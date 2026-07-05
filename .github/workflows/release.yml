@@ -37,6 +37,15 @@ jobs:
             "MSIX_CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
           }
 
+      - name: Sync MSIX manifest version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $manifestPath = "./src/NickeltownFinance/Package.appxmanifest"
+          $manifest = Get-Content $manifestPath -Raw
+          $manifest = $manifest -replace '(<Identity[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
+          Set-Content $manifestPath -Value $manifest -NoNewline
+
       - name: Publish MSIX package
         shell: pwsh
         run: |
@@ -66,7 +75,10 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
           New-Item -ItemType Directory -Force -Path ./artifacts/release | Out-Null
-          $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "NickeltownFinance.msix" | Select-Object -First 1
+          $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages/NickeltownFinance_$version.0_x64_Test" -Filter "*.msix" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $msix) {
+            $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "NickeltownFinance.msix" | Select-Object -First 1
+          }
           if (-not $msix) {
             $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "*.msix" | Select-Object -First 1
           }

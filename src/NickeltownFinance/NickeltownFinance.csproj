@@ -85,6 +85,7 @@
     <GenerateTestArtifacts>false</GenerateTestArtifacts>
     <HoursBetweenUpdateChecks>24</HoursBetweenUpdateChecks>
     <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+    <AppxPackageVersion>$(AssemblyVersion)</AppxPackageVersion>
 
     <!-- Signing: run scripts/Create-DevCertificate.ps1 once per machine (pfx is gitignored) -->
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
@@ -99,10 +100,15 @@
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
 
+  <!-- Keep Package.appxmanifest Identity Version in sync with AssemblyVersion for MSIX upgrades. -->
+  <Target Name="SyncAppxManifestVersion" BeforeTargets="_GenerateAppxPackage" Condition="'$(WindowsPackageType)' == 'MSIX'">
+    <Exec Command="powershell -NoProfile -Command &quot;$p='$(MSBuildProjectDirectory)\Package.appxmanifest'; (Get-Content $p -Raw) -replace '(&lt;Identity[^&gt;]*Version=\&quot;)[0-9.]+(\&quot;)', ('${1}$(AssemblyVersion)${2}') | Set-Content $p -NoNewline&quot;" />
+  </Target>
+
   <!-- Canonical MSIX filename for sideload distribution and GitHub releases -->
   <Target Name="CopyCanonicalMsix" AfterTargets="Publish" Condition="'$(PublishAppxPackage)' == 'true' or '$(GenerateAppxPackageOnBuild)' == 'true'">
     <ItemGroup>
-      <_BuiltMsix Include="$(MSBuildProjectDirectory)\AppPackages\**\NickeltownFinance_*.msix" />
+      <_BuiltMsix Include="$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance_$(AssemblyVersion)_*\NickeltownFinance_$(AssemblyVersion)_*.msix" />
     </ItemGroup>
     <Copy SourceFiles="@(_BuiltMsix)"
           DestinationFiles="$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix"
