@@ -30,8 +30,11 @@ jobs:
           } else {
             $pfxPath = Join-Path $env:RUNNER_TEMP "NickeltownFinance.pfx"
             [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64))
+            $secure = ConvertTo-SecureString $env:MSIX_CERTIFICATE_PASSWORD -AsPlainText -Force
+            $cert = Import-PfxCertificate -FilePath $pfxPath -Password $secure -CertStoreLocation Cert:\CurrentUser\My
             "MSIX_CERT_PATH=$pfxPath" >> $env:GITHUB_ENV
             "MSIX_CERT_PASSWORD=$env:MSIX_CERTIFICATE_PASSWORD" >> $env:GITHUB_ENV
+            "MSIX_CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
           }
 
       - name: Publish MSIX package
@@ -50,7 +53,11 @@ jobs:
             "-p:IncludeSourceRevisionInInformationalVersion=false"
           )
           if ($env:MSIX_CERT_PATH) {
-            $publishArgs += @("-p:PackageCertificateKeyFile=$env:MSIX_CERT_PATH", "-p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD")
+            $publishArgs += @(
+              "-p:PackageCertificateKeyFile=$env:MSIX_CERT_PATH",
+              "-p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD",
+              "-p:PackageCertificateThumbprint=$env:MSIX_CERT_THUMBPRINT"
+            )
           }
           dotnet @publishArgs
 
