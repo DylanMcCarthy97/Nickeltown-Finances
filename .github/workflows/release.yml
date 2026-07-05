@@ -19,31 +19,49 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Publish MSIX
+      - uses: microsoft/setup-WinAppCli@v0.1
+
+      - name: Publish application
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
           dotnet publish "src/NickeltownFinance/NickeltownFinance.csproj" `
             -c Release `
             -r win-x64 `
-            -p:BuildMsix=true `
+            --self-contained true `
+            -p:PublishSingleFile=false `
             -p:Version=$version `
             -p:AssemblyVersion="$version.0" `
             -p:FileVersion="$version.0" `
             -p:InformationalVersion=$version `
             -o ./artifacts/publish
 
-      - name: Collect release assets
+      - name: Update manifest version
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
-          New-Item -ItemType Directory -Force -Path ./artifacts/release | Out-Null
-          $msix = Get-ChildItem -Path ./artifacts -Recurse -Filter *.msix | Select-Object -First 1
-          if (-not $msix) { throw "MSIX package was not produced. Ensure Windows SDK is available on the runner." }
-          Copy-Item $msix.FullName ./artifacts/release/NickeltownFinance.msix
+          $manifestPath = "./src/NickeltownFinance/Package.appxmanifest"
+          $manifest = Get-Content $manifestPath -Raw
+          $manifest = $manifest -replace '(<Identity[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
+          Set-Content $manifestPath -Value $manifest
 
+      - name: Pack MSIX
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ./artifacts/release | Out-Null
+          winapp pack ./artifacts/publish `
+            --manifest ./src/NickeltownFinance/Package.appxmanifest `
+            --output ./artifacts/release/NickeltownFinance.msix
+          if (-not (Test-Path ./artifacts/release/NickeltownFinance.msix)) {
+            throw "winapp pack did not produce NickeltownFinance.msix"
+          }
+
+      - name: Prepare appinstaller
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
           $appInstaller = Get-Content ./packaging/NickeltownFinance.appinstaller -Raw
-          $appInstaller = $appInstaller -replace 'Version="[0-9.]+"', "Version=`"$version.0`"", 1
+          $appInstaller = $appInstaller -replace '(<AppInstaller[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}", 1
           $appInstaller = $appInstaller -replace '(<MainPackage[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
           Set-Content -Path ./artifacts/release/NickeltownFinance.appinstaller -Value $appInstaller -NoNewline
 

@@ -63,19 +63,9 @@
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
 
-    <!-- MSIX packaging: dotnet publish -p:BuildMsix=true -->
-    <PropertyGroup Condition="'$(BuildMsix)' == 'true'">
-        <WindowsPackageType>MSIX</WindowsPackageType>
-        <EnableMsixTooling>true</EnableMsixTooling>
-        <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
-        <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
-        <PublishSingleFile>false</PublishSingleFile>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(BuildMsix)' == 'true'">
-        <Content Include="Package.appxmanifest">
-            <SubType>Designer</SubType>
-        </Content>
+    <!-- MSIX is built in CI via winapp pack (see .github/workflows/release.yml). -->
+    <ItemGroup>
+        <None Include="Package.appxmanifest" />
     </ItemGroup>
 
 
