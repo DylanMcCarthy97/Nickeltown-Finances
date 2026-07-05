@@ -1,78 +1,77 @@
-name: Release
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-permissions:
-  contents: write
-
-jobs:
-  build-msix:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Import signing certificate
-        if: ${{ secrets.MSIX_CERTIFICATE_BASE64 != '' }}
-        shell: pwsh
-        env:
-          MSIX_CERTIFICATE_BASE64: ${{ secrets.MSIX_CERTIFICATE_BASE64 }}
-          MSIX_CERTIFICATE_PASSWORD: ${{ secrets.MSIX_CERTIFICATE_PASSWORD }}
-        run: |
-          $pfxPath = Join-Path $env:RUNNER_TEMP "NickeltownFinance.pfx"
-          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64))
-          "MSIX_CERT_PATH=$pfxPath" >> $env:GITHUB_ENV
-          "MSIX_CERT_PASSWORD=$env:MSIX_CERTIFICATE_PASSWORD" >> $env:GITHUB_ENV
-
-      - name: Create development certificate (unsigned fallback)
-        if: ${{ secrets.MSIX_CERTIFICATE_BASE64 == '' }}
-        shell: pwsh
-        run: ./scripts/Create-DevCertificate.ps1 -ProjectDir "src/NickeltownFinance"
-
-      - name: Publish MSIX package
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          $publishArgs = @(
-            "publish", "src/NickeltownFinance/NickeltownFinance.csproj",
-            "-c", "Release",
-            "/p:Platform=x64",
-            "/p:PublishProfile=FolderProfile",
-            "-p:Version=$version",
-            "-p:AssemblyVersion=$version.0",
-            "-p:FileVersion=$version.0",
-            "-p:InformationalVersion=$version"
-          )
-          if ($env:MSIX_CERT_PATH) {
-            $publishArgs += @("-p:PackageCertificateKeyFile=$env:MSIX_CERT_PATH", "-p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD")
-          }
-          dotnet @publishArgs
-
-      - name: Stage release artifacts
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          New-Item -ItemType Directory -Force -Path ./artifacts/release | Out-Null
-          $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "NickeltownFinance.msix" | Select-Object -First 1
-          if (-not $msix) {
-            $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "*.msix" | Select-Object -First 1
-          }
-          if (-not $msix) { throw "MSIX package was not produced." }
-          Copy-Item $msix.FullName ./artifacts/release/NickeltownFinance.msix
-          $appInstaller = Get-Content ./packaging/NickeltownFinance.appinstaller -Raw
-          $appInstaller = $appInstaller -replace '(<AppInstaller[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
-          $appInstaller = $appInstaller -replace '(<MainPackage[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
-          Set-Content -Path ./artifacts/release/NickeltownFinance.appinstaller -Value $appInstaller -NoNewline
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ./artifacts/release/*
-          generate_release_notes: true
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Prepare MSIX signing certificate
+        shell: pwsh
+        env:
+          MSIX_CERTIFICATE_BASE64: ${{ secrets.MSIX_CERTIFICATE_BASE64 }}
+          MSIX_CERTIFICATE_PASSWORD: ${{ secrets.MSIX_CERTIFICATE_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:MSIX_CERTIFICATE_BASE64)) {
+            ./scripts/Create-DevCertificate.ps1 -ProjectDir "src/NickeltownFinance"
+          } else {
+            $pfxPath = Join-Path $env:RUNNER_TEMP "NickeltownFinance.pfx"
+            [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64))
+            "MSIX_CERT_PATH=$pfxPath" >> $env:GITHUB_ENV
+            "MSIX_CERT_PASSWORD=$env:MSIX_CERTIFICATE_PASSWORD" >> $env:GITHUB_ENV
+          }
+
+      - name: Publish MSIX package
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $publishArgs = @(
+            "publish", "src/NickeltownFinance/NickeltownFinance.csproj",
+            "-c", "Release",
+            "/p:Platform=x64",
+            "/p:PublishProfile=FolderProfile",
+            "-p:Version=$version",
+            "-p:AssemblyVersion=$version.0",
+            "-p:FileVersion=$version.0",
+            "-p:InformationalVersion=$version",
+            "-p:IncludeSourceRevisionInInformationalVersion=false"
+          )
+          if ($env:MSIX_CERT_PATH) {
+            $publishArgs += @("-p:PackageCertificateKeyFile=$env:MSIX_CERT_PATH", "-p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD")
+          }
+          dotnet @publishArgs
+
+      - name: Stage release artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          New-Item -ItemType Directory -Force -Path ./artifacts/release | Out-Null
+          $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "NickeltownFinance.msix" | Select-Object -First 1
+          if (-not $msix) {
+            $msix = Get-ChildItem -Path "src/NickeltownFinance/AppPackages" -Recurse -Filter "*.msix" | Select-Object -First 1
+          }
+          if (-not $msix) { throw "MSIX package was not produced." }
+          Copy-Item $msix.FullName ./artifacts/release/NickeltownFinance.msix
+          $appInstaller = Get-Content ./packaging/NickeltownFinance.appinstaller -Raw
+          $appInstaller = $appInstaller -replace '(<AppInstaller[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
+          $appInstaller = $appInstaller -replace '(<MainPackage[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
+          Set-Content -Path ./artifacts/release/NickeltownFinance.appinstaller -Value $appInstaller -NoNewline
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/release/*
+          generate_release_notes: true
