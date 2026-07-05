@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="NickeltownFinance.Signing.props" Condition="Exists('NickeltownFinance.Signing.props')" />
   <ItemGroup>
     <ProjectReference Include="..\NickeltownFinance.Core\NickeltownFinance.Core.csproj" />
     <ProjectReference Include="..\NickeltownFinance.Infrastructure\NickeltownFinance.Infrastructure.csproj" />
@@ -11,6 +12,8 @@
     <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260610101" PrivateAssets="all" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
@@ -43,6 +46,12 @@
       <TargetPath>MobileUpload\wwwroot\assets\logo.png</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- MSIX tile / store visual assets -->
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Square44x44Logo.png" />
+    <Content Include="Assets\Square150x150Logo.png" />
+    <Content Include="Assets\Wide310x150Logo.png" />
+    <Content Include="Assets\SplashScreen.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,23 +59,76 @@
     <Resource Include="Assets\AppIcon.png" />
   </ItemGroup>
 
-    <PropertyGroup>
-        <OutputType>WinExe</OutputType>
-        <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <UseWPF>true</UseWPF>
-        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-        <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-        <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>true</SelfContained>
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <RootNamespace>NickeltownFinance</RootNamespace>
+    <AssemblyName>NickeltownFinance</AssemblyName>
 
-    <!-- MSIX is built in CI via winapp pack (see .github/workflows/release.yml). -->
+    <!-- x64 platform required for MSIX packaging in Visual Studio -->
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!-- Single-project MSIX packaging (Visual Studio Build → Publish) -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+    <AppxBundle>Never</AppxBundle>
+    <AppxAutoIncrementPackageRevision>false</AppxAutoIncrementPackageRevision>
+    <GenerateTestArtifacts>false</GenerateTestArtifacts>
+    <HoursBetweenUpdateChecks>24</HoursBetweenUpdateChecks>
+    <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+
+    <!-- Signing: run scripts/Create-DevCertificate.ps1 once per machine (pfx is gitignored) -->
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>$(MSBuildProjectDirectory)\NickeltownFinance_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificatePassword>NickeltownFinance</PackageCertificatePassword>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+
+    <PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+
+  <!-- Canonical MSIX filename for sideload distribution and GitHub releases -->
+  <Target Name="CopyCanonicalMsix" AfterTargets="Publish" Condition="'$(PublishAppxPackage)' == 'true' or '$(GenerateAppxPackageOnBuild)' == 'true'">
     <ItemGroup>
-        <None Include="Package.appxmanifest" />
+      <_BuiltMsix Include="$(MSBuildProjectDirectory)\AppPackages\**\NickeltownFinance_*.msix" />
     </ItemGroup>
+    <Copy SourceFiles="@(_BuiltMsix)"
+          DestinationFiles="$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix"
+          SkipUnchangedFiles="false"
+          Condition="'@(_BuiltMsix)' != ''" />
+  </Target>
 
+  <Target Name="SignCanonicalMsix" AfterTargets="CopyCanonicalMsix" Condition="Exists('$(MSBuildProjectDirectory)\NickeltownFinance_TemporaryKey.pfx') and Exists('$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix')">
+    <PropertyGroup>
+      <_SignToolPath Condition="'$(_SignToolPath)' == '' and Exists('$(SignAppxPackageExeFullPath)')">$(SignAppxPackageExeFullPath)</_SignToolPath>
+      <_SignToolPath Condition="'$(_SignToolPath)' == ''">C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe</_SignToolPath>
+    </PropertyGroup>
+    <Exec Command="&quot;$(_SignToolPath)&quot; sign /f &quot;$(MSBuildProjectDirectory)\NickeltownFinance_TemporaryKey.pfx&quot; /p $(PackageCertificatePassword) /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 &quot;$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix&quot;"
+          IgnoreExitCode="false"
+          Condition="Exists('$(_SignToolPath)')" />
+  </Target>
+
+  <!-- MSIX lands in AppPackages\; also copy installer artifacts to PublishDir so VS folder publish is not mistaken for a failed MSIX build. -->
+  <Target Name="CopyMsixToPublishDir" AfterTargets="CopyCanonicalMsix" Condition="'$(PublishAppxPackage)' == 'true' and Exists('$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix') and '$(PublishDir)' != ''">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\AppPackages\NickeltownFinance.msix"
+          DestinationFiles="$(PublishDir)NickeltownFinance.msix"
+          SkipUnchangedFiles="false" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\NickeltownFinance_TemporaryKey.cer"
+          DestinationFiles="$(PublishDir)NickeltownFinance.cer"
+          SkipUnchangedFiles="false"
+          Condition="Exists('$(MSBuildProjectDirectory)\NickeltownFinance_TemporaryKey.cer')" />
+  </Target>
 
 </Project>

@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "NickeltownFinance (Package)": {
+      "commandName": "MsixPackage",
+      "allowLocalNetworkLoopback": true
+    },
+    "NickeltownFinance (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

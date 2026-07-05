@@ -1,8 +1,25 @@
 <Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/NickeltownFinance/NickeltownFinance.csproj" />
-    <Project Path="src/NickeltownFinance.Core/NickeltownFinance.Core.csproj" />
-    <Project Path="src/NickeltownFinance.Infrastructure/NickeltownFinance.Infrastructure.csproj" />
-    <Project Path="src/NickeltownFinance.Reports/NickeltownFinance.Reports.csproj" />
+    <Project Path="src/NickeltownFinance.Core/NickeltownFinance.Core.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
+    <Project Path="src/NickeltownFinance.Infrastructure/NickeltownFinance.Infrastructure.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
+    <Project Path="src/NickeltownFinance.Reports/NickeltownFinance.Reports.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
+    <Project Path="src/NickeltownFinance/NickeltownFinance.csproj">
+      <Platform Solution="Debug|x64" Project="x64" />
+      <Platform Solution="Release|x64" Project="x64" />
+      <Deploy Solution="Debug|x64" />
+      <Deploy Solution="Release|x64" />
+    </Project>
   </Folder>
 </Solution>

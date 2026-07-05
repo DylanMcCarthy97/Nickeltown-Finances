@@ -11,6 +11,11 @@ public static class AppUpdateVersion
         if (trimmed.StartsWith('v') || trimmed.StartsWith('V'))
             trimmed = trimmed[1..];
 
+        // Strip SemVer build metadata (e.g. 1.0.0+gitsha) before parsing.
+        var plusIndex = trimmed.IndexOf('+');
+        if (plusIndex >= 0)
+            trimmed = trimmed[..plusIndex];
+
         return Version.TryParse(trimmed, out var version)
             ? version.ToString(version.Revision >= 0 ? 4 : 3)
             : null;
