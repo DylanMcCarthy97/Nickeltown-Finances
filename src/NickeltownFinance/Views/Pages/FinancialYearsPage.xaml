@@ -1,0 +1,145 @@
+<UserControl x:Class="NickeltownFinance.Views.Pages.FinancialYearsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+             Style="{StaticResource PageRootStyle}">
+    <UserControl.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewFinancialYearCommand}" />
+        <KeyBinding Key="E" Modifiers="Control" Command="{Binding EditCommand}" />
+        <KeyBinding Key="Delete" Command="{Binding DeleteCommand}" />
+    </UserControl.InputBindings>
+
+    <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Financial Years" Style="{StaticResource PageTitleStyle}" />
+                    <TextBlock Text="Years are determined from transaction dates. Create a new year at the end of June to carry forward the closing balance and archive the previous year."
+                               Style="{StaticResource PageSubtitleStyle}" />
+                </StackPanel>
+            </Grid>
+
+            <ds:SurfaceCard Grid.Row="1" CardMargin="0" CardPadding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <WrapPanel Grid.Row="0" Margin="0,0,0,12">
+                        <ui:Button Content="Create New Financial Year"
+                                   Icon="{ui:SymbolIcon CalendarAdd24}"
+                                   Style="{StaticResource GroupedPrimaryButtonExtraWideStyle}"
+                                   Command="{Binding NewFinancialYearCommand}"
+                                   IsEnabled="{Binding CanManage}"
+                                   Margin="{StaticResource ButtonGroupMargin}"
+                                   ToolTip="Carry forward closing balance and archive the previous year (Ctrl+N)" />
+                        <ui:Button Content="Edit starting balance"
+                                   Icon="{ui:SymbolIcon Edit24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding EditCommand}"
+                                   IsEnabled="{Binding CanEditSelected}"
+                                   Margin="{StaticResource ButtonGroupMargin}"
+                                   ToolTip="Ctrl+E" />
+                        <ui:Button Content="Set Active"
+                                   Icon="{ui:SymbolIcon CheckmarkCircle24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding SetActiveCommand}"
+                                   IsEnabled="{Binding CanEditSelected}"
+                                   Margin="{StaticResource ButtonGroupMargin}" />
+                        <ui:Button Content="Lock / Unlock"
+                                   Icon="{ui:SymbolIcon LockClosed24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding LockCommand}"
+                                   IsEnabled="{Binding CanEditSelected}"
+                                   Margin="{StaticResource ButtonGroupMargin}" />
+                        <ui:Button Content="Archive"
+                                   Icon="{ui:SymbolIcon Archive24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding ArchiveCommand}"
+                                   IsEnabled="{Binding CanEditSelected}"
+                                   Margin="{StaticResource ButtonGroupMargin}" />
+                        <ui:Button Content="Generate AGM Reports"
+                                   Icon="{ui:SymbolIcon DocumentOnePage24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding GenerateAgmReportsCommand}"
+                                   Margin="{StaticResource ButtonGroupMargin}" />
+                        <ui:Button Content="Delete"
+                                   Icon="{ui:SymbolIcon Delete24}"
+                                   Style="{StaticResource GroupedDangerButtonExtraWideStyle}"
+                                   Command="{Binding DeleteCommand}"
+                                   IsEnabled="{Binding CanDeleteSelected}"
+                                   Margin="{StaticResource ButtonGroupMargin}"
+                                   ToolTip="Delete (only when no transactions exist)" />
+                        <ui:Button Content="Refresh"
+                                   Icon="{ui:SymbolIcon ArrowSync24}"
+                                   Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                   Command="{Binding RefreshCommand}"
+                                   Margin="{StaticResource ButtonGroupMargin}"
+                                   ToolTip="F5" />
+                    </WrapPanel>
+
+                    <Grid Grid.Row="1">
+                        <ds:AppDataGrid ItemsSource="{Binding Years}"
+                                        SelectedItem="{Binding SelectedYear}"
+                                        CanUserSortColumns="True"
+                                        LayoutKey="FinancialYears">
+                            <ds:AppDataGrid.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="Edit" Command="{Binding EditCommand}" Icon="{ui:SymbolIcon Edit24}" />
+                                    <MenuItem Header="Set Active" Command="{Binding SetActiveCommand}" Icon="{ui:SymbolIcon CheckmarkCircle24}" />
+                                    <MenuItem Header="Archive" Command="{Binding ArchiveCommand}" Icon="{ui:SymbolIcon Archive24}" />
+                                    <Separator />
+                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Icon="{ui:SymbolIcon Delete24}" />
+                                </ContextMenu>
+                            </ds:AppDataGrid.ContextMenu>
+                            <ds:AppDataGrid.Columns>
+                                <DataGridTextColumn Header="Financial Year"
+                                                    Binding="{Binding Name}"
+                                                    Width="*"
+                                                    MinWidth="110" />
+                                <DataGridTextColumn Header="Starting Date"
+                                                    Binding="{Binding StartingDate, StringFormat=dd/MM/yyyy}"
+                                                    Width="120" />
+                                <DataGridTextColumn Header="Starting Balance"
+                                                    Binding="{Binding StartingBalance, Converter={StaticResource CurrencyConverter}}"
+                                                    Width="130" />
+                                <DataGridTextColumn Header="Opening Balance"
+                                                    Binding="{Binding OpeningBalance, Converter={StaticResource CurrencyConverter}}"
+                                                    Width="130" />
+                                <DataGridTextColumn Header="Current Balance"
+                                                    Binding="{Binding CurrentBalance, Converter={StaticResource CurrencyConverter}}"
+                                                    Width="130" />
+                                <DataGridTemplateColumn Header="Status" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left"
+                                                    Background="{Binding StatusKind, Converter={StaticResource StatusBadgeBackgroundConverter}}">
+                                                <TextBlock Text="{Binding Status}"
+                                                           Foreground="White"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </ds:AppDataGrid.Columns>
+                        </ds:AppDataGrid>
+
+                        <ds:EmptyState Title="No financial years"
+                                       Message="Create a financial year to begin tracking balances."
+                                       IconSymbol="CalendarLtr24"
+                                       Visibility="{Binding Years, Converter={StaticResource EmptyCollectionToVisibilityConverter}}" />
+                    </Grid>
+                </Grid>
+            </ds:SurfaceCard>
+        </Grid>
+    </ds:PageShell>
+</UserControl>

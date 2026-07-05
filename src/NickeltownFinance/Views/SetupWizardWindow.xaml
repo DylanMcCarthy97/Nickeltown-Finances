@@ -1,0 +1,100 @@
+<ui:FluentWindow x:Class="NickeltownFinance.Views.SetupWizardWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+                 Title="Welcome — Nickeltown Finance"
+                 Width="520"
+                 SizeToContent="Height"
+                 MinHeight="480"
+                 MaxHeight="720"
+                 WindowStartupLocation="CenterScreen"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="True"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 Background="{DynamicResource BrandBackgroundBrush}"
+                 Icon="pack://application:,,,/Assets/AppIcon.png"
+                 FontFamily="{StaticResource AppFontFamily}">
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="Enter" Command="{Binding CompleteCommand}" />
+    </ui:FluentWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="First-run setup"
+                     Grid.Row="0"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     Background="{DynamicResource BrandBackgroundBrush}" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="28,8,28,8">
+            <StackPanel>
+                <TextBlock Text="Set up your club finances"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource BrandTextPrimaryBrush}"
+                           Margin="0,0,0,6" />
+                <TextBlock Text="Four details and you are ready. Financial years are calculated automatically from transaction dates."
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource BrandMutedTextBrush}"
+                           Margin="0,0,0,20" />
+
+                <TextBlock Text="Club name" Style="{StaticResource FieldLabelStyle}" />
+                <ui:TextBox Text="{Binding ClubName, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="e.g. Nickeltown Flounderers Inc."
+                            Margin="0,0,0,12" />
+
+                <TextBlock Text="Financial year starts" Style="{StaticResource FieldLabelStyle}" />
+                <ComboBox ItemsSource="{Binding StartMonths}"
+                          SelectedItem="{Binding SelectedStartMonth}"
+                          DisplayMemberPath="Name"
+                          Margin="0,0,0,4" />
+                <TextBlock Text="{Binding FinancialYearPreview, StringFormat=Current period: {0}}"
+                           FontSize="11"
+                           Foreground="{StaticResource BrandMutedTextBrush}"
+                           Margin="0,0,0,12" />
+
+                <TextBlock Text="Starting date" Style="{StaticResource FieldLabelStyle}" />
+                <ds:AppDateField SelectedDate="{Binding StartingDate}" Margin="0,0,0,4" />
+                <TextBlock Text="The date you start using this software (e.g. 14 July 2026)."
+                           FontSize="11"
+                           Foreground="{StaticResource BrandMutedTextBrush}"
+                           Margin="0,0,0,12"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Text="Current bank balance" Style="{StaticResource FieldLabelStyle}" />
+                <ui:TextBox Text="{Binding BankBalanceText, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="14000.00"
+                            Margin="0,0,0,4" />
+                <TextBlock Text="Your bank balance at the end of the starting date (including that day's transactions). Importing transactions on or before this date will not change this total."
+                           FontSize="11"
+                           Foreground="{StaticResource BrandMutedTextBrush}"
+                           Margin="0,0,0,16"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Text="Sign in after setup with username admin and password Admin123!. Change the password in Settings."
+                           FontSize="11"
+                           Foreground="{StaticResource BrandMutedTextBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8" />
+
+                <ds:ErrorScreen Message="{Binding ErrorMessage}" IsCompact="True" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
+            <ui:Button Content="Save"
+                       Style="{StaticResource PrimaryButtonStyle}"
+                       Command="{Binding CompleteCommand}"
+                       HorizontalAlignment="Right"
+                       MinWidth="140"
+                       IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+        </Border>
+    </Grid>
+</ui:FluentWindow>

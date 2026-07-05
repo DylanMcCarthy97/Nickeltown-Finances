@@ -1,0 +1,99 @@
+<ui:FluentWindow x:Class="NickeltownFinance.Views.Dialogs.NewUserDialogWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+                 Title="New User"
+                 Width="460"
+                 SizeToContent="Height"
+                 MinHeight="480"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 Background="{DynamicResource BrandBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}">
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding CreateCommand}" />
+    </ui:FluentWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="New user" Grid.Row="0" ShowMinimize="False" ShowMaximize="False" />
+
+        <StackPanel Grid.Row="1" Margin="28,8,28,8">
+            <TextBlock Text="Full name" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="e.g. Jane Smith"
+                        Margin="0,0,0,4" />
+            <TextBlock Text="Used on reports when this person signs them."
+                       Style="{StaticResource CaptionTextStyle}"
+                       Margin="0,0,0,14" />
+
+            <TextBlock Text="Login username" Style="{StaticResource FieldLabelStyle}" />
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="Generated from full name" />
+                <ui:Button Grid.Column="1"
+                           Content="Reset"
+                           Style="{StaticResource SecondaryButtonStyle}"
+                           Margin="8,0,0,0"
+                           Command="{Binding RegenerateUsernameCommand}"
+                           ToolTip="Regenerate username from full name" />
+            </Grid>
+            <TextBlock Text="Generated automatically. Change only if you need a different login."
+                       Style="{StaticResource CaptionTextStyle}"
+                       Margin="0,0,0,14" />
+
+            <TextBlock Text="Password" Style="{StaticResource FieldLabelStyle}" />
+            <ui:PasswordBox Password="{Binding Password, Mode=TwoWay}" Margin="0,0,0,4" />
+            <ProgressBar Minimum="0" Maximum="4" Value="{Binding PasswordStrength}" Height="6" Margin="0,0,0,2"
+                         Foreground="{Binding PasswordStrength, Converter={StaticResource PasswordStrengthBrushConverter}}" />
+            <TextBlock Text="{Binding PasswordStrengthLabel}" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,10" />
+
+            <TextBlock Text="Confirm password" Style="{StaticResource FieldLabelStyle}" />
+            <ui:PasswordBox Password="{Binding ConfirmPassword, Mode=TwoWay}" Margin="0,0,0,14" />
+
+            <TextBlock Text="Role" Style="{StaticResource FieldLabelStyle}" />
+            <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole}" Margin="0,0,0,12">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource RoleDisplayConverter}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <CheckBox Content="Account active" IsChecked="{Binding IsActive}" Margin="0,0,0,10" />
+
+            <TextBlock Text="Password requires 8+ characters, uppercase, lowercase, a number, and a special character."
+                       Style="{StaticResource CaptionTextStyle}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8" />
+
+            <ds:ErrorScreen Message="{Binding ErrorMessage}" IsCompact="True" />
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Cancel"
+                           Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                           Command="{Binding CancelCommand}"
+                           Margin="{StaticResource ButtonGroupMarginInline}" />
+                <ui:Button Content="Create user"
+                           Style="{StaticResource GroupedPrimaryButtonWideStyle}"
+                           Command="{Binding CreateCommand}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

@@ -1,0 +1,417 @@
+<UserControl x:Class="NickeltownFinance.Views.Pages.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+             xmlns:views="clr-namespace:NickeltownFinance.Views.Pages"
+             Style="{StaticResource PageRootStyle}">
+    <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource AppCardStyle}" Padding="12" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="Settings" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+                    <ui:Button Content="Club details" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Club" Margin="0,0,0,4" />
+                    <ui:Button Content="Users" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Users"
+                               Visibility="{Binding IsAdministrator, Converter={StaticResource BoolToVisibilityConverter}}"
+                               Margin="0,0,0,4" />
+                    <ui:Button Content="Categories" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Categories" Margin="0,0,0,4" />
+                    <ui:Button Content="Backup" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Backup" Margin="0,0,0,4" />
+                    <ui:Button Content="Appearance" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Appearance" Margin="0,0,0,4" />
+                    <ui:Button Content="Report settings" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Reports" Margin="0,0,0,4" />
+                    <ui:Button Content="Receipt processing" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="ReceiptProcessing"
+                               Margin="0,0,0,4" />
+                    <ui:Button Content="About &amp; updates" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="About" />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Settings" Style="{StaticResource PageTitleStyle}" />
+                            <TextBlock Text="Club identity, users, categories, backups, and appearance."
+                                       Style="{StaticResource PageSubtitleStyle}" />
+                        </StackPanel>
+                        <ui:Button Grid.Column="1" Content="Save settings"
+                                   Style="{StaticResource PrimaryButtonStyle}"
+                                   Icon="{ui:SymbolIcon Save24}" Command="{Binding SaveSettingsCommand}"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding ShowUsers, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                    </Grid>
+
+                    <!-- Club -->
+                    <StackPanel Visibility="{Binding ShowClub, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Club details" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Club name" Style="{StaticResource FieldLabelStyle}" />
+                                <ui:TextBox Text="{Binding ClubName}" Margin="0,0,0,14" />
+                                <TextBlock Text="Club logo" Style="{StaticResource FieldLabelStyle}" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox Text="{Binding ClubLogoPath}" IsReadOnly="True" Margin="0,0,8,0" />
+                                    <ui:Button Grid.Column="1" Content="Browse" Command="{Binding BrowseLogoCommand}" />
+                                </Grid>
+                                <TextBlock Text="Shown on reports and the dashboard."
+                                           Style="{StaticResource CaptionTextStyle}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Users -->
+                    <ContentControl Content="{Binding Users}"
+                                    Visibility="{Binding ShowUsers, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <!-- Categories -->
+                    <StackPanel Visibility="{Binding ShowCategories, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Categories" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="200" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" MinWidth="200" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Background="{StaticResource BrandInsetBrush}" CornerRadius="12" Padding="14">
+                                        <StackPanel>
+                                            <TextBlock Text="Income" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource BrandIncomeBrush}" Margin="0,0,0,10" />
+                                            <ItemsControl ItemsSource="{Binding IncomeCategories}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,4">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                            <ui:Button Grid.Column="1" Content="Archive" Appearance="Transparent"
+                                                                       Command="{Binding DataContext.ArchiveCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                       CommandParameter="{Binding}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2" Background="{StaticResource BrandInsetBrush}" CornerRadius="12" Padding="14">
+                                        <StackPanel>
+                                            <TextBlock Text="Expense" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource BrandExpenseBrush}" Margin="0,0,0,10" />
+                                            <ItemsControl ItemsSource="{Binding ExpenseCategories}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,4">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                            <ui:Button Grid.Column="1" Content="Archive" Appearance="Transparent"
+                                                                       Command="{Binding DataContext.ArchiveCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                       CommandParameter="{Binding}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox Text="{Binding NewCategoryName}" PlaceholderText="New category name" Margin="0,0,8,0" />
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding CategoryTypes}" SelectedItem="{Binding NewCategoryType}" Margin="0,0,8,0" />
+                                    <ui:Button Grid.Column="2" Content="Add category" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding AddCategoryCommand}" />
+                                </Grid>
+
+                                <Border Style="{StaticResource AppCardQuietStyle}" Padding="14" Margin="0,16,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Rename category" Style="{StaticResource FieldLabelStyle}" />
+                                        <Grid Margin="0,8,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="12" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox ItemsSource="{Binding AllCategories}"
+                                                      SelectedItem="{Binding SelectedCategoryForEdit}"
+                                                      DisplayMemberPath="Name" />
+                                            <ui:TextBox Grid.Column="2" Text="{Binding RenameCategoryName, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="New name" Margin="0,0,8,0" />
+                                            <ui:Button Grid.Column="3" Content="Rename" Style="{StaticResource SecondaryButtonStyle}"
+                                                       Command="{Binding RenameCategoryCommand}" />
+                                        </Grid>
+
+                                        <TextBlock Text="Merge categories" Style="{StaticResource FieldLabelStyle}" />
+                                        <TextBlock Text="Moves all transactions to the target category and archives the source."
+                                                   Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,8" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="12" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox ItemsSource="{Binding AllCategories}"
+                                                      SelectedItem="{Binding MergeSourceCategory}"
+                                                      DisplayMemberPath="Name" />
+                                            <ComboBox Grid.Column="2" ItemsSource="{Binding AllCategories}"
+                                                      SelectedItem="{Binding MergeTargetCategory}"
+                                                      DisplayMemberPath="Name" Margin="0,0,8,0" />
+                                            <ui:Button Grid.Column="3" Content="Merge" Style="{StaticResource SecondaryButtonStyle}"
+                                                       Command="{Binding MergeCategoriesCommand}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Backup -->
+                    <StackPanel Visibility="{Binding ShowBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Backup" CardMargin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="240" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="1.2*" MinWidth="260" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="Backup folder" Style="{StaticResource FieldLabelStyle}" />
+                                    <Grid Margin="0,0,0,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBox Text="{Binding BackupFolder}" IsReadOnly="True" Margin="0,0,8,0" />
+                                        <ui:Button Grid.Column="1" Content="Browse" Command="{Binding BrowseBackupFolderCommand}" />
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:Button Content="Backup now" Icon="{ui:SymbolIcon Save24}" Style="{StaticResource GroupedPrimaryButtonStyle}"
+                                                   Margin="{StaticResource ButtonGroupMarginInline}" Command="{Binding BackupNowCommand}" />
+                                        <ui:Button Content="Restore" Icon="{ui:SymbolIcon ArrowUndo24}"
+                                                   Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                                   Command="{Binding RestoreBackupCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Border Grid.Column="2" Background="{StaticResource BrandInsetBrush}" CornerRadius="12" Padding="12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Backup history" FontWeight="SemiBold" Margin="0,0,0,10" />
+                                        <ds:AppDataGrid Grid.Row="1"
+                                                        ItemsSource="{Binding BackupHistory}"
+                                                        SelectedItem="{Binding SelectedBackup}"
+                                                        MinHeight="140"
+                                                        MaxHeight="220"
+                                                        ColumnWidth="*">
+                                            <ds:AppDataGrid.Columns>
+                                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="2*" MinWidth="120" />
+                                                <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy HH:mm}" Width="*" MinWidth="120" />
+                                                <DataGridTextColumn Header="Size" Binding="{Binding SizeDisplay}" Width="Auto" MinWidth="70" />
+                                            </ds:AppDataGrid.Columns>
+                                        </ds:AppDataGrid>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Appearance -->
+                    <StackPanel Visibility="{Binding ShowAppearance, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Appearance" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Theme" Style="{StaticResource FieldLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding Themes}"
+                                          SelectedItem="{Binding SelectedTheme}"
+                                          Width="220"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Text="Light, Dark, or System (match Windows). Changes apply immediately."
+                                           Style="{StaticResource CaptionTextStyle}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Report settings -->
+                    <StackPanel Visibility="{Binding ShowReports, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Report settings" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Financial year start month" Style="{StaticResource FieldLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding FinancialYearStartMonth}" Width="200" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource MonthNameConverter}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock Text="Used when creating new financial years. Club logo and name appear on all PDF and Excel reports."
+                                           Style="{StaticResource CaptionTextStyle}" Margin="0,12,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+
+                        <ds:SurfaceCard Title="My digital signature" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Each user has their own signature. Yours is applied automatically when you export or print a PDF report."
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
+
+                                <Border Background="{StaticResource BrandInsetBrush}"
+                                        CornerRadius="10"
+                                        Padding="16"
+                                        MinHeight="80"
+                                        Margin="0,0,0,12">
+                                    <Grid>
+                                        <TextBlock Text="No signature uploaded yet"
+                                                   Style="{StaticResource CaptionTextStyle}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Visibility="{Binding HasMySignature, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                        <Image Source="{Binding MySignatureImagePath, Converter={StaticResource PathToImageSourceConverter}}"
+                                               MaxHeight="72"
+                                               Stretch="Uniform"
+                                               HorizontalAlignment="Left"
+                                               Visibility="{Binding HasMySignature, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Content="Draw signature"
+                                               Style="{StaticResource GroupedPrimaryButtonWideStyle}"
+                                               Icon="{ui:SymbolIcon DrawImage24}"
+                                               Command="{Binding DrawMySignatureCommand}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                    <ui:Button Content="Upload image"
+                                               Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                                               Command="{Binding BrowseMySignatureCommand}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                    <ui:Button Content="Remove"
+                                               Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                                               Command="{Binding ClearMySignatureCommand}"
+                                               IsEnabled="{Binding HasMySignature}" />
+                                </StackPanel>
+                                <TextBlock Text="Draw with your mouse, trackpad, or pen. Upload is optional if you already have a signature image."
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           Margin="0,10,0,0"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Receipt processing -->
+                    <StackPanel Visibility="{Binding ShowReceiptProcessing, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Receipt processing">
+                            <StackPanel>
+                                <TextBlock Text="Control automatic inbox pipeline stages."
+                                           Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
+                                <CheckBox Content="Auto image enhancement (OpenCV)" IsChecked="{Binding ReceiptAutoEnhancement}" Margin="0,0,0,8" />
+                                <CheckBox Content="OCR extraction (Windows OCR)" IsChecked="{Binding ReceiptOcrEnabled}" Margin="0,0,0,8" />
+                                <CheckBox Content="AI categorisation" IsChecked="{Binding ReceiptAiCategorisation}" Margin="0,0,0,8" />
+                                <CheckBox Content="Automatic bank matching" IsChecked="{Binding ReceiptBankMatching}" Margin="0,0,0,8" />
+                                <CheckBox Content="Duplicate detection" IsChecked="{Binding ReceiptDuplicateDetection}" Margin="0,0,0,8" />
+                                <CheckBox Content="Thumbnail generation" IsChecked="{Binding ReceiptThumbnailGeneration}" Margin="0,0,0,8" />
+                                <TextBlock Text="Changes apply to newly queued receipts after you save settings."
+                                           Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- About & updates -->
+                    <StackPanel Visibility="{Binding ShowAbout, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="About" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Version" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBlock Text="{Binding AppVersion}" FontWeight="SemiBold" Margin="0,0,0,10" />
+                                <TextBlock Text="Installation" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBlock Text="{Binding InstallKindLabel}" Margin="0,0,0,10" />
+                                <TextBlock Text="Nickeltown Finance — club bookkeeping, receipts, and reports."
+                                           Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ds:SurfaceCard>
+
+                        <ds:SurfaceCard Title="Updates">
+                            <StackPanel>
+                                <TextBlock Text="Updates are published as GitHub releases with MSIX packages."
+                                           Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
+
+                                <Border Style="{StaticResource AppCardQuietStyle}" Padding="14" Margin="0,0,0,14"
+                                        Visibility="{Binding UpdateFeedConfigured, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <TextBlock Text="Configure GitHubOwner and GitHubRepo in UpdateConstants.cs before checking for updates."
+                                               Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+                                </Border>
+
+                                <TextBlock Text="{Binding UpdateStatusText}"
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
+
+                                <StackPanel Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Margin="0,0,0,14">
+                                    <TextBlock Text="Available update" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding AvailableUpdateVersion}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <TextBlock Text="{Binding AvailableUpdateNotes}"
+                                               Style="{StaticResource CaptionTextStyle}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Content="Check for updates"
+                                               Style="{StaticResource GroupedPrimaryButtonStyle}"
+                                               Icon="{ui:SymbolIcon ArrowSync24}"
+                                               Command="{Binding CheckForUpdatesCommand}"
+                                               IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBoolConverter}}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                    <ui:Button Content="Install update"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Icon="{ui:SymbolIcon ArrowDownload24}"
+                                               Command="{Binding InstallUpdateCommand}"
+                                               Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                    <ui:Button Content="Release notes"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Icon="{ui:SymbolIcon Open24}"
+                                               Command="{Binding OpenReleaseNotesCommand}"
+                                               Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </ds:PageShell>
+</UserControl>

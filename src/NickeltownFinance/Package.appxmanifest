@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="NickeltownFinance"
+    Publisher="CN=Nickeltown Finance"
+    Version="1.3.1.0" />
+
+  <Properties>
+    <DisplayName>Nickeltown Finance</DisplayName>
+    <PublisherDisplayName>Nickeltown Finance</PublisherDisplayName>
+    <Logo>Assets\AppIcon.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-AU" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+                   Executable="$targetnametoken$.exe"
+                   EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Nickeltown Finance"
+        Description="Club bookkeeping, receipts, and reports"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\AppIcon.png"
+        Square44x44Logo="Assets\AppIcon.png" />
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

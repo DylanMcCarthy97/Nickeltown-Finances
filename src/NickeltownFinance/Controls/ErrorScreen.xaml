@@ -1,0 +1,58 @@
+<UserControl x:Class="NickeltownFinance.Controls.ErrorScreen"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             x:Name="Root"
+             Visibility="{Binding Message, ElementName=Root, Converter={StaticResource NullToVisibilityConverter}}">
+    <Border x:Name="LayoutRoot" Padding="{Binding ContentPadding, ElementName=Root}">
+        <Grid>
+            <!-- Compact inline banner -->
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding IsCompact, ElementName=Root, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ui:SymbolIcon Symbol="ErrorCircle24"
+                               FontSize="16"
+                               Foreground="{StaticResource DsErrorBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+                <TextBlock Text="{Binding Message, ElementName=Root}"
+                           Foreground="{StaticResource DsErrorBrush}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Full-page error -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding IsCompact, ElementName=Root, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                <Border Width="56" Height="56"
+                        CornerRadius="28"
+                        Background="#1AE81123"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,16">
+                    <ui:SymbolIcon Symbol="ErrorCircle24"
+                                   FontSize="26"
+                                   Foreground="{StaticResource DsErrorBrush}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="{Binding Title, ElementName=Root}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Margin="0,0,0,8" />
+                <TextBlock Text="{Binding Message, ElementName=Root}"
+                           Opacity="0.8"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           MaxWidth="420"
+                           Margin="0,0,0,16" />
+                <ui:Button Content="{Binding RetryText, ElementName=Root}"
+                           Command="{Binding RetryCommand, ElementName=Root}"
+                           Style="{StaticResource PrimaryButtonStyle}"
+                           HorizontalAlignment="Center"
+                           Visibility="{Binding RetryCommand, ElementName=Root, Converter={StaticResource NullToVisibilityConverter}}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

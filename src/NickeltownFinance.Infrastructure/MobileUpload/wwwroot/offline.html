@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0C10" />
+  <meta name="apple-mobile-web-app-title" content="Nickeltown Finances" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <title>Offline — Nickeltown Finances</title>
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/screens.css" />
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('nf-pwa-settings-v1') || '{}');
+        var t = s.theme === 'auto' || !s.theme
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : s.theme;
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div class="offline-page">
+    <img src="/assets/logo.png" alt="Nickeltown Finances" class="logo logo-lg" width="80" height="80" />
+    <h1>You're offline</h1>
+    <p>Receipt uploads need a connection to Nickeltown Finances on your local network. Queued receipts are saved and will upload automatically when you're back online.</p>
+  </div>
+</body>
+</html>

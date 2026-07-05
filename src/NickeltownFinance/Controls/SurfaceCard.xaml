@@ -1,0 +1,21 @@
+<UserControl x:Class="NickeltownFinance.Controls.SurfaceCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <Border Style="{StaticResource AppCardStyle}"
+            Padding="{Binding CardPadding, ElementName=Root}"
+            Margin="{Binding CardMargin, ElementName=Root}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0"
+                       Text="{Binding Title, ElementName=Root}"
+                       Style="{StaticResource CardTitleStyle}"
+                       Margin="0,0,0,12"
+                       Visibility="{Binding Title, ElementName=Root, Converter={StaticResource NullToVisibilityConverter}}" />
+            <ContentPresenter Grid.Row="1" Content="{Binding Body, ElementName=Root}" />
+        </Grid>
+    </Border>
+</UserControl>

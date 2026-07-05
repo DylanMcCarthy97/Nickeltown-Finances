@@ -1,0 +1,25 @@
+{
+  "name": "Nickeltown Finances",
+  "short_name": "Nickeltown",
+  "description": "Capture and upload receipts to Nickeltown Finances on your desktop",
+  "start_url": "/upload",
+  "scope": "/",
+  "id": "/upload",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#0A0C10",
+  "theme_color": "#2D8CFF",
+  "orientation": "any",
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

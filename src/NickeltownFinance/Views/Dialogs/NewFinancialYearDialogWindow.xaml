@@ -1,0 +1,87 @@
+<ui:FluentWindow x:Class="NickeltownFinance.Views.Dialogs.NewFinancialYearDialogWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+                 Title="New Financial Year"
+                 Width="460"
+                 SizeToContent="Height"
+                 MinHeight="380"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 Background="{StaticResource BrandBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}">
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding CreateCommand}" />
+    </ui:FluentWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="New Financial Year" Grid.Row="0" ShowMinimize="False" ShowMaximize="False" />
+
+        <StackPanel Grid.Row="1" Margin="28,8,28,8">
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Financial year" Style="{StaticResource FieldLabelStyle}" />
+                    <ui:TextBox Text="{Binding FinancialYearName, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="e.g. 2025-26" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Starting date" Style="{StaticResource FieldLabelStyle}" />
+                    <ds:AppDateField SelectedDate="{Binding OpeningDate}" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Starting balance" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox Text="{Binding OpeningBalanceText, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="0.00"
+                        IsEnabled="{Binding IsOpeningBalanceEnabled}"
+                        Margin="0,0,0,12" />
+
+            <TextBlock Text="Carry forward previous closing balance?"
+                       Style="{StaticResource FieldLabelStyle}"
+                       Margin="0,0,0,6" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <RadioButton Content="Yes"
+                             IsChecked="{Binding CarryForwardPreviousClosingBalance}"
+                             Margin="0,0,16,0"
+                             GroupName="CarryForward" />
+                <RadioButton Content="No"
+                             IsChecked="{Binding CarryForwardPreviousClosingBalance, Converter={StaticResource InverseBoolConverter}}"
+                             GroupName="CarryForward" />
+            </StackPanel>
+            <TextBlock Text="{Binding CarryForwardHint}"
+                       FontSize="11"
+                       Foreground="{StaticResource BrandMutedTextBrush}"
+                       Margin="0,0,0,12"
+                       TextWrapping="Wrap" />
+
+            <ds:ErrorScreen Message="{Binding ErrorMessage}" IsCompact="True" />
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Cancel" Style="{StaticResource DialogFooterButtonStyle}"
+                           Command="{Binding CancelCommand}" Margin="{StaticResource ButtonGroupMarginInline}" />
+                <ui:Button Content="Create" Style="{StaticResource DialogFooterPrimaryButtonStyle}"
+                           Command="{Binding CreateCommand}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

@@ -1,0 +1,381 @@
+<UserControl x:Class="NickeltownFinance.Views.Pages.ImportPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+             Style="{StaticResource PageRootStyle}"
+             AllowDrop="True"
+             Drop="OnDrop"
+             DragOver="OnDragOver">
+    <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}" IsErrorCompact="True">
+        <Grid>
+            <!-- Hub -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IsHub, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Margin="0,0,8,24">
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock Text="Imports" Style="{StaticResource PageTitleStyle}" />
+                        <TextBlock Text="Import your ANZ bank statement. Choose CSV, preview, review categories, import — done."
+                                   Style="{StaticResource PageSubtitleStyle}" />
+                    </StackPanel>
+
+                    <UniformGrid Columns="3" Margin="0,0,0,20">
+                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnReceiptInboxCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="MailInbox24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Receipt Inbox" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Review, match, and commit receipts" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="Mobile · desktop · folders" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnMobileUploadCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="Phone24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Mobile Receipt Upload" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Scan QR code with your phone" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="Same Wi‑Fi · instant upload" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnBankCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="BuildingBank24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Import ANZ Statement" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="CSV or Excel from internet banking" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="{Binding LastBankImportText, StringFormat=Last: {0}}" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnHistoryCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="History24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Import History" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Audit trail and undo" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="{Binding RecentImportCount, StringFormat={}{0} recent}" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AppCardStyle}" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnRulesCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="TextBulletListSquareEdit24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Category Rules" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Always categorise descriptions" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="{Binding Rules.Count, StringFormat={}{0} rules}" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <TextBlock Text="Import status" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+                    <UniformGrid Columns="3" Margin="0,0,0,20">
+                        <ds:StatisticCard Title="Waiting review" Body="{Binding TransactionsWaitingReview}" Margin="0,0,12,0" />
+                        <ds:StatisticCard Title="Duplicates found" Body="{Binding DuplicatesFound}" Margin="0,0,12,0" />
+                        <ds:StatisticCard Title="Last bank import" Body="{Binding LastBankImportText}" />
+                    </UniformGrid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Wizard -->
+            <Grid Visibility="{Binding IsWizard, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Import wizard" Style="{StaticResource PageTitleStyle}" />
+                        <TextBlock Text="{Binding WizardTitle}" Style="{StaticResource PageSubtitleStyle}" />
+                        <TextBlock Text="{Binding StepIndicator}" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,0" />
+                    </StackPanel>
+                    <ui:Button Content="Back to Imports" HorizontalAlignment="Right" VerticalAlignment="Top"
+                               Style="{StaticResource SecondaryButtonStyle}"
+                               Command="{Binding ShowHubCommand}" />
+                </Grid>
+
+                <!-- Step 1 unused for ANZ-first flow; StartAnzImport jumps to step 2 -->
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
+                        Visibility="{Binding ShowStep1, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ui:SymbolIcon Symbol="BuildingBank24" FontSize="40" Foreground="{StaticResource BrandPrimaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16" />
+                        <TextBlock Text="ANZ Bank Statement" Style="{StaticResource SectionTitleStyle}" HorizontalAlignment="Center" />
+                        <TextBlock Text="Import your bank statement CSV or Excel export."
+                                   Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Center" Margin="0,8,0,16" />
+                        <ui:Button Content="Continue" Style="{StaticResource PrimaryButtonStyle}"
+                                   Command="{Binding StartAnzImportCommand}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 2: File -->
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
+                        Visibility="{Binding ShowStep2, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="40" Foreground="{StaticResource BrandPrimaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16" />
+                        <TextBlock Text="{Binding SummaryText}" Style="{StaticResource BodyTextStyle}" TextAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding FileName}" Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                        <ui:Button Content="Select file" Icon="{ui:SymbolIcon FolderOpen24}"
+                                   Style="{StaticResource PrimaryButtonStyle}"
+                                   Command="{Binding SelectFileCommand}" HorizontalAlignment="Center" />
+                        <TextBlock Text="Or drop a file anywhere on this page" Style="{StaticResource MutedTextStyle}"
+                                   HorizontalAlignment="Center" Margin="0,12,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Steps 3 & 4: Preview / Categories -->
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="16"
+                        Visibility="{Binding ShowStep3, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <WrapPanel Margin="0,0,0,12">
+                            <ui:Button Content="Select all new" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding SelectAllNewCommand}" Margin="{StaticResource ButtonGroupMargin}" />
+                            <ui:Button Content="Skip duplicates" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding SkipDuplicatesCommand}" Margin="{StaticResource ButtonGroupMargin}" />
+                            <ui:Button Content="Select all" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding SelectAllCommand}" Margin="{StaticResource ButtonGroupMargin}" />
+                            <ui:Button Content="Select none" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding SelectNoneCommand}" Margin="{StaticResource ButtonGroupMargin}" />
+                        </WrapPanel>
+
+                        <!-- ANZ preview -->
+                        <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
+                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ds:AppDataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                                <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Money In" Binding="{Binding Credit, Converter={StaticResource ZeroToDashConverter}}" Width="95" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Money Out" Binding="{Binding Debit, Converter={StaticResource ZeroToDashConverter}}" Width="95" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Suggested Category" Binding="{Binding CategoryDisplay}" Width="150" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="110" IsReadOnly="True" />
+                            </ds:AppDataGrid.Columns>
+                        </ds:AppDataGrid>
+
+                        <!-- Square grid -->
+                        <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding SquareRows}" IsReadOnly="False"
+                                        Visibility="{Binding IsSquareImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ds:AppDataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                                <DataGridTextColumn Header="Deposit Date" Binding="{Binding DepositDate, StringFormat=dd/MM/yyyy}" Width="110" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Deposit ID" Binding="{Binding DepositId}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Gross" Binding="{Binding GrossAmount, StringFormat=C}" Width="100" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Fees" Binding="{Binding Fees, StringFormat=C}" Width="90" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Net" Binding="{Binding NetAmount, StringFormat=C}" Width="100" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Txns" Binding="{Binding TransactionCount}" Width="70" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="90" IsReadOnly="True" />
+                            </ds:AppDataGrid.Columns>
+                        </ds:AppDataGrid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="16"
+                        Visibility="{Binding ShowStep4, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{Binding SummaryText}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
+
+                        <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
+                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ds:AppDataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                                <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Money In" Binding="{Binding Credit, Converter={StaticResource ZeroToDashConverter}}" Width="90" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Money Out" Binding="{Binding Debit, Converter={StaticResource ZeroToDashConverter}}" Width="90" IsReadOnly="True" />
+                                <DataGridTemplateColumn Header="Category" Width="160">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Categories}"
+                                                      SelectedItem="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="Name"
+                                                      IsEnabled="{Binding IsSquareDeposit, Converter={StaticResource InverseBoolConverter}}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridCheckBoxColumn Header="Always"
+                                                        Binding="{Binding RememberCategory, UpdateSourceTrigger=PropertyChanged}"
+                                                        Width="70" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="110" IsReadOnly="True" />
+                            </ds:AppDataGrid.Columns>
+                        </ds:AppDataGrid>
+
+                        <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding SquareRows}" IsReadOnly="False"
+                                        Visibility="{Binding IsSquareImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ds:AppDataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                                <DataGridTextColumn Header="Deposit Date" Binding="{Binding DepositDate, StringFormat=dd/MM/yyyy}" Width="110" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Deposit ID" Binding="{Binding DepositId}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Net" Binding="{Binding NetAmount, StringFormat=C}" Width="100" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Transactions" Binding="{Binding TransactionCount}" Width="100" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="90" IsReadOnly="True" />
+                            </ds:AppDataGrid.Columns>
+                        </ds:AppDataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- Step 5: Summary -->
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
+                        Visibility="{Binding ShowStep5, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel DataContext="{Binding LastResult}">
+                        <TextBlock Text="Import complete" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,16" />
+                        <UniformGrid Columns="4">
+                            <StackPanel Margin="0,0,12,12">
+                                <TextBlock Text="Imported" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Text="{Binding Imported}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandIncomeBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,12">
+                                <TextBlock Text="Skipped" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Text="{Binding Skipped}" FontSize="28" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,12">
+                                <TextBlock Text="Duplicates" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Text="{Binding Duplicates}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandAccentBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,12">
+                                <TextBlock Text="Errors" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Text="{Binding Errors}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandExpenseBrush}" />
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                    <ui:Button Content="Back" Style="{StaticResource GroupedSecondaryButtonStyle}"
+                               Command="{Binding PreviousStepCommand}"
+                               Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibilityConverter}}"
+                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                    <ui:Button Content="Next" Style="{StaticResource GroupedPrimaryButtonStyle}"
+                               Command="{Binding NextStepCommand}"
+                               Visibility="{Binding ShowStep5, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                    <ui:Button Content="Done" Style="{StaticResource GroupedPrimaryButtonStyle}"
+                               Command="{Binding FinishWizardCommand}"
+                               Visibility="{Binding ShowStep5, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- History -->
+            <Grid Visibility="{Binding IsHistory, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Import history" Style="{StaticResource PageTitleStyle}" />
+                        <TextBlock Text="Complete audit trail. Undo removes imported data and recalculates balances."
+                                   Style="{StaticResource PageSubtitleStyle}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <ui:Button Content="Refresh" Icon="{ui:SymbolIcon ArrowSync24}"
+                                   Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                                   Command="{Binding RefreshHistoryCommand}" Margin="{StaticResource ButtonGroupMarginInline}" />
+                        <ui:Button Content="Undo import" Icon="{ui:SymbolIcon ArrowUndo24}"
+                                   Style="{StaticResource GroupedDangerButtonWideStyle}"
+                                   Command="{Binding UndoImportCommand}" Margin="{StaticResource ButtonGroupMarginInline}" />
+                        <ui:Button Content="Back" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding ShowHubCommand}" />
+                    </StackPanel>
+                </Grid>
+                <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistoryItem}">
+                    <ds:AppDataGrid.Columns>
+                        <DataGridTextColumn Header="Date" Binding="{Binding ImportedAt, StringFormat=dd/MM/yyyy HH:mm}" Width="150" />
+                        <DataGridTextColumn Header="Filename" Binding="{Binding FileName}" Width="*" />
+                        <DataGridTextColumn Header="Source" Binding="{Binding SourceType}" Width="100" />
+                        <DataGridTextColumn Header="Imported" Binding="{Binding TransactionsImported}" Width="90" />
+                        <DataGridTextColumn Header="Skipped" Binding="{Binding TransactionsSkipped}" Width="90" />
+                        <DataGridTextColumn Header="Duplicates" Binding="{Binding DuplicatesDetected}" Width="90" />
+                        <DataGridTextColumn Header="Errors" Binding="{Binding Errors}" Width="70" />
+                        <DataGridCheckBoxColumn Header="Undo" Binding="{Binding UndoAvailable}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="User" Binding="{Binding UserName}" Width="120" />
+                    </ds:AppDataGrid.Columns>
+                </ds:AppDataGrid>
+            </Grid>
+
+            <!-- Rules -->
+            <Grid Visibility="{Binding IsRules, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Category rules" Style="{StaticResource PageTitleStyle}" />
+                        <TextBlock Text="Rules run automatically on every import. Previous choices are remembered."
+                                   Style="{StaticResource PageSubtitleStyle}" />
+                    </StackPanel>
+                    <ui:Button Content="Back" HorizontalAlignment="Right" VerticalAlignment="Top"
+                               Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ShowHubCommand}" />
+                </Grid>
+                <Border Grid.Row="1" Style="{StaticResource AppCardQuietStyle}" Padding="12" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding NewRuleMatchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding AllCategories}"
+                                  SelectedItem="{Binding NewRuleCategory}"
+                                  DisplayMemberPath="Name" Margin="0,0,8,0" />
+                        <ui:Button Grid.Column="2" Content="Add rule" Style="{StaticResource PrimaryButtonStyle}"
+                                   Command="{Binding AddRuleCommand}" />
+                    </Grid>
+                </Border>
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+                        <ui:Button Content="Refresh" Icon="{ui:SymbolIcon ArrowSync24}"
+                                   Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                   Command="{Binding RefreshRulesCommand}" Margin="{StaticResource ButtonGroupMarginInline}" />
+                        <ui:Button Content="Remove rule" Style="{StaticResource GroupedDangerButtonStyle}"
+                                   Command="{Binding DeleteRuleCommand}" />
+                    </StackPanel>
+                    <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}">
+                        <ds:AppDataGrid.Columns>
+                            <DataGridTextColumn Header="Contains" Binding="{Binding MatchText}" Width="*" />
+                            <DataGridTextColumn Header="Action" Binding="{Binding ActionDisplay}" Width="120" />
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="160" />
+                            <DataGridTextColumn Header="Priority" Binding="{Binding Priority}" Width="80" />
+                            <DataGridTextColumn Header="Hits" Binding="{Binding HitCount}" Width="70" />
+                            <DataGridTextColumn Header="Last used" Binding="{Binding LastUsedUtc, StringFormat=dd/MM/yyyy HH:mm}" Width="150" />
+                        </ds:AppDataGrid.Columns>
+                    </ds:AppDataGrid>
+                </Grid>
+            </Grid>
+        </Grid>
+    </ds:PageShell>
+</UserControl>

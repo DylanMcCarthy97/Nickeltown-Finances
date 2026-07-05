@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NickeltownFinance.Core\NickeltownFinance.Core.csproj" />
+    <ProjectReference Include="..\NickeltownFinance.Infrastructure\NickeltownFinance.Infrastructure.csproj" />
+    <ProjectReference Include="..\NickeltownFinance.Reports\NickeltownFinance.Reports.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\NickeltownFinance.Infrastructure\MobileUpload\wwwroot\**\*">
+      <Link>MobileUpload\wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Window Icon= pack URIs resolve to output\Assets\ at runtime -->
+    <Content Include="Assets\AppIcon.png">
+      <Link>Assets\AppIcon.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\ClubLogo.png">
+      <Link>Assets\ClubLogo.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\AppIcon.png">
+      <TargetPath>MobileUpload\wwwroot\icons\icon-192.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\AppIcon.png">
+      <TargetPath>MobileUpload\wwwroot\icons\icon-512.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\AppIcon.png">
+      <TargetPath>MobileUpload\wwwroot\assets\logo.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\ClubLogo.png" />
+    <Resource Include="Assets\AppIcon.png" />
+  </ItemGroup>
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+        <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    </PropertyGroup>
+
+    <!-- MSIX packaging: dotnet publish -p:BuildMsix=true -->
+    <PropertyGroup Condition="'$(BuildMsix)' == 'true'">
+        <WindowsPackageType>MSIX</WindowsPackageType>
+        <EnableMsixTooling>true</EnableMsixTooling>
+        <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
+        <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+        <PublishSingleFile>false</PublishSingleFile>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(BuildMsix)' == 'true'">
+        <Content Include="Package.appxmanifest">
+            <SubType>Designer</SubType>
+        </Content>
+    </ItemGroup>
+
+
+</Project>

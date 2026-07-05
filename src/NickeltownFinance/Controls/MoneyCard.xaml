@@ -1,0 +1,38 @@
+<UserControl x:Class="NickeltownFinance.Controls.MoneyCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             x:Name="Root">
+    <Border Style="{StaticResource KpiCardStyle}" Margin="0">
+        <Grid>
+            <Border Width="3"
+                    HorizontalAlignment="Left"
+                    Background="{Binding AccentBrush, ElementName=Root}"
+                    CornerRadius="12,0,0,12" />
+            <Grid Margin="20,18,18,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel MinWidth="0">
+                    <TextBlock Text="{Binding Title, ElementName=Root}"
+                               Style="{StaticResource MetricLabelStyle}" />
+                    <TextBlock Text="{Binding Amount, ElementName=Root, Converter={StaticResource CurrencyConverter}}"
+                               Style="{StaticResource MetricValueStyle}"
+                               Foreground="{Binding AmountBrush, ElementName=Root}" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Style="{StaticResource IconBadgeStyle}"
+                        Background="{Binding AccentFillBrush, ElementName=Root}"
+                        Margin="12,0,0,0"
+                        Visibility="{Binding ShowIcon, ElementName=Root, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ui:SymbolIcon Symbol="{Binding IconSymbol, ElementName=Root}"
+                                   FontSize="18"
+                                   Foreground="{Binding AmountBrush, ElementName=Root}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

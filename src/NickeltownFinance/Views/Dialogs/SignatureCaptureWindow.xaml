@@ -1,0 +1,83 @@
+<ui:FluentWindow x:Class="NickeltownFinance.Views.Dialogs.SignatureCaptureWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Draw your signature"
+                 Width="640"
+                 Height="420"
+                 MinWidth="520"
+                 MinHeight="360"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="CanResize"
+                 ShowInTaskbar="False"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 Background="{StaticResource BrandBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}"
+                 Icon="pack://application:,,,/Assets/AppIcon.png">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="Draw your signature"
+                     Grid.Row="0"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     Background="{StaticResource BrandBackgroundBrush}" />
+
+        <Grid Grid.Row="1" Margin="24,8,24,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Sign in the box below using your mouse, trackpad, or pen. This signature is saved to your account and used on PDF reports you export."
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource BrandMutedTextBrush}"
+                       Margin="0,0,0,12" />
+
+            <Border Grid.Row="1"
+                    Background="White"
+                    BorderBrush="{StaticResource BrandBorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    ClipToBounds="True">
+                <InkCanvas x:Name="SignaturePad"
+                           Background="White"
+                           EditingMode="Ink"
+                           Cursor="Pen" />
+            </Border>
+
+            <TextBlock x:Name="ErrorText"
+                       Grid.Row="2"
+                       Foreground="{StaticResource BrandExpenseBrush}"
+                       Margin="0,10,0,0"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed" />
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
+            <Grid>
+                <ui:Button Content="Clear"
+                           Style="{StaticResource SecondaryButtonStyle}"
+                           HorizontalAlignment="Left"
+                           MinWidth="96"
+                           Click="Clear_OnClick" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Content="Cancel"
+                               Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                               Margin="{StaticResource ButtonGroupMarginInline}"
+                               Click="Cancel_OnClick" />
+                    <ui:Button Content="Save signature"
+                               Style="{StaticResource GroupedPrimaryButtonWideStyle}"
+                               Icon="{ui:SymbolIcon Checkmark24}"
+                               Click="Save_OnClick" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

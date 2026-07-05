@@ -1,0 +1,20 @@
+## Build
+bin/
+obj/
+artifacts/
+*.user
+*.suo
+.vs/
+
+## MSIX / signing (never commit certificates)
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.pfx
+*.cer
+
+## OS / IDE
+Thumbs.db
+.DS_Store
+*.log

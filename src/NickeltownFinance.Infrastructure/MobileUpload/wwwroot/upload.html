@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0C10" id="theme-color-meta" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nickeltown Finances" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="Capture receipts and send them to Nickeltown Finances on your desktop" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <title>Nickeltown Finances</title>
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/screens.css" />
+</head>
+<body>
+  <!-- Splash -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <div class="splash-brand">
+      <img src="/assets/logo.png" alt="" class="logo logo-xl" width="96" height="96" />
+      <p class="splash-title">Nickeltown Finances</p>
+      <p class="splash-subtitle">Receipt Upload</p>
+    </div>
+    <div class="splash-spinner" role="status" aria-label="Loading"></div>
+  </div>
+
+  <div class="app hidden" id="app">
+    <main class="main" id="main">
+      <div id="toast-host" class="toast-host" role="status" aria-live="polite"></div>
+
+      <!-- Home -->
+      <section id="screen-home" class="screen screen-active" aria-label="Home">
+        <header class="home-hero">
+          <img src="/assets/logo.png" alt="Nickeltown Finances" class="logo logo-xl" width="96" height="96" />
+          <h1 class="home-hero-title">Nickeltown Finances</h1>
+          <p class="home-hero-sub">Receipt Upload</p>
+        </header>
+
+        <div class="home-status">
+          <div class="status-pill status-pill-wide">
+            <div>
+              <span class="status-pill-label">Desktop</span>
+              <span id="connection-label" class="status-pill-value">Connecting…</span>
+            </div>
+            <div id="connection-badge" class="conn-badge conn-connecting" role="status" aria-live="polite">
+              <span class="conn-signal" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
+          </div>
+          <div class="status-pill">
+            <span class="status-pill-label">Session</span>
+            <span id="session-context" class="status-pill-value">Receipt Inbox</span>
+          </div>
+          <div class="status-pill">
+            <span class="status-pill-label">Time</span>
+            <span id="current-time" class="status-pill-value" aria-live="off">—</span>
+          </div>
+        </div>
+
+        <div class="action-stack">
+          <button type="button" id="btn-camera" class="action-card action-card-primary" aria-label="Take photo of receipt">
+            <span class="action-card-icon" aria-hidden="true">📷</span>
+            <span class="action-card-body">
+              <span class="action-card-label">Take Photo</span>
+              <span class="action-card-desc">Capture with guided frame</span>
+            </span>
+            <span class="action-card-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" id="btn-gallery" class="action-card action-card-secondary" aria-label="Choose photo from gallery">
+            <span class="action-card-icon" aria-hidden="true">🖼</span>
+            <span class="action-card-body">
+              <span class="action-card-label">Choose Photo</span>
+              <span class="action-card-desc">JPEG, PNG, HEIC, WEBP</span>
+            </span>
+            <span class="action-card-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" id="btn-pdf" class="action-card action-card-tertiary" aria-label="Upload PDF receipt">
+            <span class="action-card-icon" aria-hidden="true">📄</span>
+            <span class="action-card-body">
+              <span class="action-card-label">Upload PDF</span>
+              <span class="action-card-desc">Send directly to desktop</span>
+            </span>
+            <span class="action-card-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <input type="file" id="input-gallery" accept="image/jpeg,image/png,image/heic,image/webp,image/tiff,.heic" hidden />
+        <input type="file" id="input-pdf" accept="application/pdf,.pdf" hidden />
+
+        <div id="queue-banner" class="queue-banner hidden" role="status">
+          <span class="queue-icon" aria-hidden="true">⏳</span>
+          <div class="queue-copy">
+            <strong id="queue-count">0</strong> receipt(s) waiting for desktop
+            <span class="queue-sub">Will upload automatically when connected</span>
+          </div>
+        </div>
+
+        <div id="error-banner" class="hidden" role="alert"></div>
+
+        <div class="section-head">
+          <h2>Recent uploads</h2>
+          <button type="button" id="btn-see-all" class="text-link hidden">See all</button>
+        </div>
+        <div id="home-recent" class="recent-scroll" role="list" aria-label="Recent uploads"></div>
+        <div id="home-recent-empty" class="empty-state">
+          <img src="/assets/logo.png" alt="" class="empty-state-logo" width="72" height="72" />
+          <h3>No uploads yet</h3>
+          <p>Take a photo or choose a file to send your first receipt to desktop.</p>
+        </div>
+
+        <p class="app-version">Nickeltown Finances v<span id="app-version">1.3.1</span></p>
+      </section>
+
+      <!-- Camera -->
+      <section id="screen-camera" class="screen screen-camera hidden" aria-label="Camera">
+        <div class="camera-wrap">
+          <video id="camera-video" class="camera-video" playsinline autoplay muted aria-hidden="true"></video>
+          <canvas id="camera-canvas" class="hidden" aria-hidden="true"></canvas>
+          <div class="camera-overlay">
+            <div class="camera-vignette"></div>
+            <div class="camera-guide">
+              <span class="guide-corner tl"></span>
+              <span class="guide-corner tr"></span>
+              <span class="guide-corner bl"></span>
+              <span class="guide-corner br"></span>
+              <p id="camera-hint" class="camera-hint">Align receipt inside the frame</p>
+            </div>
+          </div>
+          <div class="camera-top">
+            <div class="camera-brand">
+              <img src="/assets/logo.png" alt="" class="logo logo-sm" width="36" height="36" />
+              <span>Capture receipt</span>
+            </div>
+            <button type="button" id="camera-close" class="cam-btn" aria-label="Close camera">✕</button>
+          </div>
+          <div class="camera-bottom">
+            <p class="camera-hint" style="position:static;text-shadow:none;margin:0">Hold steady · Good lighting helps OCR</p>
+            <button type="button" id="camera-shutter" class="shutter" aria-label="Capture photo">
+              <span class="shutter-inner"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Review -->
+      <section id="screen-review" class="screen hidden" aria-label="Review photo">
+        <div class="review-head">
+          <button type="button" id="review-back" class="icon-btn" aria-label="Back">←</button>
+          <h2>Review</h2>
+          <div style="width:44px"></div>
+        </div>
+        <div class="review-frame" id="review-frame">
+          <img id="review-image" alt="Receipt preview" />
+          <div class="review-crop-hint" aria-hidden="true"></div>
+        </div>
+        <div class="review-tools">
+          <button type="button" id="review-rotate" class="tool-btn" aria-label="Rotate image">
+            <span aria-hidden="true">↻</span> Rotate
+          </button>
+          <button type="button" id="review-crop" class="tool-btn" aria-label="Auto crop receipt">
+            <span aria-hidden="true">⬚</span> Crop
+          </button>
+          <button type="button" id="review-retake" class="tool-btn" aria-label="Retake photo">
+            <span aria-hidden="true">↺</span> Retake
+          </button>
+        </div>
+        <div class="review-actions">
+          <button type="button" id="review-upload" class="btn btn-primary btn-full">Accept &amp; Send</button>
+        </div>
+      </section>
+
+      <!-- Processing -->
+      <section id="screen-processing" class="screen hidden" aria-label="Processing">
+        <div class="success-hero" id="upload-success-hero">
+          <div class="check-ring">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="check-circle" cx="32" cy="32" r="28"/><path class="check-mark" fill="none" d="M20 32l8 8 16-16"/></svg>
+          </div>
+          <h2>Receipt uploaded</h2>
+          <p id="processing-subtitle">Processing on your desktop now</p>
+        </div>
+        <div id="upload-progress" class="upload-progress-bar hidden" aria-hidden="true">
+          <div class="upload-progress-fill"></div>
+        </div>
+        <div id="timeline" class="timeline" role="list" aria-label="Processing timeline"></div>
+        <div id="processing-failed-card" class="error-card error-card-processing hidden">
+          <div class="error-card-icon">⚠️</div>
+          <h3>Processing failed</h3>
+          <p id="processing-failed-msg">Receipt uploaded successfully. Desktop processing failed.</p>
+          <div class="error-actions">
+            <button type="button" id="btn-retry" class="btn btn-primary btn-full">Retry processing</button>
+            <button type="button" id="btn-details" class="btn btn-secondary btn-full">View details</button>
+          </div>
+        </div>
+        <button type="button" id="btn-done-processing" class="btn btn-secondary btn-full hidden">Back to home</button>
+      </section>
+
+      <!-- History -->
+      <section id="screen-history" class="screen hidden" aria-label="Upload history">
+        <h2 class="screen-title">History</h2>
+        <div id="history-list" class="history-list" role="list"></div>
+        <div id="history-empty" class="empty-state hidden">
+          <img src="/assets/logo.png" alt="" class="empty-state-logo" width="72" height="72" />
+          <h3>No uploads yet</h3>
+          <p>Your receipt uploads will appear here with status and details.</p>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="screen-settings" class="screen hidden" aria-label="Settings">
+        <h2 class="screen-title">Settings</h2>
+
+        <div class="settings-group glass">
+          <h3>Appearance</h3>
+          <div class="seg-control" role="radiogroup" aria-label="Theme">
+            <button type="button" class="seg-item" data-theme="light">Light</button>
+            <button type="button" class="seg-item" data-theme="dark">Dark</button>
+            <button type="button" class="seg-item seg-active" data-theme="auto">Auto</button>
+          </div>
+        </div>
+
+        <div class="settings-group glass">
+          <h3>Image quality</h3>
+          <div class="seg-control" role="radiogroup" aria-label="Image quality">
+            <button type="button" class="seg-item" data-quality="original">Original</button>
+            <button type="button" class="seg-item seg-active" data-quality="high">High</button>
+            <button type="button" class="seg-item" data-quality="medium">Medium</button>
+            <button type="button" class="seg-item" data-quality="low">Low</button>
+          </div>
+        </div>
+
+        <div class="settings-group glass">
+          <label class="toggle-row">
+            <span>Always use rear camera</span>
+            <input type="checkbox" id="setting-rear-camera" checked />
+            <span class="toggle"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Enable haptics</span>
+            <input type="checkbox" id="setting-haptics" checked />
+            <span class="toggle"></span>
+          </label>
+        </div>
+
+        <div class="settings-group glass">
+          <h3>Connection diagnostics</h3>
+          <div class="diag-row"><span>Status</span><span id="diag-status">—</span></div>
+          <div class="diag-row"><span>Last sync</span><span id="diag-last-sync">—</span></div>
+          <div class="diag-row"><span>Session expires</span><span id="diag-session">—</span></div>
+          <div class="diag-row"><span>Import target</span><span id="diag-target">—</span></div>
+          <button type="button" id="btn-diag-test" class="btn btn-secondary btn-full" style="margin-top:12px">Test connection</button>
+        </div>
+
+        <div class="settings-group glass about">
+          <h3>About</h3>
+          <img src="/assets/logo.png" alt="Nickeltown Finances" class="about-logo" width="48" height="48" />
+          <p><strong>Nickeltown Finances</strong></p>
+          <p class="muted">Mobile receipt upload for desktop processing</p>
+          <p class="muted">Version <span id="settings-version">1.3.1</span></p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Main navigation">
+      <button type="button" id="nav-home" class="tab tab-active" aria-current="page" aria-label="Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5z"/></svg>
+        <span>Home</span>
+        <span class="tab-indicator" aria-hidden="true"></span>
+      </button>
+      <button type="button" id="nav-history" class="tab" aria-label="History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+        <span class="tab-indicator" aria-hidden="true"></span>
+      </button>
+      <button type="button" id="nav-settings" class="tab" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>Settings</span>
+        <span class="tab-indicator" aria-hidden="true"></span>
+      </button>
+    </nav>
+
+    <div id="session-bar" class="session-bar">
+      <span>Session expires <strong id="session-countdown">—</strong></span>
+    </div>
+  </div>
+
+  <!-- Install prompt -->
+  <div id="install-banner" class="install-banner hidden" role="dialog" aria-label="Install Nickeltown Finances">
+    <img src="/icons/icon-192.png" alt="" class="install-icon" width="44" height="44" />
+    <div class="install-copy">
+      <strong>Install Nickeltown Finances</strong>
+      <span>Add to home screen for the best experience</span>
+    </div>
+    <button type="button" id="install-accept" class="btn btn-primary btn-sm">Install</button>
+    <button type="button" id="install-dismiss" class="icon-btn sm" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- Success overlay -->
+  <div id="overlay-success" class="overlay hidden" aria-hidden="true">
+    <div class="overlay-card">
+      <img src="/assets/logo.png" alt="" class="logo logo-md" width="56" height="56" style="margin:0 auto 14px" />
+      <div class="overlay-check">✓</div>
+      <p>Receipt uploaded</p>
+    </div>
+  </div>
+
+  <!-- Detail sheet -->
+  <div id="sheet-backdrop" class="sheet-backdrop hidden" aria-hidden="true"></div>
+  <div id="detail-sheet" class="sheet hidden" role="dialog" aria-label="Receipt details" aria-modal="true">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <img id="sheet-thumb" class="sheet-thumb hidden" alt="Receipt thumbnail" />
+    <h3 id="sheet-title" class="sheet-title">Receipt</h3>
+    <p id="sheet-amount" class="sheet-amount"></p>
+    <div id="sheet-badge"></div>
+    <p id="sheet-meta" class="sheet-meta"></p>
+    <button type="button" id="sheet-close" class="btn btn-secondary btn-full">Close</button>
+  </div>
+
+  <script src="/js/settings.js"></script>
+  <script src="/js/queue.js"></script>
+  <script src="/js/history.js"></script>
+  <script src="/js/connection.js"></script>
+  <script src="/js/upload-service.js"></script>
+  <script src="/js/camera.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    }
+  </script>
+</body>
+</html>

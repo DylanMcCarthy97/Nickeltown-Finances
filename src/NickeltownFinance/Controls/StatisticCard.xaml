@@ -1,0 +1,14 @@
+<UserControl x:Class="NickeltownFinance.Controls.StatisticCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <Border Style="{StaticResource AppCardStyle}" Padding="20">
+        <StackPanel>
+            <TextBlock Text="{Binding Title, ElementName=Root}"
+                       Style="{StaticResource CardTitleStyle}"
+                       Margin="0,0,0,12"
+                       Visibility="{Binding Title, ElementName=Root, Converter={StaticResource NullToVisibilityConverter}}" />
+            <ContentPresenter Content="{Binding Body, ElementName=Root}" />
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -1,0 +1,110 @@
+/* Nickeltown Finances PWA — Design Tokens v1.3 */
+
+:root {
+  color-scheme: light dark;
+
+  /* Brand — aligned with desktop BrandTheme.xaml */
+  --brand-primary: #2D8CFF;
+  --brand-primary-hover: #4A9FFF;
+  --brand-primary-pressed: #1B6FD4;
+  --brand-primary-soft: rgba(45, 140, 255, 0.14);
+  --brand-primary-glow: rgba(45, 140, 255, 0.38);
+  --brand-gradient: linear-gradient(135deg, #4A9FFF 0%, #2D8CFF 48%, #1B6FD4 100%);
+  --brand-gradient-subtle: linear-gradient(145deg, rgba(45, 140, 255, 0.12) 0%, rgba(27, 111, 212, 0.06) 100%);
+
+  /* Semantic */
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.14);
+  --warning: #F59E0B;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --error: #EF4444;
+  --error-soft: rgba(239, 68, 68, 0.14);
+  --info: #6366F1;
+  --info-soft: rgba(99, 102, 241, 0.14);
+  --ocr: #8B5CF6;
+  --ocr-soft: rgba(139, 92, 246, 0.14);
+  --uploaded: #3B82F6;
+  --uploaded-soft: rgba(59, 130, 246, 0.14);
+
+  /* Surfaces — light */
+  --bg: #F2F4F8;
+  --bg-elevated: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #EEF1F6;
+  --surface-3: #E4E9F0;
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(12, 17, 23, 0.06);
+  --text: #0C1117;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
+  --border: rgba(12, 17, 23, 0.08);
+  --divider: rgba(12, 17, 23, 0.06);
+  --shadow-sm: 0 2px 8px rgba(12, 17, 23, 0.06);
+  --shadow: 0 8px 32px rgba(12, 17, 23, 0.08);
+  --shadow-lg: 0 20px 48px rgba(12, 17, 23, 0.14);
+  --shadow-card: 0 4px 20px rgba(12, 17, 23, 0.07), 0 1px 3px rgba(12, 17, 23, 0.04);
+  --overlay: rgba(12, 17, 23, 0.45);
+
+  /* Layout */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+  --tab-h: 68px;
+  --session-h: 30px;
+  --header-h: 0px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --content-max: 520px;
+  --touch-min: 48px;
+
+  /* Typography */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, monospace;
+  --text-xs: 0.72rem;
+  --text-sm: 0.84rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.35rem;
+  --text-2xl: 1.65rem;
+  --text-3xl: 2rem;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+  --tracking-tight: -0.03em;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration: 280ms;
+  --duration-slow: 420ms;
+}
+
+[data-theme="dark"] {
+  --bg: #0A0C10;
+  --bg-elevated: #12151C;
+  --surface: #181C24;
+  --surface-2: #222733;
+  --surface-3: #2A3140;
+  --glass: rgba(24, 28, 36, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --text: #F3F4F6;
+  --text-secondary: #B0B8C4;
+  --text-muted: #7A8494;
+  --border: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.05);
+  --brand-primary-soft: rgba(45, 140, 255, 0.18);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --overlay: rgba(0, 0, 0, 0.55);
+}

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NickeltownFinance/NickeltownFinance.csproj" />
+    <Project Path="src/NickeltownFinance.Core/NickeltownFinance.Core.csproj" />
+    <Project Path="src/NickeltownFinance.Infrastructure/NickeltownFinance.Infrastructure.csproj" />
+    <Project Path="src/NickeltownFinance.Reports/NickeltownFinance.Reports.csproj" />
+  </Folder>
+</Solution>
