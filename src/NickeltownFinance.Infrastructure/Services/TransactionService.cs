@@ -68,6 +68,7 @@ public class TransactionService : ITransactionService
                 .ToHashSet();
         }
 
+        // Calculate full account balance for all transactions
         foreach (var txn in allTransactions)
         {
             if (!txn.IsDeleted)
@@ -75,7 +76,17 @@ public class TransactionService : ITransactionService
             balanceById[txn.Id] = running;
         }
 
+        // Check if filters are active (excluding includeDeleted flag)
+        var hasActiveFilters = !string.IsNullOrWhiteSpace(search) ||
+                              categoryFilter is not null && categoryFilter != ObjectId.Empty ||
+                              filter?.FromDate is not null ||
+                              filter?.ToDate is not null ||
+                              filter?.IsIncome is not null ||
+                              filter?.HasReceipt is not null ||
+                              filter?.ReceiptType is not null;
+
         var items = new List<TransactionListItem>();
+        var filteredBalance = fy?.OpeningBalance ?? 0; // For filtered cumulative balance
 
         foreach (var txn in allTransactions)
         {
@@ -108,7 +119,23 @@ public class TransactionService : ITransactionService
                 continue;
 
             categories.TryGetValue(txn.CategoryId, out var cat);
-            var item = MapToListItem(txn, cat, balanceById.GetValueOrDefault(txn.Id), attachments, hasReceipt, attachmentCount);
+            
+            // Determine which balance to show
+            decimal displayBalance;
+            if (hasActiveFilters)
+            {
+                // Show cumulative balance of filtered transactions only
+                if (!txn.IsDeleted)
+                    filteredBalance += txn.IncomeAmount - txn.ExpenseAmount;
+                displayBalance = filteredBalance;
+            }
+            else
+            {
+                // Show actual account balance (no filters, just ledger view)
+                displayBalance = balanceById.GetValueOrDefault(txn.Id);
+            }
+            
+            var item = MapToListItem(txn, cat, displayBalance, attachments, hasReceipt, attachmentCount);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -142,11 +169,23 @@ public class TransactionService : ITransactionService
                     (filenameMatchIds is not null && filenameMatchIds.Contains(txn.Id)) ||
                     (ocrMatchIds is not null && ocrMatchIds.Contains(txn.Id));
                 if (!textMatch)
+                {
+                    // If this transaction doesn't match the search but we're using filtered balance,
+                    // we need to revert the balance update we just made
+                    if (hasActiveFilters && !txn.IsDeleted)
+                        filteredBalance -= txn.IncomeAmount - txn.ExpenseAmount;
                     continue;
+                }
             }
 
             if (categoryFilter is not null && categoryFilter != ObjectId.Empty && txn.CategoryId != categoryFilter)
+            {
+                // If this transaction doesn't match the category filter but we're using filtered balance,
+                // we need to revert the balance update we just made
+                if (hasActiveFilters && !txn.IsDeleted)
+                    filteredBalance -= txn.IncomeAmount - txn.ExpenseAmount;
                 continue;
+            }
 
             items.Add(item);
         }
