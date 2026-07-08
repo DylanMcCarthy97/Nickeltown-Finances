@@ -104,9 +104,9 @@
                 <!-- Mid band: chart + receipts + actions -->
                 <Grid Grid.Row="3" Margin="0,0,0,24">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" MinWidth="320" />
+                        <ColumnDefinition Width="2*" MinWidth="260" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="*" MinWidth="240" />
+                        <ColumnDefinition Width="*" MinWidth="200" />
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20">
@@ -185,9 +185,9 @@
                 <!-- Bottom: transactions + activity -->
                 <Grid Grid.Row="4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" MinWidth="320" />
+                        <ColumnDefinition Width="2*" MinWidth="260" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="*" MinWidth="220" />
+                        <ColumnDefinition Width="*" MinWidth="180" />
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20">
@@ -226,8 +226,8 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="72" />
-                                                        <ColumnDefinition Width="*" MinWidth="100" />
-                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="*" MinWidth="80" />
+                                                        <ColumnDefinition Width="90" />
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock Text="{Binding Date, StringFormat=dd/MM/yyyy}"

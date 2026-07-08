@@ -88,9 +88,9 @@
                             <StackPanel>
                                 <Grid Margin="0,0,0,16">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" MinWidth="200" />
+                                        <ColumnDefinition Width="*" MinWidth="160" />
                                         <ColumnDefinition Width="14" />
-                                        <ColumnDefinition Width="*" MinWidth="200" />
+                                        <ColumnDefinition Width="*" MinWidth="160" />
                                     </Grid.ColumnDefinitions>
 
                                     <Border Background="{StaticResource BrandInsetBrush}" CornerRadius="12" Padding="14">
@@ -202,9 +202,9 @@
                         <ds:SurfaceCard Title="Backup" CardMargin="0,0,0,14">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" MinWidth="240" />
+                                    <ColumnDefinition Width="*" MinWidth="200" />
                                     <ColumnDefinition Width="14" />
-                                    <ColumnDefinition Width="1.2*" MinWidth="260" />
+                                    <ColumnDefinition Width="1.2*" MinWidth="220" />
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel>
