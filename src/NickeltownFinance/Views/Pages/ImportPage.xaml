@@ -19,8 +19,21 @@
                                    Style="{StaticResource PageSubtitleStyle}" />
                     </StackPanel>
 
-                    <UniformGrid Columns="3" Margin="0,0,0,20">
-                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnReceiptInboxCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -34,7 +47,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnMobileUploadCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -48,7 +61,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                        <Border Grid.Row="0" Grid.Column="4" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnBankCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -62,7 +75,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnLegacyReportCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -76,7 +89,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnHistoryCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -90,7 +103,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AppCardStyle}" Padding="20" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="4" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnRulesCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -103,14 +116,21 @@
                                 <TextBlock Text="{Binding Rules.Count, StringFormat={}{0} rules}" Style="{StaticResource MutedTextStyle}" />
                             </StackPanel>
                         </Border>
-                    </UniformGrid>
+                    </Grid>
 
                     <TextBlock Text="Import status" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
-                    <UniformGrid Columns="3" Margin="0,0,0,20">
-                        <ds:StatisticCard Title="Waiting review" Body="{Binding TransactionsWaitingReview}" Margin="0,0,12,0" />
-                        <ds:StatisticCard Title="Duplicates found" Body="{Binding DuplicatesFound}" Margin="0,0,12,0" />
-                        <ds:StatisticCard Title="Last bank import" Body="{Binding LastBankImportText}" />
-                    </UniformGrid>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ds:StatisticCard Grid.Column="0" Title="Waiting review" Body="{Binding TransactionsWaitingReview}" />
+                        <ds:StatisticCard Grid.Column="2" Title="Duplicates found" Body="{Binding DuplicatesFound}" />
+                        <ds:StatisticCard Grid.Column="4" Title="Last bank import" Body="{Binding LastBankImportText}" />
+                    </Grid>
                 </StackPanel>
             </ScrollViewer>
 

@@ -189,7 +189,7 @@
                                         <ds:AppDataGrid.Columns>
                                             <DataGridTextColumn Header="Date"
                                                                 Binding="{Binding Date, StringFormat=dd/MM/yyyy}"
-                                                                Width="72" />
+                                                                Width="88" />
                                             <DataGridTextColumn Header="Bank description (ANZ)"
                                                                 Binding="{Binding Description}"
                                                                 Width="*"

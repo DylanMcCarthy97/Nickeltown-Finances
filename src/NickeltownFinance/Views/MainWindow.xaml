@@ -229,18 +229,11 @@
                 <Border Grid.Row="0" Style="{StaticResource ToolbarPanelStyle}">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" MinWidth="160" MaxWidth="360" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <ds:SearchBar Placeholder="Search transactions… (Ctrl+F)"
-                                      Text="{Binding GlobalSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      SearchCommand="{Binding GlobalSearchCommand}"
-                                      ShowButton="False"
-                                      TextBoxMargin="0" />
-
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <ComboBox ItemsSource="{Binding FinancialYears}"
                                       SelectedItem="{Binding SelectedFinancialYear}"
                                       DisplayMemberPath="Name"

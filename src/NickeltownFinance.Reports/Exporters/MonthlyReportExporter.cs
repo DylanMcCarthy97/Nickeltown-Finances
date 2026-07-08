@@ -117,7 +117,7 @@ public static class MonthlyReportExporter
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(52);
+                        columns.ConstantColumn(72);
                         columns.RelativeColumn(2.4f);
                         columns.RelativeColumn(1.2f);
                         columns.ConstantColumn(68);

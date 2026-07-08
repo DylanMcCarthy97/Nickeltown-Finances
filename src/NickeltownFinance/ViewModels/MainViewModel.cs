@@ -34,7 +34,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _userRoleDisplay = string.Empty;
     [ObservableProperty] private string _statusText = "Ready";
     [ObservableProperty] private string _financialYearStatus = string.Empty;
-    [ObservableProperty] private string _globalSearchText = string.Empty;
     [ObservableProperty] private string _currentPageName = "Dashboard";
     [ObservableProperty] private string _activeNavKey = "Dashboard";
     [ObservableProperty] private bool _isSidebarCollapsed;
@@ -268,22 +267,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void FocusSearch()
-    {
-        // Global search always lands on transactions for instant results.
-        NavigateTransactions();
-        if (CurrentPage is TransactionsViewModel tx)
-            tx.SearchText = GlobalSearchText;
-    }
-
-    [RelayCommand]
-    private void GlobalSearch() => FocusSearch();
-
-    partial void OnGlobalSearchTextChanged(string value)
-    {
-        if (CurrentPage is TransactionsViewModel transactions)
-            transactions.SearchText = value;
-    }
+    private void FocusSearch() => NavigateTransactions();
 
     [RelayCommand]
     private async Task BackupAsync()
@@ -359,8 +343,5 @@ public partial class MainViewModel : ViewModelBase
 
         if (viewModelType == typeof(SettingsViewModel))
             RefreshBranding();
-
-        if (!string.IsNullOrWhiteSpace(GlobalSearchText) && CurrentPage is TransactionsViewModel transactions)
-            transactions.SearchText = GlobalSearchText;
     }
 }
