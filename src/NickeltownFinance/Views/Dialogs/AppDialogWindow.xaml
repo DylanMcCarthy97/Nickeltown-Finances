@@ -3,22 +3,22 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="{Binding TitleText}"
-                 Width="460"
+                 Width="480"
                  SizeToContent="Height"
                  MinHeight="200"
                  WindowStartupLocation="CenterOwner"
                  ResizeMode="NoResize"
                  ShowInTaskbar="False"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="None"
-                 Background="{StaticResource BrandBackgroundBrush}"
+                 WindowBackdropType="Mica"
+                 Background="Transparent"
                  FontFamily="{StaticResource AppFontFamily}">
     <ui:FluentWindow.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
         <KeyBinding Key="Enter" Command="{Binding PrimaryCommand}" />
     </ui:FluentWindow.InputBindings>
 
-    <Grid Background="{StaticResource BrandBackgroundBrush}">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -28,22 +28,21 @@
         <ui:TitleBar Title="{Binding TitleText}"
                      Grid.Row="0"
                      ShowMinimize="False"
-                     ShowMaximize="False"
-                     Background="{StaticResource BrandBackgroundBrush}" />
+                     ShowMaximize="False" />
 
-        <Grid Grid.Row="1" Margin="28,12,28,12">
+        <Grid Grid.Row="1" Margin="{StaticResource DialogContentPadding}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Width="48" Height="48"
-                    CornerRadius="12"
+            <Border Width="52" Height="52"
+                    CornerRadius="14"
                     Background="{Binding IconBackground}"
                     VerticalAlignment="Top"
-                    Margin="0,2,16,0">
+                    Margin="0,2,18,0">
                 <ui:SymbolIcon Symbol="{Binding IconSymbol}"
-                               FontSize="22"
+                               FontSize="24"
                                Foreground="{Binding IconForeground}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />

@@ -7,12 +7,6 @@
     <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="AGM report" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Text="Annual financial summary for the AGM."
-                               Style="{StaticResource PageSubtitleStyle}" />
-                </StackPanel>
-
                 <ds:SurfaceCard CardMargin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -23,6 +17,29 @@
                         <StackPanel>
                             <TextBlock Text="Financial year" Style="{StaticResource FieldLabelStyle}" />
                             <ComboBox ItemsSource="{Binding FinancialYears}" SelectedItem="{Binding SelectedFinancialYear}" DisplayMemberPath="Name" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="16,0,16,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Cash on hand" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:NumberBox Value="{Binding CashOnHand}" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Shire bonds" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:NumberBox Value="{Binding ShireBonds}" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PayPal" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:NumberBox Value="{Binding PayPalBalance}" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                         <ui:Button Grid.Column="2" Content="Generate report"
                                    Style="{StaticResource PrimaryButtonStyle}"
@@ -47,7 +64,21 @@
                     </StackPanel>
                 </ds:SurfaceCard>
 
-                <StackPanel Visibility="{Binding HasReport, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ds:EmptyState Title="No AGM report yet"
+                               Message="Select a financial year and click Generate report to build the full annual summary."
+                               IconSymbol="DocumentOnePage24"
+                               Margin="0,8,0,0"
+                               Visibility="{Binding HasReport, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                    <ds:EmptyState.ActionContent>
+                        <ui:Button Content="Generate report"
+                                   Style="{StaticResource PrimaryButtonStyle}"
+                                   Icon="{ui:SymbolIcon DocumentOnePage24}"
+                                   Command="{Binding GenerateReportCommand}" />
+                    </ds:EmptyState.ActionContent>
+                </ds:EmptyState>
+
+                <StackPanel Style="{StaticResource RevealPanelStyle}"
+                            Visibility="{Binding HasReport, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ds:SurfaceCard CardMargin="0,0,0,14" CardPadding="12,10">
                         <StackPanel Orientation="Horizontal">
                             <ui:Button Content="Print" Icon="{ui:SymbolIcon Print24}" Style="{StaticResource GroupedSecondaryButtonStyle}" Margin="{StaticResource ButtonGroupMarginInline}" Command="{Binding PrintCommand}" />
@@ -58,6 +89,8 @@
 
                     <ds:ReportCard ClubName="{Binding ReportData.ClubName}"
                                    ReportTitle="Annual General Meeting Report"
+                                   MaxWidth="960"
+                                   HorizontalAlignment="Center"
                                    Subtitle="{Binding ReportData.FinancialYearName, StringFormat=Financial year {0}}">
                         <StackPanel DataContext="{Binding ReportData}">
                             <TextBlock Margin="0,0,0,16" TextWrapping="Wrap"
@@ -88,7 +121,11 @@
                                 </ds:AppDataGrid.Columns>
                             </ds:AppDataGrid>
 
-                            <ds:ReportLine Label="Closing balance" Amount="{Binding ClosingBalance}" IsBold="True" LineMargin="0,0,0,8" />
+                            <ds:ReportLine Label="{Binding ClosingBalanceTitle}" Amount="{Binding ClosingBalance}" IsBold="True" LineMargin="0,0,0,8" />
+                            <ds:ReportLine Label="Cash on hand (petty cash)" Amount="{Binding CashOnHand}" />
+                            <ds:ReportLine Label="Bonds with the Shire" Amount="{Binding ShireBonds}" />
+                            <ds:ReportLine Label="PayPal balance" Amount="{Binding PayPalBalance}" />
+                            <ds:ReportLine Label="Total moneys owned by the club" Amount="{Binding TotalFundsOwned}" IsBold="True" LineMargin="0,0,0,8" />
 
                             <Grid Margin="0,16,0,0">
                                 <Grid.ColumnDefinitions>
@@ -118,79 +155,8 @@
                                 </ds:StatisticCard>
                             </Grid>
 
-                            <Border Style="{StaticResource AppCardStyle}" Padding="20" Margin="0,20,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Treasurer declaration" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,6" />
-                                    <TextBlock Text="I confirm this report is a true and fair summary of the club's finances for the financial year."
-                                               Style="{StaticResource CaptionTextStyle}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,16" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="24" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="24" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" MinHeight="56" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                                   Text="Full name" Style="{StaticResource DetailLabelStyle}" />
-                                        <TextBlock Grid.Row="0" Grid.Column="2"
-                                                   Text="Signature" Style="{StaticResource DetailLabelStyle}" />
-                                        <TextBlock Grid.Row="0" Grid.Column="4"
-                                                   Text="Date" Style="{StaticResource DetailLabelStyle}" />
-
-                                        <StackPanel Grid.Row="1" Grid.Column="0"
-                                                    Margin="0,8,0,8"
-                                                    VerticalAlignment="Bottom">
-                                            <TextBlock Text="{Binding PreparedBy}" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding PreparedByRole}"
-                                                       Style="{StaticResource CaptionTextStyle}"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Row="1" Grid.Column="2"
-                                                    Margin="0,8,0,8"
-                                                    VerticalAlignment="Bottom">
-                                            <Image Source="{Binding SignatureImagePath, Converter={StaticResource PathToImageSourceConverter}}"
-                                                   MaxHeight="48"
-                                                   Stretch="Uniform"
-                                                   HorizontalAlignment="Left"
-                                                   Visibility="{Binding HasSignature, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                            <TextBlock Text="Digitally signed"
-                                                       Style="{StaticResource CaptionTextStyle}"
-                                                       Margin="0,4,0,0"
-                                                       Visibility="{Binding HasSignature, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                            <TextBlock Text="Draw your signature in Settings → Report settings"
-                                                       Style="{StaticResource CaptionTextStyle}"
-                                                       TextWrapping="Wrap"
-                                                       Visibility="{Binding HasSignature, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-                                        </StackPanel>
-
-                                        <TextBlock Grid.Row="1" Grid.Column="4"
-                                                   Text="{Binding PrintedAt, StringFormat=dd/MM/yyyy}"
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,8,0,8"
-                                                   VerticalAlignment="Bottom" />
-
-                                        <Border Grid.Row="2" Grid.Column="0"
-                                                BorderBrush="{StaticResource BrandBorderSubtleBrush}"
-                                                BorderThickness="0,0,0,1" />
-                                        <Border Grid.Row="2" Grid.Column="2"
-                                                BorderBrush="{StaticResource BrandBorderSubtleBrush}"
-                                                BorderThickness="0,0,0,1" />
-                                        <Border Grid.Row="2" Grid.Column="4"
-                                                BorderBrush="{StaticResource BrandBorderSubtleBrush}"
-                                                BorderThickness="0,0,0,1" />
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
+                            <ds:TreasurerDeclarationCard Margin="0,20,0,0"
+                                                       DeclarationText="I confirm this report is a true and fair summary of the club's finances for the financial year." />
                         </StackPanel>
                     </ds:ReportCard>
                 </StackPanel>

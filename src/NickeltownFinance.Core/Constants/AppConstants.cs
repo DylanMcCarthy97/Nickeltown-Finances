@@ -28,6 +28,9 @@ public static class SettingKeys
     public const string ReceiptBankMatching = "ReceiptBankMatching";
     public const string ReceiptDuplicateDetection = "ReceiptDuplicateDetection";
     public const string ReceiptThumbnailGeneration = "ReceiptThumbnailGeneration";
+    public const string DefaultCashOnHand = "DefaultCashOnHand";
+    public const string DefaultShireBonds = "DefaultShireBonds";
+    public const string DefaultPayPalBalance = "DefaultPayPalBalance";
 }
 
 

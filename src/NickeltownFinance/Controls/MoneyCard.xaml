@@ -8,7 +8,7 @@
             <Border Width="3"
                     HorizontalAlignment="Left"
                     Background="{Binding AccentBrush, ElementName=Root}"
-                    CornerRadius="12,0,0,12" />
+                    CornerRadius="14,0,0,14" />
             <Grid Margin="20,18,18,18">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

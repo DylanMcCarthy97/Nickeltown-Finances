@@ -9,7 +9,7 @@
                  WindowStartupLocation="CenterOwner"
                  ResizeMode="CanResize"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="None"
+                 WindowBackdropType="Mica"
                  Background="{DynamicResource BrandBackgroundBrush}"
                  FontFamily="{StaticResource AppFontFamily}"
                  Icon="pack://application:,,,/Assets/AppIcon.png"

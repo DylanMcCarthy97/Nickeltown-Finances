@@ -59,6 +59,30 @@ public class SettingsService : ISettingsService
             value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
     }
 
+    public decimal DefaultCashOnHand
+    {
+        get => decimal.TryParse(_settingsRepository.GetValue(SettingKeys.DefaultCashOnHand), out var v) ? v : 200m;
+        set => _settingsRepository.SetValue(
+            SettingKeys.DefaultCashOnHand,
+            value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    public decimal DefaultShireBonds
+    {
+        get => decimal.TryParse(_settingsRepository.GetValue(SettingKeys.DefaultShireBonds), out var v) ? v : 1000m;
+        set => _settingsRepository.SetValue(
+            SettingKeys.DefaultShireBonds,
+            value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    public decimal DefaultPayPalBalance
+    {
+        get => decimal.TryParse(_settingsRepository.GetValue(SettingKeys.DefaultPayPalBalance), out var v) ? v : 0m;
+        set => _settingsRepository.SetValue(
+            SettingKeys.DefaultPayPalBalance,
+            value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     public AppTheme Theme
     {
         get => Enum.TryParse<AppTheme>(_settingsRepository.GetValue(SettingKeys.Theme), out var t) ? t : AppTheme.System;

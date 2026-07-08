@@ -23,6 +23,8 @@
             <conv:MonthNameConverter x:Key="MonthNameConverter" />
             <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
             <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <conv:BoolToGridLengthConverter x:Key="BoolToGridLengthConverter" />
+            <conv:PageErrorVisibilityConverter x:Key="PageErrorVisibilityConverter" />
             <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
             <conv:PasswordVisibilityLabelConverter x:Key="PasswordVisibilityLabelConverter" />
             <conv:ZeroToDashConverter x:Key="ZeroToDashConverter" />

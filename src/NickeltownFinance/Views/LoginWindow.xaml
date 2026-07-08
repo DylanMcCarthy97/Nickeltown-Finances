@@ -9,7 +9,7 @@
                  WindowStartupLocation="CenterScreen"
                  ResizeMode="CanResizeWithGrip"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="None"
+                 WindowBackdropType="Mica"
                  Background="{DynamicResource BrandBackgroundBrush}"
                  Icon="pack://application:,,,/Assets/AppIcon.png"
                  FontFamily="{StaticResource AppFontFamily}">
@@ -26,20 +26,23 @@
 
         <!-- Centred sign-in -->
         <Grid Grid.Row="1">
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Width="360"
-                        Margin="24">
+            <Border Style="{StaticResource ElevatedCardStyle}"
+                    MaxWidth="420"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Margin="32"
+                    Padding="36,32">
+            <StackPanel Width="340">
 
                 <Image Source="{StaticResource DefaultClubLogoImage}"
-                       Width="96" Height="96"
+                       Width="80" Height="80"
                        Stretch="Uniform"
                        HorizontalAlignment="Center"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        Margin="0,0,0,20" />
 
                 <TextBlock Text="Nickeltown Finance"
-                           FontSize="28"
+                           FontSize="26"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource BrandTextPrimaryBrush}"
                            HorizontalAlignment="Center"
@@ -48,7 +51,7 @@
                 <TextBlock Text="Sign in to continue"
                            Style="{StaticResource CaptionTextStyle}"
                            HorizontalAlignment="Center"
-                           Margin="0,8,0,32" />
+                           Margin="0,8,0,28" />
 
                 <TextBlock Text="Username" Style="{StaticResource FieldLabelStyle}" />
                 <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
@@ -105,7 +108,7 @@
                 <ui:Button Content="Sign in"
                            Style="{StaticResource PrimaryButtonStyle}"
                            HorizontalAlignment="Stretch"
-                           MinHeight="42"
+                           MinHeight="44"
                            Margin="0,8,0,0"
                            Command="{Binding LoginCommand}"
                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
@@ -119,8 +122,9 @@
                 <TextBlock Text="{Binding AppVersion}"
                            Style="{StaticResource CaptionTextStyle}"
                            HorizontalAlignment="Center"
-                           Margin="0,32,0,0" />
+                           Margin="0,24,0,0" />
             </StackPanel>
+            </Border>
 
             <!-- Forgot password overlay -->
             <Border Background="{DynamicResource BrandOverlayBrush}"

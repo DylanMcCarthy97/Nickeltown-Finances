@@ -14,10 +14,14 @@ public partial class AgmReportViewModel : ViewModelBase
 {
     private readonly IReportService _reportService;
     private readonly IFinancialYearService _financialYearService;
+    private readonly ISettingsService _settingsService;
     private readonly INotificationService _notificationService;
 
     [ObservableProperty] private ObservableCollection<FinancialYear> _financialYears = [];
     [ObservableProperty] private FinancialYear? _selectedFinancialYear;
+    [ObservableProperty] private decimal _cashOnHand;
+    [ObservableProperty] private decimal _shireBonds;
+    [ObservableProperty] private decimal _payPalBalance;
     [ObservableProperty] private AgmReportData? _reportData;
     [ObservableProperty] private bool _hasReport;
     [ObservableProperty] private string _searchText = string.Empty;
@@ -27,7 +31,19 @@ public partial class AgmReportViewModel : ViewModelBase
     public IReadOnlyList<MonthlyBreakdown> VisibleMonths => FilterMonths(ReportData?.MonthlyData);
 
     partial void OnSearchTextChanged(string value) => NotifyVisibleCollections();
-    partial void OnReportDataChanged(AgmReportData? value) => NotifyVisibleCollections();
+    partial void OnReportDataChanged(AgmReportData? value)
+    {
+        if (value is not null)
+        {
+            CashOnHand = value.CashOnHand;
+            ShireBonds = value.ShireBonds;
+            PayPalBalance = value.PayPalBalance;
+        }
+        NotifyVisibleCollections();
+    }
+
+    public decimal TotalFundsOwned =>
+        (ReportData?.ClosingBalance ?? 0m) + CashOnHand + ShireBonds + PayPalBalance;
 
     private void NotifyVisibleCollections()
     {
@@ -59,11 +75,16 @@ public partial class AgmReportViewModel : ViewModelBase
     public AgmReportViewModel(
         IReportService reportService,
         IFinancialYearService financialYearService,
+        ISettingsService settingsService,
         INotificationService notificationService)
     {
         _reportService = reportService;
         _financialYearService = financialYearService;
+        _settingsService = settingsService;
         _notificationService = notificationService;
+        CashOnHand = _settingsService.DefaultCashOnHand;
+        ShireBonds = _settingsService.DefaultShireBonds;
+        PayPalBalance = _settingsService.DefaultPayPalBalance;
         LoadFinancialYears();
     }
 
@@ -82,6 +103,7 @@ public partial class AgmReportViewModel : ViewModelBase
         try
         {
             ReportData = await _reportService.BuildAgmReportAsync(SelectedFinancialYear.Id);
+            ApplyHoldingsToReport();
             HasReport = true;
         }
         catch (Exception ex)
@@ -99,7 +121,8 @@ public partial class AgmReportViewModel : ViewModelBase
     private async Task ExportPdfAsync()
     {
         if (ReportData is null || SelectedFinancialYear is null) return;
-        ReportData.PrintedAt = DateTime.Now;
+        ApplyHoldingsToReport();
+        _reportService.ApplyPrintDate(ReportData);
         var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.pdf");
         await _reportService.ExportAgmPdfAsync(ReportData, path);
         _notificationService.ShowSuccess($"PDF saved to {path}");
@@ -110,7 +133,8 @@ public partial class AgmReportViewModel : ViewModelBase
     private async Task ExportExcelAsync()
     {
         if (ReportData is null || SelectedFinancialYear is null) return;
-        ReportData.PrintedAt = DateTime.Now;
+        ApplyHoldingsToReport();
+        _reportService.ApplyPrintDate(ReportData);
         var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.xlsx");
         await _reportService.ExportAgmExcelAsync(ReportData, path);
         _notificationService.ShowSuccess($"Excel saved to {path}");
@@ -151,5 +175,14 @@ public partial class AgmReportViewModel : ViewModelBase
         await _reportService.ExportReceiptAuditExcelAsync(SelectedFinancialYear.Id, path);
         _notificationService.ShowSuccess($"Receipt audit saved to {path}");
         Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+    }
+
+    private void ApplyHoldingsToReport()
+    {
+        if (ReportData is null) return;
+        ReportData.CashOnHand = CashOnHand;
+        ReportData.ShireBonds = ShireBonds;
+        ReportData.PayPalBalance = PayPalBalance;
+        OnPropertyChanged(nameof(TotalFundsOwned));
     }
 }

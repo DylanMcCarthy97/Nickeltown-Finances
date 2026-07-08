@@ -7,18 +7,18 @@
          Brushes are unfrozen so ThemeService can switch light/dark live.
          ============================================================ -->
 
-    <!-- Core surfaces -->
-    <Color x:Key="BrandBackgroundColor">#181A20</Color>
-    <Color x:Key="BrandSurfaceColor">#232833</Color>
-    <Color x:Key="BrandSidebarColor">#1E2530</Color>
-    <Color x:Key="BrandElevatedColor">#2A3140</Color>
-    <Color x:Key="BrandBorderColor">#2E3644</Color>
-    <Color x:Key="BrandBorderSubtleColor">#262D3A</Color>
+    <!-- Core surfaces — deep, layered (modern dark UI) -->
+    <Color x:Key="BrandBackgroundColor">#0C0E13</Color>
+    <Color x:Key="BrandSurfaceColor">#151820</Color>
+    <Color x:Key="BrandSidebarColor">#10131A</Color>
+    <Color x:Key="BrandElevatedColor">#1C212C</Color>
+    <Color x:Key="BrandBorderColor">#2A3040</Color>
+    <Color x:Key="BrandBorderSubtleColor">#1E2430</Color>
 
     <!-- Accents -->
-    <Color x:Key="BrandPrimaryColor">#2D8CFF</Color>
-    <Color x:Key="BrandPrimaryHoverColor">#4A9FFF</Color>
-    <Color x:Key="BrandPrimaryPressedColor">#1B6FD4</Color>
+    <Color x:Key="BrandPrimaryColor">#4B9EFF</Color>
+    <Color x:Key="BrandPrimaryHoverColor">#6BB0FF</Color>
+    <Color x:Key="BrandPrimaryPressedColor">#2B7AE8</Color>
     <Color x:Key="BrandSuccessColor">#22C55E</Color>
     <Color x:Key="BrandWarningColor">#F59E0B</Color>
     <Color x:Key="BrandDangerColor">#EF4444</Color>
@@ -31,8 +31,8 @@
 
     <!-- Text -->
     <Color x:Key="BrandTextPrimaryColor">#FFFFFF</Color>
-    <Color x:Key="BrandTextSecondaryColor">#B0BAC5</Color>
-    <Color x:Key="BrandMutedTextColor">#7A8794</Color>
+    <Color x:Key="BrandTextSecondaryColor">#A8B2C0</Color>
+    <Color x:Key="BrandMutedTextColor">#6B7788</Color>
 
     <!-- Legacy aliases (pages / controls) -->
     <Color x:Key="BrandPrimaryMidColor">#232833</Color>
@@ -69,10 +69,11 @@
     <SolidColorBrush x:Key="BrandCardBrush" Color="{StaticResource BrandCardColor}" po:Freeze="False" />
 
     <!-- Soft fills (12–18% opacity) -->
-    <SolidColorBrush x:Key="BrandAccentFillBrush" Color="#292D8CFF" po:Freeze="False" />
-    <SolidColorBrush x:Key="BrandNavActiveBrush" Color="#292D8CFF" po:Freeze="False" />
-    <SolidColorBrush x:Key="BrandNavHoverBrush" Color="#14FFFFFF" po:Freeze="False" />
-    <SolidColorBrush x:Key="BrandInsetBrush" Color="#0DFFFFFF" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandAccentFillBrush" Color="#334B9EFF" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandNavActiveBrush" Color="#384B9EFF" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandNavHoverBrush" Color="#12FFFFFF" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandInsetBrush" Color="#0AFFFFFF" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandGlassBrush" Color="#CC10131A" po:Freeze="False" />
     <SolidColorBrush x:Key="BrandIncomeFillBrush" Color="#2922C55E" po:Freeze="False" />
     <SolidColorBrush x:Key="BrandExpenseFillBrush" Color="#29EF4444" po:Freeze="False" />
     <SolidColorBrush x:Key="BrandProfitFillBrush" Color="#292D8CFF" po:Freeze="False" />
@@ -82,7 +83,7 @@
     <SolidColorBrush x:Key="BrandDangerFillBrush" Color="#29EF4444" po:Freeze="False" />
     <SolidColorBrush x:Key="BrandErrorBrush" Color="#EF4444" po:Freeze="False" />
     <SolidColorBrush x:Key="BrandRowAltBrush" Color="#0CFFFFFF" po:Freeze="False" />
-    <SolidColorBrush x:Key="BrandOverlayBrush" Color="#CC181A20" po:Freeze="False" />
+    <SolidColorBrush x:Key="BrandOverlayBrush" Color="#D90C0E13" po:Freeze="False" />
 
     <!-- Override WPF-UI chrome -->
     <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="{StaticResource BrandBackgroundColor}" po:Freeze="False" />
@@ -99,31 +100,31 @@
 
     <!-- Elevation (subtle, premium) -->
     <DropShadowEffect x:Key="CardShadow"
-                      BlurRadius="16"
-                      ShadowDepth="2"
+                      BlurRadius="24"
+                      ShadowDepth="0"
                       Direction="270"
-                      Opacity="0.28"
+                      Opacity="0.35"
                       Color="#000000"
                       po:Freeze="False" />
     <DropShadowEffect x:Key="CardShadowSoft"
-                      BlurRadius="10"
-                      ShadowDepth="1"
+                      BlurRadius="16"
+                      ShadowDepth="0"
                       Direction="270"
-                      Opacity="0.18"
+                      Opacity="0.22"
                       Color="#000000"
                       po:Freeze="False" />
     <DropShadowEffect x:Key="ElevatedShadow"
-                      BlurRadius="24"
-                      ShadowDepth="4"
+                      BlurRadius="40"
+                      ShadowDepth="0"
                       Direction="270"
-                      Opacity="0.32"
+                      Opacity="0.45"
                       Color="#000000"
                       po:Freeze="False" />
     <DropShadowEffect x:Key="QuietSurfaceShadow"
                       BlurRadius="20"
-                      ShadowDepth="3"
+                      ShadowDepth="0"
                       Direction="270"
-                      Opacity="0.20"
+                      Opacity="0.28"
                       Color="#000000"
                       po:Freeze="False" />
 
@@ -135,9 +136,9 @@
                  UriSource="pack://application:,,,/Assets/ClubLogo.png"
                  CacheOption="OnLoad" />
 
-    <CornerRadius x:Key="RadiusSm">6</CornerRadius>
-    <CornerRadius x:Key="RadiusMd">8</CornerRadius>
-    <CornerRadius x:Key="RadiusLg">12</CornerRadius>
-    <CornerRadius x:Key="RadiusXl">16</CornerRadius>
+    <CornerRadius x:Key="RadiusSm">8</CornerRadius>
+    <CornerRadius x:Key="RadiusMd">10</CornerRadius>
+    <CornerRadius x:Key="RadiusLg">14</CornerRadius>
+    <CornerRadius x:Key="RadiusXl">18</CornerRadius>
 
 </ResourceDictionary>

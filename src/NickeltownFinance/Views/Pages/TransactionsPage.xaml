@@ -139,8 +139,8 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" MinWidth="360" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="300" MinWidth="260" />
+                        <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=12}" />
+                        <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=260}" />
                     </Grid.ColumnDefinitions>
 
                     <ds:AppDataGrid Grid.Column="0" ItemsSource="{Binding Transactions}"
@@ -208,10 +208,18 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Balance" Width="125" SortMemberPath="RunningBalance">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding RunningBalance, Converter={StaticResource CurrencyConverter}}"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Right" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Payment" Binding="{Binding PaymentMethod}" Width="100" />
                             <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="100" />
                             <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="120" />
-                            <DataGridTextColumn Header="Balance" Binding="{Binding RunningBalance, Converter={StaticResource CurrencyConverter}}" Width="110" />
                             <DataGridTextColumn Header="Created by" Binding="{Binding CreatedBy}" Width="100" />
                             <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="150" />
                         </ds:AppDataGrid.Columns>

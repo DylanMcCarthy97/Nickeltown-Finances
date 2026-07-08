@@ -77,8 +77,32 @@ public static class AgmReportExporter
                     });
                     col.Item().Row(r =>
                     {
-                        r.RelativeItem().Text("Closing Balance").Bold();
+                        r.RelativeItem().Text(data.ClosingBalanceTitle).Bold();
                         r.ConstantItem(100).AlignRight().Text(data.ClosingBalance.ToString("C")).Bold();
+                    });
+                    col.Item().PaddingTop(10).Text("Treasurer comments").Bold();
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Cash on hand (petty cash)");
+                        r.ConstantItem(100).AlignRight().Text(data.CashOnHand.ToString("C"));
+                    });
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Bonds with the Shire");
+                        r.ConstantItem(100).AlignRight().Text(data.ShireBonds.ToString("C"));
+                    });
+                    if (data.PayPalBalance > 0)
+                    {
+                        col.Item().Row(r =>
+                        {
+                            r.RelativeItem().Text("PayPal balance");
+                            r.ConstantItem(100).AlignRight().Text(data.PayPalBalance.ToString("C"));
+                        });
+                    }
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Total moneys owned by the club").Bold();
+                        r.ConstantItem(100).AlignRight().Text(data.TotalFundsOwned.ToString("C")).Bold();
                     });
 
                     col.Item().PaddingTop(15).Text("INCOME BY CATEGORY").Bold();
@@ -198,8 +222,24 @@ public static class AgmReportExporter
         ws.Cell(row, 1).Value = "Annual Profit";
         ws.Cell(row, 4).Value = data.AnnualProfit;
         row++;
-        ws.Cell(row, 1).Value = "Closing Balance";
+        ws.Cell(row, 1).Value = data.ClosingBalanceTitle;
         ws.Cell(row, 4).Value = data.ClosingBalance;
+        row++;
+        ws.Cell(row, 1).Value = "Cash on hand (petty cash)";
+        ws.Cell(row, 4).Value = data.CashOnHand;
+        row++;
+        ws.Cell(row, 1).Value = "Bonds with the Shire";
+        ws.Cell(row, 4).Value = data.ShireBonds;
+        row++;
+        if (data.PayPalBalance > 0)
+        {
+            ws.Cell(row, 1).Value = "PayPal balance";
+            ws.Cell(row, 4).Value = data.PayPalBalance;
+            row++;
+        }
+        ws.Cell(row, 1).Value = "Total moneys owned by the club";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 4).Value = data.TotalFundsOwned;
         row += 2;
         ws.Cell(row, 1).Value = "Treasurer signature:";
         ws.Cell(row, 2).Value = "________________________";

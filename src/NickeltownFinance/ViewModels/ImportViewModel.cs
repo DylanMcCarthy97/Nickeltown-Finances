@@ -15,6 +15,7 @@ namespace NickeltownFinance.ViewModels;
 public partial class ImportViewModel : ViewModelBase
 {
     private readonly IStatementImportService _importService;
+    private readonly ILegacyTreasurerImportService _legacyImportService;
     private readonly ISquareImportService _squareImportService;
     private readonly ICategoryService _categoryService;
     private readonly ICategorisationService _categorisationService;
@@ -32,6 +33,7 @@ public partial class ImportViewModel : ViewModelBase
     private StatementFormat _sourceFormat = StatementFormat.Csv;
     private string _bankName = "ANZ";
     private ObservableCollection<ImportRowViewModel> _allRows = [];
+    private IReadOnlyList<LegacyTreasurerMonthSummary> _legacyMonthSummaries = [];
 
     [ObservableProperty] private string _section = "Hub";
     [ObservableProperty] private int _wizardStep = 1;
@@ -85,6 +87,7 @@ public partial class ImportViewModel : ViewModelBase
     public bool IsRules => Section == "Rules";
     public bool IsAnzImport => ImportType == "ANZ";
     public bool IsSquareImport => ImportType == "Square";
+    public bool IsLegacyImport => ImportType == "Legacy";
     public bool ShowDropZone => !HasPreview && !ShowMapping;
     public bool CanGoNext => WizardStep switch
     {
@@ -119,6 +122,7 @@ public partial class ImportViewModel : ViewModelBase
 
     public ImportViewModel(
         IStatementImportService importService,
+        ILegacyTreasurerImportService legacyImportService,
         ISquareImportService squareImportService,
         ICategoryService categoryService,
         ICategorisationService categorisationService,
@@ -128,6 +132,7 @@ public partial class ImportViewModel : ViewModelBase
         INavigationService navigationService)
     {
         _importService = importService;
+        _legacyImportService = legacyImportService;
         _squareImportService = squareImportService;
         _categoryService = categoryService;
         _categorisationService = categorisationService;
@@ -181,6 +186,7 @@ public partial class ImportViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(IsAnzImport));
         OnPropertyChanged(nameof(IsSquareImport));
+        OnPropertyChanged(nameof(IsLegacyImport));
         OnPropertyChanged(nameof(WizardTitle));
         OnPropertyChanged(nameof(CanGoNext));
     }
@@ -243,6 +249,16 @@ public partial class ImportViewModel : ViewModelBase
         WizardStep = 2;
         Section = "Wizard";
         SummaryText = "Select your ANZ bank statement (CSV or Excel).";
+    }
+
+    [RelayCommand]
+    private void StartLegacyImport()
+    {
+        ResetWizardState();
+        ImportType = "Legacy";
+        WizardStep = 2;
+        Section = "Wizard";
+        SummaryText = "Select your legacy Income and Expense Statement workbook (.xlsx).";
     }
 
     [RelayCommand]
@@ -324,8 +340,8 @@ public partial class ImportViewModel : ViewModelBase
             return;
         }
 
-        // ANZ flow starts at step 2 (file select); back returns to the hub.
-        if (WizardStep == 2 && IsAnzImport)
+        // ANZ/Legacy flow starts at step 2 (file select); back returns to the hub.
+        if (WizardStep == 2 && (IsAnzImport || IsLegacyImport))
         {
             _ = ShowHubAsync();
             return;
@@ -348,6 +364,20 @@ public partial class ImportViewModel : ViewModelBase
             if (squareDialog.ShowDialog() != true)
                 return;
             await AnalyseSquareFileAsync(squareDialog.FileName);
+            return;
+        }
+
+        if (IsLegacyImport)
+        {
+            var legacyDialog = new OpenFileDialog
+            {
+                Title = "Import Legacy Treasurer Report",
+                Filter = "Excel workbook (*.xlsx)|*.xlsx|All files (*.*)|*.*",
+                CheckFileExists = true
+            };
+            if (legacyDialog.ShowDialog() != true)
+                return;
+            await AnalyseLegacyFileAsync(legacyDialog.FileName);
             return;
         }
 
@@ -437,6 +467,90 @@ public partial class ImportViewModel : ViewModelBase
             ShowMapping = false;
             RecalculateSummary();
             SummaryText = $"ANZ statement loaded: {preview.Rows.Count} transactions. Review categories, then import.";
+
+            if (preview.Warnings.Count > 0)
+                _notificationService.ShowInfo(string.Join(" ", preview.Warnings.Take(3)));
+
+            if (Section == "Wizard" && WizardStep == 2)
+                WizardStep = 3;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            HasPreview = false;
+            Rows = [];
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task AnalyseLegacyFileAsync(string filePath)
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        ShowResults = false;
+        ShowMapping = false;
+        LastResult = null;
+        ParseFailure = null;
+        SquareRows = [];
+        try
+        {
+            var result = await _legacyImportService.AnalyseAsync(filePath);
+            _sourceFilePath = filePath;
+
+            if (result.FailureReason is not null)
+            {
+                ErrorMessage = result.FailureReason;
+                HasPreview = false;
+                _allRows = [];
+                Rows = [];
+                _legacyMonthSummaries = [];
+                _notificationService.ShowError(result.FailureReason);
+                return;
+            }
+
+            var preview = result.Preview!;
+            _sourceFormat = StatementFormat.Excel;
+            _bankName = "Legacy Treasurer Report";
+            FileName = preview.FileName;
+            _legacyMonthSummaries = preview.Months;
+
+            var rows = new ObservableCollection<ImportRowViewModel>();
+            foreach (var row in preview.Rows)
+            {
+                var isIncome = row.Credit > 0;
+                var categories = new ObservableCollection<Category>(
+                    AllCategories.Where(c => c.Type == (isIncome ? CategoryType.Income : CategoryType.Expense)));
+
+                var suggested = categories.FirstOrDefault(c => c.Id == row.SuggestedCategoryId);
+                var vm = new ImportRowViewModel
+                {
+                    IsSelected = row.IsSelected,
+                    Date = row.Date,
+                    Description = row.Description,
+                    Debit = row.Debit,
+                    Credit = row.Credit,
+                    Fingerprint = row.Fingerprint,
+                    Status = row.Status,
+                    MatchedTransactionId = row.MatchedTransactionId,
+                    Categories = categories,
+                    SelectedCategory = suggested
+                };
+                vm.PropertyChanged += OnRowPropertyChanged;
+                rows.Add(vm);
+            }
+
+            _allRows = rows;
+            ApplyFilters();
+            HasPreview = true;
+            var monthCount = preview.Months.Count(m => !m.IsSkipped);
+            RecalculateSummary();
+            SummaryText =
+                $"Legacy workbook loaded: {monthCount} month(s), {preview.Rows.Count} transactions. " +
+                $"Cash on hand and Shire bonds will be saved per month.";
 
             if (preview.Warnings.Count > 0)
                 _notificationService.ShowInfo(string.Join(" ", preview.Warnings.Take(3)));
@@ -726,6 +840,28 @@ public partial class ImportViewModel : ViewModelBase
                     }).ToList()
                 });
             }
+            else if (IsLegacyImport)
+            {
+                LastResult = await _legacyImportService.CommitAsync(new LegacyTreasurerCommitRequest
+                {
+                    FileName = FileName,
+                    Months = _legacyMonthSummaries,
+                    Rows = _allRows.Select(r => new ImportPreviewRow
+                    {
+                        IsSelected = r.IsSelected,
+                        Date = r.Date,
+                        Description = r.Description,
+                        Debit = r.Debit,
+                        Credit = r.Credit,
+                        SuggestedCategoryId = r.SelectedCategory?.Id,
+                        SuggestedCategoryName = r.SelectedCategory?.Name ?? string.Empty,
+                        RememberCategory = r.RememberCategory,
+                        Status = r.Status,
+                        MatchedTransactionId = r.MatchedTransactionId,
+                        Fingerprint = r.Fingerprint
+                    }).ToList()
+                });
+            }
             else
             {
                 LastResult = await _importService.CommitAsync(new ImportCommitRequest
@@ -802,6 +938,7 @@ public partial class ImportViewModel : ViewModelBase
         _allRows = [];
         Rows = [];
         SquareRows = [];
+        _legacyMonthSummaries = [];
         FileName = string.Empty;
         ErrorMessage = null;
         RecalculateSummary();
@@ -858,9 +995,12 @@ public partial class ImportViewModel : ViewModelBase
             return;
 
         var isSquare = SelectedHistoryItem.SourceType.Contains("Square", StringComparison.OrdinalIgnoreCase);
+        var isLegacy = SelectedHistoryItem.SourceType.Contains("Legacy", StringComparison.OrdinalIgnoreCase);
         var (success, error) = isSquare
             ? await _squareImportService.UndoImportAsync(SelectedHistoryItem.Id)
-            : await _importService.UndoImportAsync(SelectedHistoryItem.Id);
+            : isLegacy
+                ? await _legacyImportService.UndoImportAsync(SelectedHistoryItem.Id)
+                : await _importService.UndoImportAsync(SelectedHistoryItem.Id);
 
         if (!success)
         {

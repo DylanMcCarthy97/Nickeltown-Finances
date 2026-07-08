@@ -379,6 +379,7 @@ public class StatementImportService : IStatementImportService
             {
                 ImportSourceType.AnzBank => "ANZ Bank",
                 ImportSourceType.Square => "Square",
+                ImportSourceType.LegacyTreasurerReport => "Legacy Treasurer",
                 _ => b.SourceType.ToString()
             },
             TransactionsImported = b.TransactionsImported,

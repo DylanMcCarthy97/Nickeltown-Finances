@@ -55,6 +55,12 @@ public interface ISettingsService
     /// <summary>Bank balance on <see cref="TrackingStartDate"/>.</summary>
     decimal? TrackingStartBalance { get; set; }
 
+    decimal DefaultCashOnHand { get; set; }
+
+    decimal DefaultShireBonds { get; set; }
+
+    decimal DefaultPayPalBalance { get; set; }
+
     AppTheme Theme { get; set; }
 
     string BackupFolder { get; set; }
@@ -123,6 +129,15 @@ public interface ISquareImportService
     Task<SquareImportAnalyseResult> AnalyseAsync(string filePath);
 
     Task<ImportResult> CommitAsync(SquareImportCommitRequest request);
+
+    Task<(bool Success, string? Error)> UndoImportAsync(ObjectId batchId);
+}
+
+public interface ILegacyTreasurerImportService
+{
+    Task<LegacyTreasurerAnalyseResult> AnalyseAsync(string filePath);
+
+    Task<ImportResult> CommitAsync(LegacyTreasurerCommitRequest request);
 
     Task<(bool Success, string? Error)> UndoImportAsync(ObjectId batchId);
 }
@@ -316,6 +331,12 @@ public interface IReportService
     Task<MonthlyReportData> BuildMonthlyReportAsync(ObjectId financialYearId, int year, int month, string notes = "");
 
     Task<AgmReportData> BuildAgmReportAsync(ObjectId financialYearId);
+
+    /// <summary>Sets <see cref="MonthlyReportData.PrintedAt"/> to now and recalculates closing balance as of that date.</summary>
+    void ApplyPrintDate(MonthlyReportData data);
+
+    /// <summary>Sets <see cref="AgmReportData.PrintedAt"/> to now and recalculates closing balance as of that date.</summary>
+    void ApplyPrintDate(AgmReportData data);
 
     Task<string> ExportMonthlyPdfAsync(MonthlyReportData data, string outputPath);
 

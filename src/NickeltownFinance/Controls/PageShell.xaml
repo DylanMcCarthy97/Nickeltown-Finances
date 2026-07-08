@@ -14,8 +14,14 @@
                               Message="{Binding ErrorMessage, ElementName=Root}"
                               Title="{Binding ErrorTitle, ElementName=Root}"
                               RetryCommand="{Binding RetryCommand, ElementName=Root}"
-                              IsCompact="True"
-                              Visibility="{Binding IsErrorCompact, ElementName=Root, Converter={StaticResource BoolToVisibilityConverter}}" />
+                              IsCompact="True">
+            <controls:ErrorScreen.Visibility>
+                <MultiBinding Converter="{StaticResource PageErrorVisibilityConverter}" ConverterParameter="compact">
+                    <Binding Path="IsErrorCompact" ElementName="Root" />
+                    <Binding Path="ErrorMessage" ElementName="Root" />
+                </MultiBinding>
+            </controls:ErrorScreen.Visibility>
+        </controls:ErrorScreen>
 
         <Grid Grid.Row="1">
             <ContentPresenter Content="{Binding Body, ElementName=Root}" />
@@ -24,8 +30,14 @@
             <controls:ErrorScreen Message="{Binding ErrorMessage, ElementName=Root}"
                                   Title="{Binding ErrorTitle, ElementName=Root}"
                                   RetryCommand="{Binding RetryCommand, ElementName=Root}"
-                                  IsCompact="False"
-                                  Visibility="{Binding IsErrorCompact, ElementName=Root, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                  IsCompact="False">
+                <controls:ErrorScreen.Visibility>
+                    <MultiBinding Converter="{StaticResource PageErrorVisibilityConverter}" ConverterParameter="full">
+                        <Binding Path="IsErrorCompact" ElementName="Root" />
+                        <Binding Path="ErrorMessage" ElementName="Root" />
+                    </MultiBinding>
+                </controls:ErrorScreen.Visibility>
+            </controls:ErrorScreen>
 
             <controls:LoadingScreen IsLoading="{Binding IsBusy, ElementName=Root}"
                                     Message="{Binding LoadingMessage, ElementName=Root}" />

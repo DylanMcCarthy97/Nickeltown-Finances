@@ -56,6 +56,9 @@ public sealed class LiteDbContext : IDisposable
     public ILiteCollection<SupplierProduct> SupplierProducts =>
         _database.GetCollection<SupplierProduct>("supplier_products");
 
+    public ILiteCollection<TreasurerMonthSnapshot> TreasurerMonthSnapshots =>
+        _database.GetCollection<TreasurerMonthSnapshot>("treasurer_month_snapshots");
+
     private void EnsureIndexes()
     {
         Transactions.EnsureIndex(x => x.Date);
@@ -97,6 +100,8 @@ public sealed class LiteDbContext : IDisposable
         SupplierPurchases.EnsureIndex(x => x.ReceiptImportItemId);
         SupplierProducts.EnsureIndex(x => x.SupplierProfileId);
         SupplierProducts.EnsureIndex(x => x.NormalizedKey);
+        TreasurerMonthSnapshots.EnsureIndex(x => x.Year);
+        TreasurerMonthSnapshots.EnsureIndex(x => x.Month);
 
         // Legacy PIN-era users have no Username; unique index cannot be created over duplicate nulls.
         foreach (var user in Users.FindAll().Where(u => string.IsNullOrWhiteSpace(u.Username)).ToList())

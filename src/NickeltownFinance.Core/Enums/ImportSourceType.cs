@@ -12,5 +12,6 @@ public enum ImportSourceType
     Pos = 10,
     Inventory = 11,
     Membership = 12,
+    LegacyTreasurerReport = 13,
     Other = 99
 }

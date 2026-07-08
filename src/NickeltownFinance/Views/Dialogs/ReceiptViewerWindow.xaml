@@ -2,13 +2,14 @@
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:vm="clr-namespace:NickeltownFinance.ViewModels"
                  Title="{Binding Title}"
                  Width="1100" Height="780"
                  MinWidth="820" MinHeight="560"
                  WindowStartupLocation="CenterOwner"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="None"
-                 Background="{StaticResource BrandBackgroundBrush}"
+                 WindowBackdropType="Mica"
+                 Background="Transparent"
                  FontFamily="{StaticResource AppFontFamily}"
                  Icon="pack://application:,,,/Assets/AppIcon.png"
                  PreviewMouseWheel="Window_PreviewMouseWheel"
@@ -29,20 +30,59 @@
 
         <ui:TitleBar Title="{Binding Title}" Grid.Row="0" />
 
-        <Border Grid.Row="1" Style="{StaticResource ToolbarPanelStyle}" Margin="16,8,16,8">
-            <StackPanel Orientation="Horizontal"
-                        Visibility="{Binding ShowViewModeTabs, Converter={StaticResource BoolToVisibilityConverter}}">
-                <ui:Button Content="Enhanced" Margin="0,0,6,0"
-                           Command="{Binding SetViewModeCommand}" CommandParameter="Enhanced" />
-                <ui:Button Content="Original" Margin="0,0,6,0"
-                           Command="{Binding SetViewModeCommand}" CommandParameter="Original" />
-                <ui:Button Content="OCR Debug" Margin="0,0,6,0"
+        <Border Grid.Row="1"
+                Background="{StaticResource BrandInsetBrush}"
+                CornerRadius="12"
+                Padding="4"
+                Margin="20,10,20,8"
+                HorizontalAlignment="Left"
+                Visibility="{Binding ShowViewModeTabs, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Enhanced" Command="{Binding SetViewModeCommand}" CommandParameter="Enhanced">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedViewMode}" Value="{x:Static vm:ReceiptPreviewViewMode.Enhanced}">
+                                    <Setter Property="Background" Value="{StaticResource BrandSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
+                <ui:Button Content="Original" Margin="4,0,0,0" Command="{Binding SetViewModeCommand}" CommandParameter="Original">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedViewMode}" Value="{x:Static vm:ReceiptPreviewViewMode.Original}">
+                                    <Setter Property="Background" Value="{StaticResource BrandSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
+                <ui:Button Content="OCR Debug" Margin="4,0,0,0"
                            Visibility="{Binding ShowOcrDebugTab, Converter={StaticResource BoolToVisibilityConverter}}"
-                           Command="{Binding SetViewModeCommand}" CommandParameter="OcrDebug" />
+                           Command="{Binding SetViewModeCommand}" CommandParameter="OcrDebug">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedViewMode}" Value="{x:Static vm:ReceiptPreviewViewMode.OcrDebug}">
+                                    <Setter Property="Background" Value="{StaticResource BrandSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource ToolbarPanelStyle}" Margin="16,0,16,12">
+        <Border Grid.Row="2" Padding="20,0,20,12">
             <Grid>
                 <StackPanel Orientation="Horizontal">
                     <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" ToolTip="Previous document" Command="{Binding PreviousAttachmentCommand}" Style="{StaticResource GroupedToolbarButtonStyle}" Margin="0,0,6,0" />

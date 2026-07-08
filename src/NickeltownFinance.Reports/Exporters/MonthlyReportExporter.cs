@@ -59,7 +59,7 @@ public static class MonthlyReportExporter
                 SummaryCell(row, "Opening balance", data.OpeningBalance);
                 SummaryCell(row, "Income", data.TotalIncome);
                 SummaryCell(row, "Expenses", data.TotalExpenses);
-                SummaryCell(row, "Closing balance", data.ClosingBalance, bold: true);
+                SummaryCell(row, data.ClosingBalanceTitle, data.ClosingBalance, bold: true);
             });
 
             col.Item().PaddingTop(14).Text("Category summary").Bold().FontSize(12).FontColor(Colors.Black);
@@ -75,6 +75,31 @@ public static class MonthlyReportExporter
             {
                 r.RelativeItem().Text("Monthly profit / loss").Bold();
                 r.ConstantItem(100).AlignRight().Text(data.MonthlyProfit.ToString("C")).Bold();
+            });
+
+            col.Item().PaddingTop(14).Text("Treasurer comments").Bold().FontSize(12).FontColor(Colors.Black);
+            col.Item().PaddingTop(4).Row(r =>
+            {
+                r.RelativeItem().Text("Excludes petty cash — cash on hand");
+                r.ConstantItem(100).AlignRight().Text(data.CashOnHand.ToString("C"));
+            });
+            col.Item().Row(r =>
+            {
+                r.RelativeItem().Text("Bonds held with the Shire");
+                r.ConstantItem(100).AlignRight().Text(data.ShireBonds.ToString("C"));
+            });
+            if (data.PayPalBalance > 0)
+            {
+                col.Item().Row(r =>
+                {
+                    r.RelativeItem().Text("PayPal account balance");
+                    r.ConstantItem(100).AlignRight().Text(data.PayPalBalance.ToString("C"));
+                });
+            }
+            col.Item().PaddingTop(4).Row(r =>
+            {
+                r.RelativeItem().Text("Total moneys owned by the club").Bold();
+                r.ConstantItem(100).AlignRight().Text(data.TotalFundsOwned.ToString("C")).Bold();
             });
 
             // Transaction detail — bank descriptions
@@ -324,9 +349,29 @@ public static class MonthlyReportExporter
         ws.Cell(row, 2).Value = data.MonthlyProfit;
         ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
         row++;
-        ws.Cell(row, 1).Value = "Closing Balance";
+        ws.Cell(row, 1).Value = data.ClosingBalanceTitle;
         ws.Cell(row, 1).Style.Font.Bold = true;
         ws.Cell(row, 2).Value = data.ClosingBalance;
+        ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+        row++;
+        ws.Cell(row, 1).Value = "Cash on hand (petty cash)";
+        ws.Cell(row, 2).Value = data.CashOnHand;
+        ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+        row++;
+        ws.Cell(row, 1).Value = "Bonds with the Shire";
+        ws.Cell(row, 2).Value = data.ShireBonds;
+        ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+        row++;
+        if (data.PayPalBalance > 0)
+        {
+            ws.Cell(row, 1).Value = "PayPal balance";
+            ws.Cell(row, 2).Value = data.PayPalBalance;
+            ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+            row++;
+        }
+        ws.Cell(row, 1).Value = "Total moneys owned by the club";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 2).Value = data.TotalFundsOwned;
         ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
         row += 2;
 

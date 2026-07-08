@@ -63,6 +63,20 @@
                         </Border>
 
                         <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
+                                MouseLeftButtonUp="OnLegacyReportCardClick">
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <ui:SymbolIcon Symbol="DocumentTable24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Import Legacy Treasurer Reports" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Income &amp; Expense Statement workbook (.xlsx)" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="One sheet per month · cash on hand &amp; bonds" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AppCardStyle}" Margin="0,0,12,0" Padding="20" Cursor="Hand"
                                 MouseLeftButtonUp="OnHistoryCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"

@@ -160,3 +160,10 @@ public interface IReceiptImportBatchRepository : IRepository<ReceiptImportBatch>
     IEnumerable<ReceiptImportBatch> GetHistory(int limit = 100);
 }
 
+public interface ITreasurerMonthSnapshotRepository : IRepository<TreasurerMonthSnapshot>
+{
+    TreasurerMonthSnapshot? GetByYearMonth(int year, int month);
+
+    void Upsert(TreasurerMonthSnapshot snapshot);
+}
+

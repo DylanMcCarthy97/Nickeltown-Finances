@@ -25,6 +25,9 @@ public partial class ImportPage
     private void OnBankCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.StartAnzImportCommand.Execute(null);
 
+    private void OnLegacyReportCardClick(object sender, MouseButtonEventArgs e) =>
+        Vm?.StartLegacyImportCommand.Execute(null);
+
     private void OnHistoryCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.ShowHistoryCommand.Execute(null);
 

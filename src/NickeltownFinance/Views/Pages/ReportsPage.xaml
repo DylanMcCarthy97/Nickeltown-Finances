@@ -11,45 +11,52 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
             <TextBlock Text="Reports" Style="{StaticResource PageTitleStyle}" />
             <TextBlock Text="Professional club reports — one click to generate, export, or print."
                        Style="{StaticResource PageSubtitleStyle}" />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
-            <ui:Button Content="Monthly report"
-                       Icon="{ui:SymbolIcon CalendarLtr24}"
-                       Margin="0,0,8,0"
-                       Command="{Binding ShowMonthlyCommand}">
-                <ui:Button.Style>
-                    <Style TargetType="ui:Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
-                                <Setter Property="Background" Value="{StaticResource BrandNavActiveBrush}" />
-                                <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ui:Button.Style>
-            </ui:Button>
-            <ui:Button Content="AGM / Year report"
-                       Icon="{ui:SymbolIcon DocumentOnePage24}"
-                       Command="{Binding ShowAgmCommand}">
-                <ui:Button.Style>
-                    <Style TargetType="ui:Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="1">
-                                <Setter Property="Background" Value="{StaticResource BrandNavActiveBrush}" />
-                                <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ui:Button.Style>
-            </ui:Button>
-        </StackPanel>
+        <Border Grid.Row="1"
+                Background="{StaticResource BrandInsetBrush}"
+                CornerRadius="12"
+                Padding="4"
+                HorizontalAlignment="Left"
+                Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Monthly report"
+                           Icon="{ui:SymbolIcon CalendarLtr24}"
+                           Margin="0,0,4,0"
+                           Command="{Binding ShowMonthlyCommand}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
+                                    <Setter Property="Background" Value="{StaticResource BrandSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
+                <ui:Button Content="AGM / Year report"
+                           Icon="{ui:SymbolIcon DocumentOnePage24}"
+                           Command="{Binding ShowAgmCommand}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedTabIndex}" Value="1">
+                                    <Setter Property="Background" Value="{StaticResource BrandSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource BrandPrimaryBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
+            </StackPanel>
+        </Border>
 
         <Grid Grid.Row="2">
             <ContentControl Content="{Binding MonthlyReport}">

@@ -17,6 +17,7 @@ public class ReportService : IReportService
     private readonly ISessionService _sessionService;
     private readonly IUserRepository _userRepository;
     private readonly IAttachmentRepository _attachmentRepository;
+    private readonly ITreasurerMonthSnapshotRepository _snapshotRepository;
 
     public ReportService(
         IFinancialYearRepository financialYearRepository,
@@ -26,7 +27,8 @@ public class ReportService : IReportService
         ISettingsService settingsService,
         ISessionService sessionService,
         IUserRepository userRepository,
-        IAttachmentRepository attachmentRepository)
+        IAttachmentRepository attachmentRepository,
+        ITreasurerMonthSnapshotRepository snapshotRepository)
     {
         _financialYearRepository = financialYearRepository;
         _financialYearService = financialYearService;
@@ -36,6 +38,7 @@ public class ReportService : IReportService
         _sessionService = sessionService;
         _userRepository = userRepository;
         _attachmentRepository = attachmentRepository;
+        _snapshotRepository = snapshotRepository;
     }
 
     public Task<MonthlyReportData> BuildMonthlyReportAsync(ObjectId financialYearId, int year, int month, string notes = "")
@@ -88,7 +91,6 @@ public class ReportService : IReportService
 
         var totalIncome = incomeByCat.Sum(x => x.Amount);
         var totalExpenses = expenseByCat.Sum(x => x.Amount);
-        var closing = CalculateBalanceAsOf(monthEnd);
         var (preparedBy, role, signaturePath) = GetPreparer();
 
         var data = new MonthlyReportData
@@ -105,7 +107,6 @@ public class ReportService : IReportService
             ExpensesByCategory = expenseByCat,
             TotalExpenses = totalExpenses,
             MonthlyProfit = totalIncome - totalExpenses,
-            ClosingBalance = closing,
             Transactions = transactions,
             Notes = notes,
             PreparedBy = preparedBy,
@@ -113,6 +114,8 @@ public class ReportService : IReportService
             PrintedAt = DateTime.Now,
             SignatureImagePath = signaturePath
         };
+        ApplyClosingBalance(data, monthEnd);
+        ApplyHoldings(data, year, month);
 
         return Task.FromResult(data);
     }
@@ -174,27 +177,31 @@ public class ReportService : IReportService
         var totalIncome = incomeByCat.Sum(x => x.Amount);
         var totalExpenses = expenseByCat.Sum(x => x.Amount);
         var opening = CalculateBalanceAsOf(fy.OpeningDate.AddDays(-1));
-        var closing = CalculateBalanceAsOf(fy.EndDate);
         var (preparedBy, role, signaturePath) = GetPreparer();
 
-        return Task.FromResult(new AgmReportData
+        var data = new AgmReportData
         {
             ClubName = _settingsService.ClubName,
             LogoPath = ResolveLogoPath(),
             FinancialYearName = fy.Name,
             OpeningBalance = opening,
-            ClosingBalance = closing,
             TotalIncome = totalIncome,
             TotalExpenses = totalExpenses,
             AnnualProfit = totalIncome - totalExpenses,
             MonthlyData = monthlyData,
             IncomeByCategory = incomeByCat,
             ExpensesByCategory = expenseByCat,
+            FinancialYearEndDate = fy.EndDate,
             PreparedBy = preparedBy,
             PreparedByRole = role,
             PrintedAt = DateTime.Now,
             SignatureImagePath = signaturePath
-        });
+        };
+        ApplyClosingBalance(data);
+        var holdingsMonth = data.ClosingBalanceAsOf;
+        ApplyHoldings(data, holdingsMonth.Year, holdingsMonth.Month);
+
+        return Task.FromResult(data);
     }
 
     public Task<string> ExportMonthlyPdfAsync(MonthlyReportData data, string outputPath) =>
@@ -308,6 +315,67 @@ public class ReportService : IReportService
         sheet.Columns().AdjustToContents();
         workbook.SaveAs(outputPath);
         return Task.FromResult(outputPath);
+    }
+
+    public void ApplyPrintDate(MonthlyReportData data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        data.PrintedAt = DateTime.Now;
+        var monthEnd = new DateTime(data.Year, data.Month, 1).AddMonths(1).AddDays(-1);
+        ApplyClosingBalance(data, monthEnd);
+        ApplyHoldings(data, data.ClosingBalanceAsOf.Year, data.ClosingBalanceAsOf.Month);
+    }
+
+    public void ApplyPrintDate(AgmReportData data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        data.PrintedAt = DateTime.Now;
+        ApplyClosingBalance(data);
+        ApplyHoldings(data, data.ClosingBalanceAsOf.Year, data.ClosingBalanceAsOf.Month);
+    }
+
+    private void ApplyHoldings(MonthlyReportData data, int year, int month)
+    {
+        var (cash, bonds, paypal) = ResolveHoldings(year, month);
+        data.CashOnHand = cash;
+        data.ShireBonds = bonds;
+        data.PayPalBalance = paypal;
+    }
+
+    private void ApplyHoldings(AgmReportData data, int year, int month)
+    {
+        var (cash, bonds, paypal) = ResolveHoldings(year, month);
+        data.CashOnHand = cash;
+        data.ShireBonds = bonds;
+        data.PayPalBalance = paypal;
+    }
+
+    private (decimal CashOnHand, decimal ShireBonds, decimal PayPalBalance) ResolveHoldings(int year, int month)
+    {
+        var snapshot = _snapshotRepository.GetByYearMonth(year, month);
+        return (
+            snapshot?.CashOnHand ?? _settingsService.DefaultCashOnHand,
+            snapshot?.ShireBonds ?? _settingsService.DefaultShireBonds,
+            snapshot?.PayPalBalance ?? _settingsService.DefaultPayPalBalance);
+    }
+
+    private void ApplyClosingBalance(MonthlyReportData data, DateTime monthEnd)
+    {
+        data.ClosingBalanceAsOf = ResolveClosingBalanceAsOf(data.PrintedAt, monthEnd);
+        data.ClosingBalance = CalculateBalanceAsOf(data.ClosingBalanceAsOf);
+    }
+
+    private void ApplyClosingBalance(AgmReportData data)
+    {
+        data.ClosingBalanceAsOf = ResolveClosingBalanceAsOf(data.PrintedAt, data.FinancialYearEndDate);
+        data.ClosingBalance = CalculateBalanceAsOf(data.ClosingBalanceAsOf);
+    }
+
+    private static DateTime ResolveClosingBalanceAsOf(DateTime printedAt, DateTime periodEnd)
+    {
+        var printDate = printedAt.Date;
+        var endDate = periodEnd.Date;
+        return printDate <= endDate ? printDate : endDate;
     }
 
     /// <summary>

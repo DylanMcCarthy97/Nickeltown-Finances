@@ -6,7 +6,7 @@
                  Title="{Binding WindowTitle}"
                  MinWidth="1024" MinHeight="680"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="None"
+                 WindowBackdropType="Mica"
                  Background="{DynamicResource BrandBackgroundBrush}"
                  Icon="pack://application:,,,/Assets/AppIcon.png"
                  FontFamily="{StaticResource AppFontFamily}">
@@ -98,9 +98,9 @@
                                    Command="{Binding SignOutCommand}"
                                    Margin="0,0,0,8" />
 
-                        <Border Padding="8,10"
-                                CornerRadius="8"
-                                Background="{StaticResource BrandNavHoverBrush}"
+                        <Border Padding="10,12"
+                                CornerRadius="12"
+                                Background="{StaticResource BrandInsetBrush}"
                                 Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                             <StackPanel>
                                 <TextBlock Text="{Binding UserDisplayName}"

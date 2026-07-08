@@ -3,12 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              x:Name="Root">
-    <Border Background="{DynamicResource BrandSurfaceBrush}"
-            BorderBrush="{DynamicResource BrandBorderSubtleBrush}"
-            BorderThickness="1"
-            CornerRadius="8"
+    <Border Background="{DynamicResource BrandInsetBrush}"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            CornerRadius="10"
             Padding="4,0"
-            MinHeight="36">
+            MinHeight="40">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -19,7 +19,7 @@
             <ui:SymbolIcon Symbol="Search24"
                            FontSize="16"
                            Foreground="{DynamicResource BrandMutedTextBrush}"
-                           Margin="10,0,6,0"
+                           Margin="12,0,4,0"
                            VerticalAlignment="Center" />
 
             <ui:TextBox Grid.Column="1"
@@ -33,7 +33,7 @@
                         Background="Transparent"
                         Foreground="{DynamicResource BrandTextPrimaryBrush}"
                         VerticalAlignment="Center"
-                        MinHeight="32" />
+                        MinHeight="36" />
 
             <ui:Button Grid.Column="2"
                        Content="{Binding ButtonText, ElementName=Root}"

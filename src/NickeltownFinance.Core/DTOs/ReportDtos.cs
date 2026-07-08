@@ -170,6 +170,22 @@ public class MonthlyReportData
 
     public decimal ClosingBalance { get; set; }
 
+    /// <summary>Calendar date the closing balance was calculated for (print date, capped at month end).</summary>
+    public DateTime ClosingBalanceAsOf { get; set; }
+
+    public string ClosingBalanceTitle =>
+        $"Closing balance (as at {DateFormats.Format(ClosingBalanceAsOf)})";
+
+    public decimal CashOnHand { get; set; }
+
+    public decimal ShireBonds { get; set; }
+
+    public decimal PayPalBalance { get; set; }
+
+    public decimal OtherFundsTotal => CashOnHand + ShireBonds + PayPalBalance;
+
+    public decimal TotalFundsOwned => ClosingBalance + OtherFundsTotal;
+
     /// <summary>Individual transactions with bank descriptions and categories.</summary>
     public IReadOnlyList<ReportTransactionLine> Transactions { get; set; } = [];
 
@@ -217,6 +233,25 @@ public class AgmReportData
     public decimal OpeningBalance { get; set; }
 
     public decimal ClosingBalance { get; set; }
+
+    /// <summary>Last day of the financial year covered by this report.</summary>
+    public DateTime FinancialYearEndDate { get; set; }
+
+    /// <summary>Calendar date the closing balance was calculated for (print date, capped at year end).</summary>
+    public DateTime ClosingBalanceAsOf { get; set; }
+
+    public string ClosingBalanceTitle =>
+        $"Closing balance (as at {DateFormats.Format(ClosingBalanceAsOf)})";
+
+    public decimal CashOnHand { get; set; }
+
+    public decimal ShireBonds { get; set; }
+
+    public decimal PayPalBalance { get; set; }
+
+    public decimal OtherFundsTotal => CashOnHand + ShireBonds + PayPalBalance;
+
+    public decimal TotalFundsOwned => ClosingBalance + OtherFundsTotal;
 
     public decimal TotalIncome { get; set; }
 

@@ -71,6 +71,60 @@ public class InverseBoolToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>
+/// Returns a <see cref="GridLength"/> parsed from <paramref name="parameter"/> when the bound bool is true,
+/// otherwise collapses the column/row to zero width.
+/// </summary>
+public class BoolToGridLengthConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not true)
+            return new GridLength(0);
+
+        var param = parameter?.ToString()?.Trim();
+        if (string.IsNullOrEmpty(param))
+            return new GridLength(1, GridUnitType.Star);
+
+        if (param.EndsWith('*'))
+        {
+            var star = double.TryParse(param[..^1], NumberStyles.Number, culture, out var weight) ? weight : 1;
+            return new GridLength(star, GridUnitType.Star);
+        }
+
+        return double.TryParse(param, NumberStyles.Number, culture, out var pixels)
+            ? new GridLength(pixels)
+            : new GridLength(1, GridUnitType.Star);
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// Shows compact or full-page error UI only when <see cref="PageShell"/> has a message
+/// and the requested layout mode matches <c>IsErrorCompact</c>.
+/// </summary>
+public class PageErrorVisibilityConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (values.Length < 2)
+            return Visibility.Collapsed;
+
+        var isErrorCompact = values[0] is true;
+        var hasMessage = values[1] is string { Length: > 0 };
+        if (!hasMessage)
+            return Visibility.Collapsed;
+
+        var wantCompact = !string.Equals(parameter?.ToString(), "full", StringComparison.OrdinalIgnoreCase);
+        return isErrorCompact == wantCompact ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 public class InverseBoolConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
