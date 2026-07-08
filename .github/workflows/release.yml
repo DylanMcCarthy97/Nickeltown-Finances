@@ -87,6 +87,8 @@ jobs:
           $appInstaller = Get-Content ./packaging/NickeltownFinance.appinstaller -Raw
           $appInstaller = $appInstaller -replace '(<AppInstaller[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
           $appInstaller = $appInstaller -replace '(<MainPackage[^>]*Version=")[0-9.]+(")', "`${1}$version.0`${2}"
+          $appInstaller = $appInstaller -replace '(<OnLaunch[^>]*)(/>)', '$1 UpdateBlocksActivation="true" ShowPrompt="true" />'
+          $appInstaller = $appInstaller -replace '(<AutomaticBackgroundTask />)', '$1`r`n    <ForceUpdateFromAnyVersion>true</ForceUpdateFromAnyVersion>'
           Set-Content -Path ./artifacts/release/NickeltownFinance.appinstaller -Value $appInstaller -NoNewline
 
       - name: Create GitHub release
