@@ -4,7 +4,7 @@
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  xmlns:ds="clr-namespace:NickeltownFinance.Controls"
                  Title="Nickeltown Finance"
-                 MinWidth="720" MinHeight="560"
+                 MinWidth="640" MinHeight="520"
                  Width="920" Height="680"
                  WindowStartupLocation="CenterScreen"
                  ResizeMode="CanResizeWithGrip"

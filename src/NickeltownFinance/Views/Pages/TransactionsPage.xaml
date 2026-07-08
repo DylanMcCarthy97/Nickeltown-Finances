@@ -49,13 +49,13 @@
                 <StackPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" MinWidth="180" />
+                            <ColumnDefinition Width="2*" MinWidth="140" />
                             <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" MinWidth="120" />
+                            <ColumnDefinition Width="*" MinWidth="100" />
                             <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" MinWidth="110" />
+                            <ColumnDefinition Width="*" MinWidth="90" />
                             <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" MinWidth="110" />
+                            <ColumnDefinition Width="*" MinWidth="90" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
@@ -94,11 +94,11 @@
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock Text="From" Style="{StaticResource FieldLabelStyle}" />
-                                <ds:AppDateField SelectedDate="{Binding FromDate}" MinWidth="170" />
+                                <ds:AppDateField SelectedDate="{Binding FromDate}" MinWidth="140" />
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="To" Style="{StaticResource FieldLabelStyle}" />
-                                <ds:AppDateField SelectedDate="{Binding ToDate}" MinWidth="170" />
+                                <ds:AppDateField SelectedDate="{Binding ToDate}" MinWidth="140" />
                             </StackPanel>
                         </StackPanel>
 
@@ -138,7 +138,7 @@
             <ds:SurfaceCard Grid.Row="2" CardMargin="0" CardPadding="12">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" MinWidth="360" />
+                        <ColumnDefinition Width="*" MinWidth="280" />
                         <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=12}" />
                         <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=260}" />
                     </Grid.ColumnDefinitions>
@@ -164,7 +164,7 @@
                             </ContextMenu>
                         </ds:AppDataGrid.ContextMenu>
                         <ds:AppDataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="44">
+                            <DataGridTemplateColumn Header="" Width="40">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ui:Button Icon="{ui:SymbolIcon Attach24}"
@@ -176,7 +176,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Receipt" Width="120">
+                            <DataGridTemplateColumn Header="Receipt" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ds:StatusBadge Text="Required"
@@ -185,10 +185,10 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="100" SortMemberPath="Date" />
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="95" SortMemberPath="Date" />
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" SortMemberPath="Description" />
-                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="120" SortMemberPath="CategoryName" />
-                            <DataGridTemplateColumn Header="Income" Width="100" SortMemberPath="IncomeAmount">
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="110" SortMemberPath="CategoryName" />
+                            <DataGridTemplateColumn Header="Income" Width="90" SortMemberPath="IncomeAmount">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding IncomeAmount, Converter={StaticResource ZeroToDashConverter}}"
@@ -198,7 +198,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Expense" Width="100" SortMemberPath="ExpenseAmount">
+                            <DataGridTemplateColumn Header="Expense" Width="90" SortMemberPath="ExpenseAmount">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding ExpenseAmount, Converter={StaticResource ZeroToDashConverter}}"
@@ -208,7 +208,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Balance" Width="125" SortMemberPath="RunningBalance">
+                            <DataGridTemplateColumn Header="Balance" Width="110" SortMemberPath="RunningBalance">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding RunningBalance, Converter={StaticResource CurrencyConverter}}"
@@ -217,11 +217,11 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Payment" Binding="{Binding PaymentMethod}" Width="100" />
-                            <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="100" />
-                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="120" />
-                            <DataGridTextColumn Header="Created by" Binding="{Binding CreatedBy}" Width="100" />
-                            <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="150" />
+                            <DataGridTextColumn Header="Payment" Binding="{Binding PaymentMethod}" Width="90" />
+                            <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="90" />
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="110" />
+                            <DataGridTextColumn Header="Created by" Binding="{Binding CreatedBy}" Width="95" />
+                            <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="140" />
                         </ds:AppDataGrid.Columns>
                     </ds:AppDataGrid>
 

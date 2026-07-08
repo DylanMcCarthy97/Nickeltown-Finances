@@ -141,9 +141,9 @@
 
             <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.4*" MinWidth="360" />
+                    <ColumnDefinition Width="1.4*" MinWidth="280" />
                     <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="*" MinWidth="320" />
+                    <ColumnDefinition Width="*" MinWidth="260" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="8">
@@ -161,12 +161,12 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Date" Binding="{Binding DateDisplay}" Width="80" />
-                            <DataGridTextColumn Header="Total" Binding="{Binding TotalDisplay}" Width="80" />
-                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryDisplay}" Width="100" />
-                            <DataGridTextColumn Header="Source" Binding="{Binding SourceDisplay}" Width="70" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel}" Width="110" />
-                            <DataGridTextColumn Header="Uploaded" Binding="{Binding UploadedTimeDisplay}" Width="130" />
+                            <DataGridTextColumn Header="Date" Binding="{Binding DateDisplay}" Width="75" />
+                            <DataGridTextColumn Header="Total" Binding="{Binding TotalDisplay}" Width="75" />
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryDisplay}" Width="90" />
+                            <DataGridTextColumn Header="Source" Binding="{Binding SourceDisplay}" Width="65" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel}" Width="100" />
+                            <DataGridTextColumn Header="Uploaded" Binding="{Binding UploadedTimeDisplay}" Width="115" />
                         </ds:AppDataGrid.Columns>
                     </ds:AppDataGrid>
                 </Border>

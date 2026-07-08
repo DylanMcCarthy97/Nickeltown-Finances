@@ -5,7 +5,7 @@
                  xmlns:ds="clr-namespace:NickeltownFinance.Controls"
                  Title="{Binding Title}"
                  Width="920" Height="820"
-                 MinWidth="760" MinHeight="680"
+                 MinWidth="680" MinHeight="600"
                  WindowStartupLocation="CenterOwner"
                  ResizeMode="CanResize"
                  ExtendsContentIntoTitleBar="True"

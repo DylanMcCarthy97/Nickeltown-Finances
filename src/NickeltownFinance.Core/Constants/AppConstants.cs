@@ -37,7 +37,7 @@ public static class SettingKeys
 public static class AppPaths
 {
     public static string AppDataRoot =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NickeltownFinance");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "NickeltownFinance");
 
     public static string DatabasePath => Path.Combine(AppDataRoot, "data", "nickeltown.db");
 
