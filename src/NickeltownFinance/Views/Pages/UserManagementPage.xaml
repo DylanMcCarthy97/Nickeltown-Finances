@@ -16,70 +16,83 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0"
-                       Text="Users"
-                       Style="{StaticResource PageTitleStyle}"
-                       Margin="0,0,0,16" />
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="User management"
+                               Style="{StaticResource PageTitleStyle}" />
+                    <TextBlock Text="Manage accounts, roles, signatures, and account access."
+                               Style="{StaticResource PageSubtitleStyle}" />
+                </StackPanel>
+                <ui:Button Grid.Column="1"
+                           Content="New user"
+                           Icon="{ui:SymbolIcon PersonAdd24}"
+                           Style="{StaticResource PrimaryButtonStyle}"
+                           Command="{Binding NewUserCommand}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0" />
+            </Grid>
 
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="7*" MinWidth="340" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="3*" MinWidth="240" />
+                    <ColumnDefinition Width="1.15*" MinWidth="420" />
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="1*" MinWidth="360" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: toolbar + users grid -->
-                <ds:SurfaceCard Grid.Column="0" CardMargin="0" CardPadding="12">
+                <!-- Left: users list -->
+                <ds:SurfaceCard Grid.Column="0" CardMargin="0" CardPadding="14">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" MinWidth="120" />
-                                <ColumnDefinition Width="12" />
-                                <ColumnDefinition Width="140" />
-                            </Grid.ColumnDefinitions>
+                        <Border Grid.Row="0"
+                                Style="{StaticResource AppCardQuietStyle}"
+                                Padding="12"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <ui:Button Grid.Column="0"
-                                       Content="New User"
-                                       Icon="{ui:SymbolIcon PersonAdd24}"
-                                       Style="{StaticResource PrimaryButtonStyle}"
-                                       Command="{Binding NewUserCommand}"
-                                       Margin="0,0,8,0"
-                                       ToolTip="Ctrl+N" />
+                                <ds:SearchBar Grid.Column="0"
+                                              Placeholder="Search users..."
+                                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                              ShowButton="False"
+                                              TextBoxMargin="0"
+                                              VerticalAlignment="Center" />
 
-                            <ui:Button Grid.Column="1"
-                                       Content="Refresh"
-                                       Icon="{ui:SymbolIcon ArrowSync24}"
-                                       Style="{StaticResource ToolbarButtonStyle}"
-                                       Command="{Binding RefreshCommand}"
-                                       Margin="0,0,12,0"
-                                       ToolTip="F5" />
+                                <ComboBox Grid.Column="2"
+                                          ItemsSource="{Binding RoleFilterOptions}"
+                                          SelectedItem="{Binding RoleFilter}"
+                                          VerticalAlignment="Center"
+                                          MinHeight="36"
+                                          ToolTip="Filter by role" />
 
-                            <ds:SearchBar Grid.Column="2"
-                                          Placeholder="Search users..."
-                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                          ShowButton="False"
-                                          TextBoxMargin="0"
-                                          VerticalAlignment="Center" />
-
-                            <ComboBox Grid.Column="4"
-                                      ItemsSource="{Binding RoleFilterOptions}"
-                                      SelectedItem="{Binding RoleFilter}"
-                                      VerticalAlignment="Center"
-                                      MinHeight="36" />
-                        </Grid>
+                                <ui:Button Grid.Column="4"
+                                           Content="Refresh"
+                                           Icon="{ui:SymbolIcon ArrowSync24}"
+                                           Style="{StaticResource GroupedToolbarButtonStyle}"
+                                           Command="{Binding RefreshCommand}"
+                                           ToolTip="Refresh list (F5)" />
+                            </Grid>
+                        </Border>
 
                         <ds:AppDataGrid Grid.Row="1"
                                         ItemsSource="{Binding Users}"
                                         SelectedItem="{Binding SelectedUser}"
                                         CanUserSortColumns="True"
                                         LayoutKey="Users"
+                                        MinRowHeight="44"
                                         MouseDoubleClick="UsersGrid_OnMouseDoubleClick">
                             <ds:AppDataGrid.ContextMenu>
                                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
@@ -116,15 +129,15 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Username"
                                                     Binding="{Binding Username}"
-                                                    Width="*"
+                                                    Width="1.1*"
                                                     MinWidth="90" />
                                 <DataGridTextColumn Header="Full name"
                                                     Binding="{Binding DisplayName}"
-                                                    Width="1.4*"
+                                                    Width="1.3*"
                                                     MinWidth="110" />
                                 <DataGridTextColumn Header="Role"
                                                     Binding="{Binding RoleDisplay}"
-                                                    Width="110" />
+                                                    Width="120" />
                                 <DataGridTemplateColumn Header="Status" Width="96">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -142,17 +155,17 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Last Login"
                                                     Binding="{Binding LastLoginDisplay}"
-                                                    Width="130" />
+                                                    Width="140" />
                             </ds:AppDataGrid.Columns>
                         </ds:AppDataGrid>
                     </Grid>
                 </ds:SurfaceCard>
 
-                <!-- Right: selected user profile -->
-                <ds:SurfaceCard Grid.Column="2" CardMargin="0" CardPadding="16">
+                <!-- Right: user detail -->
+                <ds:SurfaceCard Grid.Column="2" CardMargin="0" CardPadding="18">
                     <Grid>
                         <ds:EmptyState Title="No user selected"
-                                       Message="Select a user from the list"
+                                       Message="Select a user from the list on the left"
                                        IconSymbol="Person24"
                                        Visibility="{Binding IsDetailsVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
 
@@ -163,219 +176,234 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <!-- Profile header -->
-                            <Grid Grid.Row="0" Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                            <Border Grid.Row="0"
+                                    Style="{StaticResource AppCardQuietStyle}"
+                                    Padding="14"
+                                    Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
 
-                                <Grid Grid.Column="0"
-                                      Width="48"
-                                      Height="48"
-                                      Margin="0,0,12,0"
-                                      VerticalAlignment="Top"
-                                      Cursor="Hand"
-                                      ToolTip="Change photo"
-                                      MouseLeftButtonUp="Avatar_OnMouseLeftButtonUp">
-                                    <Ellipse Fill="{DynamicResource ControlFillColorDefaultBrush}" />
-                                    <Ellipse>
-                                        <Ellipse.Fill>
-                                            <ImageBrush ImageSource="{Binding EditProfilePicturePath, Converter={StaticResource PathToImageSourceConverter}}"
-                                                        Stretch="UniformToFill" />
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Text="{Binding DetailAvatarInitials}"
-                                               FontSize="15"
-                                               FontWeight="SemiBold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Visibility="{Binding EditProfilePicturePath, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}, ConverterParameter=Invert}" />
-                                </Grid>
+                                    <Grid Grid.Column="0"
+                                          Width="48"
+                                          Height="48"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Top"
+                                          Cursor="Hand"
+                                          ToolTip="Change photo"
+                                          MouseLeftButtonUp="Avatar_OnMouseLeftButtonUp">
+                                        <Ellipse Fill="{DynamicResource ControlFillColorDefaultBrush}" />
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding EditProfilePicturePath, Converter={StaticResource PathToImageSourceConverter}}"
+                                                            Stretch="UniformToFill" />
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <TextBlock Text="{Binding DetailAvatarInitials}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding EditProfilePicturePath, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}, ConverterParameter=Invert}" />
+                                    </Grid>
 
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding EditDisplayName}"
-                                               FontSize="16"
-                                               FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis"
-                                               Margin="0,0,0,6" />
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border CornerRadius="10"
-                                                Padding="8,2"
-                                                Margin="0,0,6,0"
-                                                Background="{DynamicResource ControlFillColorDefaultBrush}">
-                                            <TextBlock Text="{Binding DetailRoleDisplay}"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold" />
-                                        </Border>
-                                        <Border CornerRadius="10"
-                                                Padding="8,2"
-                                                Background="{Binding DetailStatusKind, Converter={StaticResource StatusBadgeBackgroundConverter}}">
-                                            <TextBlock Text="{Binding DetailStatusText}"
-                                                       Foreground="White"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold" />
-                                        </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding EditDisplayName}"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,0,0,6" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border CornerRadius="10"
+                                                    Padding="8,2"
+                                                    Margin="0,0,6,0"
+                                                    Background="{DynamicResource ControlFillColorDefaultBrush}">
+                                                <TextBlock Text="{Binding DetailRoleDisplay}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                            </Border>
+                                            <Border CornerRadius="10"
+                                                    Padding="8,2"
+                                                    Background="{Binding DetailStatusKind, Converter={StaticResource StatusBadgeBackgroundConverter}}">
+                                                <TextBlock Text="{Binding DetailStatusText}"
+                                                           Foreground="White"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                            </Border>
+                                        </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
-                            </Grid>
+                                </Grid>
+                            </Border>
 
-                            <!-- Profile + Security (scroll only if the window is short) -->
+                            <!-- Profile + Security -->
                             <ScrollViewer Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled"
                                           Padding="0,0,2,0">
                                 <StackPanel>
-                                    <TextBlock Text="Profile"
-                                               Style="{StaticResource CardTitleStyle}"
-                                               Margin="0,0,0,10" />
+                                    <Border Style="{StaticResource AppCardQuietStyle}" Padding="14" Margin="0,0,0,12">
+                                        <StackPanel>
+                                            <TextBlock Text="Profile"
+                                                       Style="{StaticResource CardTitleStyle}"
+                                                       Margin="0,0,0,10" />
 
-                                    <TextBlock Text="Username" Style="{StaticResource DetailLabelStyle}" />
-                                    <ui:TextBox Text="{Binding EditUsername, UpdateSourceTrigger=PropertyChanged}"
-                                                Margin="0,0,0,10" />
+                                            <TextBlock Text="Username" Style="{StaticResource DetailLabelStyle}" />
+                                            <ui:TextBox Text="{Binding EditUsername, UpdateSourceTrigger=PropertyChanged}"
+                                                        Margin="0,0,0,10" />
 
-                                    <TextBlock Text="Full name" Style="{StaticResource DetailLabelStyle}" />
-                                    <ui:TextBox Text="{Binding EditDisplayName, UpdateSourceTrigger=PropertyChanged}"
-                                                PlaceholderText="e.g. Jane Smith"
-                                                Margin="0,0,0,4" />
-                                    <TextBlock Text="Shown on reports when this person signs them."
-                                               Style="{StaticResource CaptionTextStyle}"
-                                               Margin="0,0,0,10" />
-
-                                    <TextBlock Text="Email (future)" Style="{StaticResource DetailLabelStyle}" />
-                                    <ui:TextBox Text="{Binding EditEmail, UpdateSourceTrigger=PropertyChanged}"
-                                                PlaceholderText="Not configured"
-                                                Margin="0,0,0,10" />
-
-                                    <TextBlock Text="Role" Style="{StaticResource DetailLabelStyle}" />
-                                    <ComboBox ItemsSource="{Binding Roles}"
-                                              SelectedItem="{Binding EditRole}"
-                                              Margin="0,0,0,10">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Converter={StaticResource RoleDisplayConverter}}" />
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-
-                                    <CheckBox Content="Account Active"
-                                              IsChecked="{Binding EditIsActive}"
-                                              Margin="0,0,0,16" />
-
-                                    <TextBlock Text="Digital signature"
-                                               Style="{StaticResource CardTitleStyle}"
-                                               Margin="0,0,0,6" />
-                                    <TextBlock Text="Used on PDF reports this user prints. PNG with a transparent background works best."
-                                               Style="{StaticResource CaptionTextStyle}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,10" />
-
-                                    <Border Background="{StaticResource BrandInsetBrush}"
-                                            CornerRadius="10"
-                                            Padding="12"
-                                            MinHeight="72"
-                                            Margin="0,0,0,8">
-                                        <Grid>
-                                            <TextBlock Text="No signature uploaded"
+                                            <TextBlock Text="Full name" Style="{StaticResource DetailLabelStyle}" />
+                                            <ui:TextBox Text="{Binding EditDisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="e.g. Jane Smith"
+                                                        Margin="0,0,0,4" />
+                                            <TextBlock Text="Shown on reports when this person signs them."
                                                        Style="{StaticResource CaptionTextStyle}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Center"
-                                                       Visibility="{Binding EditHasSignature, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-                                            <Image Source="{Binding EditSignatureImagePath, Converter={StaticResource PathToImageSourceConverter}}"
-                                                   MaxHeight="64"
-                                                   Stretch="Uniform"
-                                                   HorizontalAlignment="Left"
-                                                   Visibility="{Binding EditHasSignature, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                        </Grid>
+                                                       Margin="0,0,0,10" />
+
+                                            <TextBlock Text="Email (future)" Style="{StaticResource DetailLabelStyle}" />
+                                            <ui:TextBox Text="{Binding EditEmail, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="Not configured"
+                                                        Margin="0,0,0,10" />
+
+                                            <TextBlock Text="Role" Style="{StaticResource DetailLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding Roles}"
+                                                      SelectedItem="{Binding EditRole}"
+                                                      Margin="0,0,0,10">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Converter={StaticResource RoleDisplayConverter}}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+
+                                            <CheckBox Content="Account Active"
+                                                      IsChecked="{Binding EditIsActive}" />
+                                        </StackPanel>
                                     </Border>
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                        <ui:Button Content="Draw signature"
-                                                   Style="{StaticResource SecondaryButtonStyle}"
-                                                   Icon="{ui:SymbolIcon DrawImage24}"
-                                                   Command="{Binding DrawSignatureCommand}"
-                                                   Margin="0,0,8,0" />
-                                        <ui:Button Content="Upload image"
-                                                   Style="{StaticResource GhostButtonStyle}"
-                                                   Command="{Binding BrowseSignatureCommand}"
-                                                   Margin="0,0,8,0" />
-                                        <ui:Button Content="Remove"
-                                                   Style="{StaticResource GhostButtonStyle}"
-                                                   Command="{Binding ClearSignatureCommand}"
-                                                   IsEnabled="{Binding EditHasSignature}" />
-                                    </StackPanel>
+                                    <Border Style="{StaticResource AppCardQuietStyle}" Padding="14" Margin="0,0,0,12">
+                                        <StackPanel>
+                                            <TextBlock Text="Digital signature"
+                                                       Style="{StaticResource CardTitleStyle}"
+                                                       Margin="0,0,0,6" />
+                                            <TextBlock Text="Used on PDF reports this user prints. PNG with a transparent background works best."
+                                                       Style="{StaticResource CaptionTextStyle}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,0,0,10" />
 
-                                    <TextBlock Text="Security"
-                                               Style="{StaticResource CardTitleStyle}"
-                                               Margin="0,0,0,10" />
+                                            <Border Background="{StaticResource BrandInsetBrush}"
+                                                    CornerRadius="10"
+                                                    Padding="12"
+                                                    MinHeight="74"
+                                                    Margin="0,0,0,10">
+                                                <Grid>
+                                                    <TextBlock Text="No signature uploaded"
+                                                               Style="{StaticResource CaptionTextStyle}"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center"
+                                                               Visibility="{Binding EditHasSignature, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                                    <Image Source="{Binding EditSignatureImagePath, Converter={StaticResource PathToImageSourceConverter}}"
+                                                           MaxHeight="64"
+                                                           Stretch="Uniform"
+                                                           HorizontalAlignment="Left"
+                                                           Visibility="{Binding EditHasSignature, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                </Grid>
+                                            </Border>
 
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Last Login" Style="{StaticResource CaptionTextStyle}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding DetailLastLogin}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold" />
-                                    </Grid>
+                                            <WrapPanel>
+                                                <ui:Button Content="Draw signature"
+                                                           Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                                           Icon="{ui:SymbolIcon DrawImage24}"
+                                                           Command="{Binding DrawSignatureCommand}"
+                                                           Margin="{StaticResource ButtonGroupMargin}" />
+                                                <ui:Button Content="Upload image"
+                                                           Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                                           Command="{Binding BrowseSignatureCommand}"
+                                                           Margin="{StaticResource ButtonGroupMargin}" />
+                                                <ui:Button Content="Remove"
+                                                           Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                                           Command="{Binding ClearSignatureCommand}"
+                                                           IsEnabled="{Binding EditHasSignature}" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
 
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Password Changed" Style="{StaticResource CaptionTextStyle}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding DetailPasswordChanged}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold" />
-                                    </Grid>
+                                    <Border Style="{StaticResource AppCardQuietStyle}" Padding="14">
+                                        <StackPanel>
+                                            <TextBlock Text="Security"
+                                                       Style="{StaticResource CardTitleStyle}"
+                                                       Margin="0,0,0,10" />
 
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Created Date" Style="{StaticResource CaptionTextStyle}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding DetailCreated}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold" />
-                                    </Grid>
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Last Login" Style="{StaticResource CaptionTextStyle}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DetailLastLogin}"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                            </Grid>
 
-                                    <ui:Button Content="Unlock Account"
-                                               Appearance="Caution"
-                                               HorizontalAlignment="Stretch"
-                                               Command="{Binding UnlockUserCommand}"
-                                               Margin="0,8,0,0"
-                                               Visibility="{Binding DetailIsLocked, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Password Changed" Style="{StaticResource CaptionTextStyle}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DetailPasswordChanged}"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Created Date" Style="{StaticResource CaptionTextStyle}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DetailCreated}"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                            </Grid>
+
+                                            <ui:Button Content="Unlock Account"
+                                                       Appearance="Caution"
+                                                       HorizontalAlignment="Stretch"
+                                                       Command="{Binding UnlockUserCommand}"
+                                                       Margin="0,8,0,0"
+                                                       Visibility="{Binding DetailIsLocked, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <!-- Actions (single place) -->
-                            <StackPanel Grid.Row="2" Margin="0,12,0,0">
-                                <ui:Button Content="Save Changes"
-                                           Style="{StaticResource PrimaryButtonStyle}"
-                                           HorizontalAlignment="Stretch"
-                                           Command="{Binding SaveChangesCommand}"
-                                           Margin="0,0,0,6" />
-                                <ui:Button Content="Reset Password"
-                                           Style="{StaticResource SecondaryButtonStyle}"
-                                           HorizontalAlignment="Stretch"
-                                           Command="{Binding ResetPasswordCommand}"
-                                           Margin="0,0,0,6" />
-                                <ui:Button Content="{Binding ActivateDeactivateLabel}"
-                                           Style="{StaticResource SecondaryButtonStyle}"
-                                           HorizontalAlignment="Stretch"
-                                           Command="{Binding ToggleActiveCommand}"
-                                           Margin="0,0,0,6" />
-                                <ui:Button Content="Delete User"
-                                           Style="{StaticResource DangerButtonStyle}"
-                                           HorizontalAlignment="Stretch"
-                                           Command="{Binding DeleteUserCommand}" />
-                            </StackPanel>
+                            <Border Grid.Row="2"
+                                    Style="{StaticResource AppCardQuietStyle}"
+                                    Padding="12"
+                                    Margin="0,14,0,0">
+                                <WrapPanel>
+                                    <ui:Button Content="Save changes"
+                                               Style="{StaticResource GroupedPrimaryButtonExtraWideStyle}"
+                                               Command="{Binding SaveChangesCommand}"
+                                               Margin="{StaticResource ButtonGroupMargin}" />
+                                    <ui:Button Content="Reset password"
+                                               Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                               Command="{Binding ResetPasswordCommand}"
+                                               Margin="{StaticResource ButtonGroupMargin}" />
+                                    <ui:Button Content="{Binding ActivateDeactivateLabel}"
+                                               Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
+                                               Command="{Binding ToggleActiveCommand}"
+                                               Margin="{StaticResource ButtonGroupMargin}" />
+                                    <ui:Button Content="Delete user"
+                                               Style="{StaticResource GroupedDangerButtonExtraWideStyle}"
+                                               Command="{Binding DeleteUserCommand}" />
+                                </WrapPanel>
+                            </Border>
                         </Grid>
                     </Grid>
                 </ds:SurfaceCard>

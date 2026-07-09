@@ -36,7 +36,7 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{Binding SidebarWidth}" MinWidth="64" MaxWidth="220" />
+                <ColumnDefinition Width="{Binding SidebarWidth}" MinWidth="64" MaxWidth="280" />
                 <ColumnDefinition Width="*" MinWidth="480" />
             </Grid.ColumnDefinitions>
 
@@ -119,6 +119,10 @@
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
+                            <TextBlock Text="Main"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="12,0,0,8"
+                                       Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             <ui:Button Content="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarLabelConverter}, ConverterParameter=Dashboard}"
                                        Icon="{ui:SymbolIcon Home24}" ToolTip="Dashboard"
                                        Command="{Binding NavigateDashboardCommand}">
@@ -199,6 +203,10 @@
                                 </ui:Button.Style>
                             </ui:Button>
 
+                            <TextBlock Text="Admin"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="12,14,0,8"
+                                       Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             <ui:Button Content="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarLabelConverter}, ConverterParameter=Settings}"
                                        Icon="{ui:SymbolIcon Settings24}" ToolTip="Settings"
                                        Command="{Binding NavigateSettingsCommand}">

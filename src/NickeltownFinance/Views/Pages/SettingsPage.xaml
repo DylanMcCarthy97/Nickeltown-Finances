@@ -8,7 +8,7 @@
     <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="236" />
                 <ColumnDefinition Width="20" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -309,21 +309,21 @@
                                     </Grid>
                                 </Border>
 
-                                <StackPanel Orientation="Horizontal">
+                                <WrapPanel>
                                     <ui:Button Content="Draw signature"
-                                               Style="{StaticResource GroupedPrimaryButtonWideStyle}"
+                                               Style="{StaticResource GroupedPrimaryButtonExtraWideStyle}"
                                                Icon="{ui:SymbolIcon DrawImage24}"
                                                Command="{Binding DrawMySignatureCommand}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                               Margin="{StaticResource ButtonGroupMargin}" />
                                     <ui:Button Content="Upload image"
-                                               Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                                               Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
                                                Command="{Binding BrowseMySignatureCommand}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                               Margin="{StaticResource ButtonGroupMargin}" />
                                     <ui:Button Content="Remove"
-                                               Style="{StaticResource GroupedSecondaryButtonWideStyle}"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
                                                Command="{Binding ClearMySignatureCommand}"
                                                IsEnabled="{Binding HasMySignature}" />
-                                </StackPanel>
+                                </WrapPanel>
                                 <TextBlock Text="Draw with your mouse, trackpad, or pen. Upload is optional if you already have a signature image."
                                            Style="{StaticResource CaptionTextStyle}"
                                            Margin="0,10,0,0"
@@ -388,25 +388,25 @@
                                                TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <StackPanel Orientation="Horizontal">
+                                <WrapPanel>
                                     <ui:Button Content="Check for updates"
-                                               Style="{StaticResource GroupedPrimaryButtonStyle}"
+                                               Style="{StaticResource GroupedPrimaryButtonExtraWideStyle}"
                                                Icon="{ui:SymbolIcon ArrowSync24}"
                                                Command="{Binding CheckForUpdatesCommand}"
                                                IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBoolConverter}}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                               Margin="{StaticResource ButtonGroupMargin}" />
                                     <ui:Button Content="Install update"
-                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
                                                Icon="{ui:SymbolIcon ArrowDownload24}"
                                                Command="{Binding InstallUpdateCommand}"
                                                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}" />
+                                               Margin="{StaticResource ButtonGroupMargin}" />
                                     <ui:Button Content="Release notes"
-                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
                                                Icon="{ui:SymbolIcon Open24}"
                                                Command="{Binding OpenReleaseNotesCommand}"
                                                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                </StackPanel>
+                                </WrapPanel>
                             </StackPanel>
                         </ds:SurfaceCard>
                     </StackPanel>

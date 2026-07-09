@@ -281,62 +281,67 @@
     <Thickness x:Key="ButtonGroupMarginInline">0,0,8,0</Thickness>
 
     <Style x:Key="GroupedPrimaryButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="GroupedSecondaryButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="GroupedDangerButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource DangerButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="GroupedSuccessButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource SuccessButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="GroupedToolbarButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource ToolbarButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidth}" />
+        <Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
         <Setter Property="MinHeight" Value="36" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="GroupedToolbarButtonWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedToolbarButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthWide}" />
     </Style>
 
     <Style x:Key="GroupedPrimaryButtonWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedPrimaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthWide}" />
     </Style>
 
     <Style x:Key="GroupedSecondaryButtonWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedSecondaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthWide}" />
     </Style>
 
     <Style x:Key="GroupedDangerButtonWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedDangerButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthWide}" />
     </Style>
 
     <Style x:Key="GroupedSecondaryButtonExtraWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedSecondaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
     </Style>
 
     <Style x:Key="GroupedPrimaryButtonExtraWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedPrimaryButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
     </Style>
 
     <Style x:Key="GroupedDangerButtonExtraWideStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedDangerButtonStyle}">
-        <Setter Property="Width" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
+        <Setter Property="MinWidth" Value="{StaticResource ButtonGroupMinWidthExtraWide}" />
     </Style>
 
     <Style x:Key="TabFilterButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource GroupedSecondaryButtonStyle}">

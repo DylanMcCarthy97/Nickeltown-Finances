@@ -38,7 +38,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _activeNavKey = "Dashboard";
     [ObservableProperty] private bool _isSidebarCollapsed;
     [ObservableProperty] private bool _isAdministrator;
-    [ObservableProperty] private GridLength _sidebarWidth = new(220);
+    [ObservableProperty] private GridLength _sidebarWidth = new(260);
     [ObservableProperty] private string _clubName = string.Empty;
     [ObservableProperty] private ImageSource _clubLogoImage = null!;
     [ObservableProperty] private string _clockText = string.Empty;
@@ -200,7 +200,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     private void ApplySidebarWidth() =>
-        SidebarWidth = new GridLength(IsSidebarCollapsed ? 64 : 220);
+        SidebarWidth = new GridLength(IsSidebarCollapsed ? 64 : 260);
 
     [RelayCommand]
     private void NavigateDashboard() => Navigate("Dashboard", "Dashboard", typeof(DashboardViewModel));
