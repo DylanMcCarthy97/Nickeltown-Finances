@@ -30,9 +30,9 @@ public static class SquareCsvParser
             .ToList();
 
         var map = BuildColumnMap(headers);
-        if (map.NetIndex < 0 && map.GrossIndex < 0)
+        if (map.NetIndex < 0 && map.TotalCollectedIndex < 0 && map.GrossSalesIndex < 0)
             throw new InvalidOperationException(
-                "Square CSV must include Net Total / Net Amount or Gross Sales / Amount columns.");
+                "Square CSV must include Net Total / Net Amount or Gross Sales / Total Collected columns.");
 
         var warnings = new List<string>();
         var linesByDeposit = new Dictionary<string, List<SquareTransactionPreviewLine>>(StringComparer.OrdinalIgnoreCase);
@@ -126,16 +126,20 @@ public static class SquareCsvParser
     private sealed class ColumnMap
     {
         public int DateIndex = -1;
+        public int TimeIndex = -1;
         public int DepositDateIndex = -1;
         public int DepositIdIndex = -1;
-        public int GrossIndex = -1;
+        public int GrossSalesIndex = -1;
+        public int TotalCollectedIndex = -1;
         public int FeesIndex = -1;
         public int NetIndex = -1;
         public int CustomerIndex = -1;
         public int DescriptionIndex = -1;
+        public int TenderNoteIndex = -1;
         public int CategoryIndex = -1;
         public int PaymentMethodIndex = -1;
         public int TransactionIdIndex = -1;
+        public int PaymentIdIndex = -1;
     }
 
     private static ColumnMap BuildColumnMap(IReadOnlyList<string> headers)
@@ -146,26 +150,36 @@ public static class SquareCsvParser
             var h = headers[i].Trim().ToUpperInvariant();
             if (h is "DATE" or "TRANSACTION DATE" or "CREATED AT")
                 map.DateIndex = map.DateIndex < 0 ? i : map.DateIndex;
+            else if (h is "TIME")
+                map.TimeIndex = i;
             else if (h is "DEPOSIT DATE" or "PAYOUT DATE")
                 map.DepositDateIndex = i;
             else if (h is "DEPOSIT ID" or "PAYOUT ID" or "DEPOSITID")
                 map.DepositIdIndex = i;
-            else if (h is "GROSS SALES" or "GROSS AMOUNT" or "TOTAL COLLECTED" or "AMOUNT" or "TOTAL")
-                map.GrossIndex = map.GrossIndex < 0 ? i : map.GrossIndex;
+            else if (h is "TOTAL COLLECTED")
+                map.TotalCollectedIndex = i;
+            else if (h is "GROSS SALES" or "GROSS AMOUNT")
+                map.GrossSalesIndex = map.GrossSalesIndex < 0 ? i : map.GrossSalesIndex;
+            else if (h is "AMOUNT" or "TOTAL")
+                map.GrossSalesIndex = map.GrossSalesIndex < 0 ? i : map.GrossSalesIndex;
             else if (h is "FEES" or "FEE" or "PROCESSING FEES")
                 map.FeesIndex = i;
             else if (h is "NET TOTAL" or "NET AMOUNT" or "NET" or "PAYOUT AMOUNT")
                 map.NetIndex = i;
             else if (h is "CUSTOMER NAME" or "CUSTOMER" or "BUYER NAME")
                 map.CustomerIndex = i;
+            else if (h is "TENDER NOTE")
+                map.TenderNoteIndex = i;
             else if (h is "DESCRIPTION" or "DETAILS" or "ITEM" or "TRANSACTION TYPE")
                 map.DescriptionIndex = map.DescriptionIndex < 0 ? i : map.DescriptionIndex;
             else if (h is "CATEGORY" or "ITEM CATEGORY")
                 map.CategoryIndex = i;
             else if (h is "PAYMENT METHOD" or "CARD BRAND" or "SOURCE")
                 map.PaymentMethodIndex = map.PaymentMethodIndex < 0 ? i : map.PaymentMethodIndex;
-            else if (h is "TRANSACTION ID" or "PAYMENT ID" or "PAYMENTID")
-                map.TransactionIdIndex = map.TransactionIdIndex < 0 ? i : map.TransactionIdIndex;
+            else if (h is "TRANSACTION ID")
+                map.TransactionIdIndex = i;
+            else if (h is "PAYMENT ID" or "PAYMENTID")
+                map.PaymentIdIndex = i;
         }
 
         return map;
@@ -183,12 +197,24 @@ public static class SquareCsvParser
         if (!TryParseDate(dateText, out var date))
             return null;
 
+        var timeText = Get(map.TimeIndex);
+        var transactionTime = date.Date;
+        if (!string.IsNullOrWhiteSpace(timeText) &&
+            TimeSpan.TryParse(timeText, CultureInfo.InvariantCulture, out var timeOfDay))
+        {
+            transactionTime = date.Date.Add(timeOfDay);
+        }
+
         DateTime? depositDate = null;
         var depositDateText = Get(map.DepositDateIndex);
         if (TryParseDate(depositDateText, out var dd))
             depositDate = dd;
 
-        var gross = ParseMoney(Get(map.GrossIndex));
+        var gross = map.TotalCollectedIndex >= 0
+            ? ParseMoney(Get(map.TotalCollectedIndex))
+            : map.GrossSalesIndex >= 0
+                ? ParseMoney(Get(map.GrossSalesIndex))
+                : 0m;
         var fees = Math.Abs(ParseMoney(Get(map.FeesIndex)));
         var net = ParseMoney(Get(map.NetIndex));
         if (net == 0 && gross != 0)
@@ -200,9 +226,11 @@ public static class SquareCsvParser
 
         var depositId = Get(map.DepositIdIndex);
         var externalTxnId = Get(map.TransactionIdIndex);
-        var description = Get(map.DescriptionIndex);
-        if (string.IsNullOrWhiteSpace(description))
-            description = "Square sale";
+        var paymentId = Get(map.PaymentIdIndex);
+        var rawDescription = Get(map.DescriptionIndex);
+        var tenderNote = Get(map.TenderNoteIndex);
+        var customerColumn = Get(map.CustomerIndex);
+        var (description, customerName) = SquareDescriptionHelper.Parse(tenderNote, rawDescription, customerColumn);
 
         var fingerprint = ImportFingerprint.Compute(
             date,
@@ -213,10 +241,12 @@ public static class SquareCsvParser
         return new SquareTransactionPreviewLine
         {
             Date = date.Date,
+            TransactionTime = transactionTime,
             DepositDate = depositDate?.Date,
             ExternalDepositId = depositId,
-            CustomerName = Get(map.CustomerIndex),
+            CustomerName = customerName,
             Description = description,
+            PaymentId = paymentId,
             Category = Get(map.CategoryIndex),
             GrossAmount = gross,
             Fees = fees,

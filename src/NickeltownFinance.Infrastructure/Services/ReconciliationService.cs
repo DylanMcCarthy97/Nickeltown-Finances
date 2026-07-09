@@ -8,6 +8,9 @@ namespace NickeltownFinance.Infrastructure.Services;
 
 public class ReconciliationService : IReconciliationService
 {
+    private const decimal AmountTolerance = 0.01m;
+    private const int DateToleranceDays = 2;
+
     private static readonly string[] SquareTransferMarkers =
     [
         "TRANSFER FROM SQUARE",
@@ -75,7 +78,7 @@ public class ReconciliationService : IReconciliationService
                 continue;
 
             var amountMatches = unmatchedAnz
-                .Where(t => t.IncomeAmount == deposit.NetAmount)
+                .Where(t => AmountsMatch(t.IncomeAmount, deposit.NetAmount))
                 .Select(ToAnzItem)
                 .ToList();
 
@@ -222,7 +225,7 @@ public class ReconciliationService : IReconciliationService
     {
         var amount = txn.IncomeAmount > 0 ? txn.IncomeAmount : txn.ExpenseAmount;
         var unmatched = _depositRepository.GetUnmatched()
-            .Where(d => d.NetAmount == amount)
+            .Where(d => AmountsMatch(d.NetAmount, amount))
             .ToList();
 
         // Prefer deposit ID present in the bank description/reference.
@@ -235,8 +238,10 @@ public class ReconciliationService : IReconciliationService
         if (withId.Count == 1)
             return withId;
 
-        // Prefer deposit date within a few days of the bank credit.
-        var byDate = unmatched.Where(d => Math.Abs((d.DepositDate.Date - txn.Date.Date).TotalDays) <= 5).ToList();
+        // Prefer deposit date within tolerance of the bank credit.
+        var byDate = unmatched
+            .Where(d => Math.Abs((d.DepositDate.Date - txn.Date.Date).TotalDays) <= DateToleranceDays)
+            .ToList();
         if (byDate.Count == 1)
             return byDate;
 
@@ -245,6 +250,8 @@ public class ReconciliationService : IReconciliationService
 
         return unmatched;
     }
+
+    private static bool AmountsMatch(decimal a, decimal b) => Math.Abs(a - b) <= AmountTolerance;
 
     private void Link(Transaction txn, SquareDeposit deposit)
     {

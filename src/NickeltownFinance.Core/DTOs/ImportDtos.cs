@@ -179,6 +179,8 @@ public class SquareTransactionPreviewLine
 {
     public DateTime Date { get; set; }
 
+    public DateTime TransactionTime { get; set; }
+
     public DateTime? DepositDate { get; set; }
 
     public string ExternalDepositId { get; set; } = string.Empty;
@@ -186,6 +188,8 @@ public class SquareTransactionPreviewLine
     public string CustomerName { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
+
+    public string PaymentId { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;
 
@@ -462,4 +466,41 @@ public class CategorisationSuggestion
     public string CategoryName { get; set; } = string.Empty;
 
     public bool IsSquareDeposit { get; set; }
+}
+
+public class SquareDepositDetailDto
+{
+    public DateTime DepositDate { get; set; }
+
+    public decimal GrossSales { get; set; }
+
+    public decimal Fees { get; set; }
+
+    public decimal NetDeposit { get; set; }
+
+    public IReadOnlyList<SquareDepositItemGroupDto> Groups { get; set; } = [];
+}
+
+public class SquareDepositItemGroupDto
+{
+    public string Description { get; set; } = string.Empty;
+
+    public string DisplayTitle { get; set; } = string.Empty;
+
+    public decimal TotalAmount { get; set; }
+
+    public IReadOnlyList<SquareDepositLineItemDto> Items { get; set; } = [];
+}
+
+public class SquareDepositLineItemDto
+{
+    public string Description { get; set; } = string.Empty;
+
+    public string CustomerName { get; set; } = string.Empty;
+
+    public decimal Amount { get; set; }
+
+    public DateTime TransactionTime { get; set; }
+
+    public string? PaymentId { get; set; }
 }

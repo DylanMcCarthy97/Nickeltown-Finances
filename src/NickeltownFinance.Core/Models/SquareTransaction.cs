@@ -4,6 +4,7 @@ namespace NickeltownFinance.Core.Models;
 
 /// <summary>
 /// An individual Square sale/payment belonging to a <see cref="SquareDeposit"/>.
+/// Stored as <c>square_transactions</c> (Square deposit line item).
 /// </summary>
 public class SquareTransaction : BaseEntity
 {
@@ -13,11 +14,16 @@ public class SquareTransaction : BaseEntity
 
     public DateTime Date { get; set; }
 
+    /// <summary>Date and time the payment was taken (local club time).</summary>
+    public DateTime TransactionTime { get; set; }
+
     public DateTime? DepositDate { get; set; }
 
     public string CustomerName { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
+
+    public string PaymentId { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;
 

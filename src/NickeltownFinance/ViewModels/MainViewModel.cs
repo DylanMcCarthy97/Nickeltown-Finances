@@ -76,7 +76,7 @@ public partial class MainViewModel : ViewModelBase
         UserRoleDisplay = user?.Role.ToDisplayName() ?? string.Empty;
         IsAdministrator = user?.Role == UserRole.Administrator;
         LoadFinancialYears();
-        StatusText = $"Signed in as {UserDisplayName}";
+        StatusText = "Ready";
         ClockText = DateTime.Now.ToString("dd/MM/yyyy  •  HH:mm", System.Globalization.CultureInfo.InvariantCulture);
         NotificationCount = 0;
 

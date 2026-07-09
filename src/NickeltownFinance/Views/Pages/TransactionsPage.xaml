@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+             xmlns:vm="clr-namespace:NickeltownFinance.ViewModels"
              Style="{StaticResource PageRootStyle}">
     <UserControl.InputBindings>
         <KeyBinding Key="E" Modifiers="Control" Command="{Binding ExportCommand}" />
@@ -140,7 +141,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" MinWidth="280" />
                         <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=12}" />
-                        <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=260}" />
+                        <ColumnDefinition Width="{Binding ShowDetailPanel, Converter={StaticResource BoolToGridLengthConverter}, ConverterParameter=380}" />
                     </Grid.ColumnDefinitions>
 
                     <ds:AppDataGrid Grid.Column="0" ItemsSource="{Binding Transactions}"
@@ -164,15 +165,29 @@
                             </ContextMenu>
                         </ds:AppDataGrid.ContextMenu>
                         <ds:AppDataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="40">
+                            <DataGridTemplateColumn Header="" Width="72">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ui:Button Icon="{ui:SymbolIcon Attach24}"
-                                                   ToolTip="View receipts"
-                                                   Style="{StaticResource ToolbarButtonStyle}"
-                                                   Visibility="{Binding HasReceipt, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                   Click="ReceiptIcon_OnClick"
-                                                   Padding="4" />
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <ui:Button Icon="{ui:SymbolIcon Attach24}"
+                                                       ToolTip="View receipts"
+                                                       Style="{StaticResource ToolbarButtonStyle}"
+                                                       Visibility="{Binding HasReceipt, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                       Click="ReceiptIcon_OnClick"
+                                                       Padding="2" Margin="0,0,2,0" />
+                                            <ui:Button Icon="{ui:SymbolIcon Payment24}"
+                                                       ToolTip="{Binding SquareStatusToolTip}"
+                                                       Style="{StaticResource ToolbarButtonStyle}"
+                                                       Visibility="{Binding HasSquareDepositDetail, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                       Padding="2" Margin="0,0,2,0"
+                                                       Foreground="{StaticResource BrandSuccessBrush}" />
+                                            <ui:Button Icon="{ui:SymbolIcon Clock24}"
+                                                       ToolTip="{Binding SquareStatusToolTip}"
+                                                       Style="{StaticResource ToolbarButtonStyle}"
+                                                       Visibility="{Binding IsSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                       Padding="2"
+                                                       Foreground="{StaticResource BrandWarningBrush}" />
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -187,6 +202,20 @@
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="95" SortMemberPath="Date" />
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" SortMemberPath="Description" />
+                            <DataGridTemplateColumn Header="Square" Width="88" SortMemberPath="IsSquareDeposit">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ds:StatusBadge Text="Matched"
+                                                            Tone="Success"
+                                                            Visibility="{Binding HasSquareDepositDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            <ds:StatusBadge Text="Awaiting"
+                                                            Tone="Warning"
+                                                            Visibility="{Binding IsSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="110" SortMemberPath="CategoryName" />
                             <DataGridTemplateColumn Header="Income" Width="90" SortMemberPath="IncomeAmount">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -227,37 +256,143 @@
 
                     <Border Grid.Column="2" Style="{StaticResource AppCardQuietStyle}" Padding="16"
                             Visibility="{Binding ShowDetailPanel, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <StackPanel>
-                            <TextBlock Text="Transaction details" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
-                            <Border Height="120" CornerRadius="8" Background="#1e293b" Margin="0,0,0,12">
-                                <Image Source="{Binding DetailThumbnail}" Stretch="Uniform" MaxHeight="120" />
-                            </Border>
-                            <TextBlock Text="Receipt status" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBlock Text="{Binding DetailReceiptStatus}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,8" />
-                            <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBlock Text="{Binding SelectedTransaction.CategoryName, Mode=OneWay}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,8" />
-                            <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBlock Text="{Binding SelectedTransaction.Notes, Mode=OneWay}" Style="{StaticResource CaptionTextStyle}"
-                                       TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12">
-                                <Run Text="{Binding DetailAttachmentCount, Mode=OneWay}" />
-                                <Run Text=" attachment(s)" />
-                            </TextBlock>
-                            <UniformGrid Columns="2" Rows="2">
-                                <ui:Button Content="View receipt" Style="{StaticResource PrimaryButtonStyle}"
-                                           Command="{Binding ViewReceiptsCommand}"
-                                           HorizontalAlignment="Stretch" MinHeight="36" Margin="0,0,4,4" />
-                                <ui:Button Content="Replace" Style="{StaticResource SecondaryButtonStyle}"
-                                           Command="{Binding ReplaceReceiptCommand}"
-                                           HorizontalAlignment="Stretch" MinHeight="36" Margin="4,0,0,4" />
-                                <ui:Button Content="Add another" Style="{StaticResource SecondaryButtonStyle}"
-                                           Command="{Binding AddAnotherReceiptCommand}"
-                                           HorizontalAlignment="Stretch" MinHeight="36" Margin="0,4,4,0" />
-                                <ui:Button Content="Remove" Style="{StaticResource SecondaryButtonStyle}"
-                                           Command="{Binding RemoveReceiptCommand}"
-                                           HorizontalAlignment="Stretch" MinHeight="36" Margin="4,4,0,0" />
-                            </UniformGrid>
-                        </StackPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <!-- Square deposit breakdown -->
+                                <StackPanel Visibility="{Binding ShowSquareDetail, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Visibility="{Binding ShowSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="Awaiting Square match" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+                                        <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,12">
+                                            This bank deposit is from Square but hasn't been matched to a Square payout yet.
+                                            Import your Square transactions CSV to see what payments made up this deposit.
+                                        </TextBlock>
+                                        <ui:Button Content="Import Square CSV"
+                                                   Style="{StaticResource PrimaryButtonStyle}"
+                                                   Icon="{ui:SymbolIcon Payment24}"
+                                                   Command="{Binding ImportSquareStatementCommand}"
+                                                   HorizontalAlignment="Stretch" Margin="0,0,0,16" />
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding ShowSquareAwaitingMatch, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <TextBlock Text="Square Deposit" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Text="Deposit Date" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SquareDepositDate}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,10" />
+
+                                    <TextBlock Text="Gross Sales" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SquareGrossSales, Converter={StaticResource CurrencyConverter}}"
+                                               Style="{StaticResource BodyTextStyle}" Margin="0,0,0,10" />
+
+                                    <TextBlock Text="Square Fees" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SquareFees, Converter={StaticResource CurrencyConverter}}"
+                                               Style="{StaticResource BodyTextStyle}" Margin="0,0,0,10" />
+
+                                    <TextBlock Text="Net Deposit" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SquareNetDeposit, Converter={StaticResource CurrencyConverter}}"
+                                               Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Margin="0,0,0,16" />
+
+                                    <TextBlock Text="Transactions Included" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,8" />
+
+                                    <ItemsControl ItemsSource="{Binding SquareDepositGroups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:SquareDepositGroupViewModel}">
+                                                <Border Margin="0,0,0,8" Padding="0,0,0,4"
+                                                        BorderBrush="{DynamicResource BrandBorderBrush}"
+                                                        BorderThickness="0,0,0,1">
+                                                    <StackPanel>
+                                                        <Button Style="{StaticResource ToolbarButtonStyle}"
+                                                                HorizontalContentAlignment="Stretch"
+                                                                Padding="0,4"
+                                                                Command="{Binding DataContext.ToggleSquareGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" Margin="0,0,6,0" FontSize="11"
+                                                                           Foreground="{DynamicResource BrandMutedTextBrush}">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="▶" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                                                    <Setter Property="Text" Value="▼" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Grid.Column="1" Text="{Binding DisplayTitle}"
+                                                                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+                                                                <TextBlock Grid.Column="2" Text="{Binding TotalAmount, Converter={StaticResource CurrencyConverter}}"
+                                                                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+                                                            </Grid>
+                                                        </Button>
+
+                                                        <ItemsControl ItemsSource="{Binding Items}"
+                                                                      Margin="18,4,0,0"
+                                                                      Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Margin="0,0,0,10">
+                                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+                                                                        <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0">
+                                                                            <Run Text="• " />
+                                                                            <Run Text="{Binding CustomerName, Mode=OneWay}" />
+                                                                        </TextBlock>
+                                                                        <TextBlock Text="{Binding Amount, Converter={StaticResource CurrencyConverter}}"
+                                                                                   Style="{StaticResource BodyTextStyle}" Margin="0,2,0,0" />
+                                                                        <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0">
+                                                                            <Run Text="{Binding TransactionTime, StringFormat=dd/MM/yyyy h:mm tt, Mode=OneWay}" />
+                                                                        </TextBlock>
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Receipt details -->
+                                <StackPanel Visibility="{Binding ShowSquareDetail, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <TextBlock Text="Transaction details" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+                                    <Border Height="120" CornerRadius="8" Background="#1e293b" Margin="0,0,0,12">
+                                        <Image Source="{Binding DetailThumbnail}" Stretch="Uniform" MaxHeight="120" />
+                                    </Border>
+                                    <TextBlock Text="Receipt status" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding DetailReceiptStatus}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,8" />
+                                    <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SelectedTransaction.CategoryName, Mode=OneWay}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,8" />
+                                    <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SelectedTransaction.Notes, Mode=OneWay}" Style="{StaticResource CaptionTextStyle}"
+                                               TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12">
+                                        <Run Text="{Binding DetailAttachmentCount, Mode=OneWay}" />
+                                        <Run Text=" attachment(s)" />
+                                    </TextBlock>
+                                    <UniformGrid Columns="2" Rows="2">
+                                        <ui:Button Content="View receipt" Style="{StaticResource PrimaryButtonStyle}"
+                                                   Command="{Binding ViewReceiptsCommand}"
+                                                   HorizontalAlignment="Stretch" MinHeight="36" Margin="0,0,4,4" />
+                                        <ui:Button Content="Replace" Style="{StaticResource SecondaryButtonStyle}"
+                                                   Command="{Binding ReplaceReceiptCommand}"
+                                                   HorizontalAlignment="Stretch" MinHeight="36" Margin="4,0,0,4" />
+                                        <ui:Button Content="Add another" Style="{StaticResource SecondaryButtonStyle}"
+                                                   Command="{Binding AddAnotherReceiptCommand}"
+                                                   HorizontalAlignment="Stretch" MinHeight="36" Margin="0,4,4,0" />
+                                        <ui:Button Content="Remove" Style="{StaticResource SecondaryButtonStyle}"
+                                                   Command="{Binding RemoveReceiptCommand}"
+                                                   HorizontalAlignment="Stretch" MinHeight="36" Margin="4,4,0,0" />
+                                    </UniformGrid>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
                     </Border>
 
                     <ds:EmptyState Grid.Column="0" Grid.ColumnSpan="3" Title="{Binding EmptyTitle}"

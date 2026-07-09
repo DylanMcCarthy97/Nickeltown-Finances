@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStatementImportService, StatementImportService>();
         services.AddSingleton<ILegacyTreasurerImportService, LegacyTreasurerImportService>();
         services.AddSingleton<ISquareImportService, SquareImportService>();
+        services.AddSingleton<ISquareDepositService, SquareDepositService>();
         services.AddSingleton<IAttachmentService, AttachmentService>();
 
         services.AddSingleton<IReceiptImportItemRepository, ReceiptImportItemRepository>();

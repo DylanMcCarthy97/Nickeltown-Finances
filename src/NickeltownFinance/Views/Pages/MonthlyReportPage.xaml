@@ -55,8 +55,6 @@
                             <ColumnDefinition Width="*" MinWidth="120" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" MinWidth="120" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" MinWidth="120" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Cash on hand (petty cash)" Style="{StaticResource FieldLabelStyle}" />
@@ -65,10 +63,6 @@
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Bonds with the Shire" Style="{StaticResource FieldLabelStyle}" />
                             <ui:NumberBox Value="{Binding ShireBonds}" Minimum="0" SpinButtonPlacementMode="Hidden" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="4">
-                            <TextBlock Text="PayPal balance (optional)" Style="{StaticResource FieldLabelStyle}" />
-                            <ui:NumberBox Value="{Binding PayPalBalance}" Minimum="0" SpinButtonPlacementMode="Hidden" />
                         </StackPanel>
                     </Grid>
                     </StackPanel>
@@ -168,7 +162,6 @@
                                 <StackPanel>
                                     <ds:ReportLine Label="Cash on hand (petty cash)" Amount="{Binding CashOnHand}" />
                                     <ds:ReportLine Label="Bonds with the Shire" Amount="{Binding ShireBonds}" />
-                                    <ds:ReportLine Label="PayPal balance" Amount="{Binding PayPalBalance}" />
                                     <ds:ReportLine Label="Total moneys owned by the club" Amount="{Binding TotalFundsOwned}" IsBold="True" LineMargin="0,10,0,0" />
                                 </StackPanel>
                             </Border>

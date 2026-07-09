@@ -20,6 +20,7 @@ public partial class TransactionsViewModel : ViewModelBase
     private readonly IFinancialYearService _financialYearService;
     private readonly ICategoryService _categoryService;
     private readonly IAttachmentService _attachmentService;
+    private readonly ISquareDepositService _squareDepositService;
     private readonly INotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
 
@@ -43,6 +44,13 @@ public partial class TransactionsViewModel : ViewModelBase
     [ObservableProperty] private string _detailReceiptStatus = string.Empty;
     [ObservableProperty] private int _detailAttachmentCount;
     [ObservableProperty] private bool _showDetailPanel;
+    [ObservableProperty] private bool _showSquareDetail;
+    [ObservableProperty] private bool _showSquareAwaitingMatch;
+    [ObservableProperty] private string _squareDepositDate = string.Empty;
+    [ObservableProperty] private decimal _squareGrossSales;
+    [ObservableProperty] private decimal _squareFees;
+    [ObservableProperty] private decimal _squareNetDeposit;
+    [ObservableProperty] private ObservableCollection<SquareDepositGroupViewModel> _squareDepositGroups = [];
 
     public IReadOnlyList<string> ReceiptFilterOptions { get; } = ["Any", "With Receipts", "Missing Receipts"];
     public IReadOnlyList<string> TypeFilterOptions { get; } = ["All", "Income only", "Expense only"];
@@ -54,6 +62,7 @@ public partial class TransactionsViewModel : ViewModelBase
         IFinancialYearService financialYearService,
         ICategoryService categoryService,
         IAttachmentService attachmentService,
+        ISquareDepositService squareDepositService,
         INotificationService notificationService,
         IServiceProvider serviceProvider)
     {
@@ -61,6 +70,7 @@ public partial class TransactionsViewModel : ViewModelBase
         _financialYearService = financialYearService;
         _categoryService = categoryService;
         _attachmentService = attachmentService;
+        _squareDepositService = squareDepositService;
         _notificationService = notificationService;
         _serviceProvider = serviceProvider;
         ReceiptFilter = "Any";
@@ -171,17 +181,86 @@ public partial class TransactionsViewModel : ViewModelBase
         ShowDetailPanel = value is not null;
         if (value is null)
         {
-            DetailThumbnail = null;
-            DetailReceiptStatus = string.Empty;
-            DetailAttachmentCount = 0;
+            ClearDetailPanel();
             return;
         }
 
+        if (value.HasSquareDepositDetail)
+        {
+            ShowSquareAwaitingMatch = false;
+            _ = LoadSquareDepositDetailAsync(value.Id);
+            return;
+        }
+
+        if (value.IsSquareAwaitingMatch)
+        {
+            ShowSquareDetail = true;
+            ShowSquareAwaitingMatch = true;
+            DetailThumbnail = null;
+            DetailReceiptStatus = string.Empty;
+            DetailAttachmentCount = 0;
+            SquareDepositGroups = [];
+            return;
+        }
+
+        ShowSquareDetail = false;
+        ShowSquareAwaitingMatch = false;
         DetailReceiptStatus = value.ReceiptStatusText;
         DetailAttachmentCount = value.AttachmentCount;
         DetailThumbnail = string.IsNullOrWhiteSpace(value.ThumbnailPath) || !File.Exists(value.ThumbnailPath)
             ? null
             : Converters.ImageLoadHelper.LoadUnlocked(value.ThumbnailPath);
+    }
+
+    private void ClearDetailPanel()
+    {
+        ShowSquareDetail = false;
+        ShowSquareAwaitingMatch = false;
+        DetailThumbnail = null;
+        DetailReceiptStatus = string.Empty;
+        DetailAttachmentCount = 0;
+        SquareDepositGroups = [];
+        SquareDepositDate = string.Empty;
+        SquareGrossSales = 0;
+        SquareFees = 0;
+        SquareNetDeposit = 0;
+    }
+
+    private async Task LoadSquareDepositDetailAsync(ObjectId transactionId)
+    {
+        ShowSquareDetail = false;
+        DetailThumbnail = null;
+        DetailReceiptStatus = string.Empty;
+        DetailAttachmentCount = 0;
+
+        var detail = await _squareDepositService.GetDetailForBankTransactionAsync(transactionId);
+        if (detail is null || SelectedTransaction?.Id != transactionId)
+        {
+            ClearDetailPanel();
+            return;
+        }
+
+        ShowSquareDetail = true;
+        SquareDepositDate = detail.DepositDate.ToString("dd/MM/yyyy");
+        SquareGrossSales = detail.GrossSales;
+        SquareFees = detail.Fees;
+        SquareNetDeposit = detail.NetDeposit;
+        SquareDepositGroups = new ObservableCollection<SquareDepositGroupViewModel>(
+            detail.Groups.Select(g => new SquareDepositGroupViewModel(g)));
+    }
+
+    [RelayCommand]
+    private void ImportSquareStatement()
+    {
+        ImportViewModel.PendingStartupMode = ImportStartupMode.MonthlyAtSquare;
+        _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
+    }
+
+    [RelayCommand]
+    private void ToggleSquareGroup(SquareDepositGroupViewModel? group)
+    {
+        if (group is null) return;
+        group.IsExpanded = !group.IsExpanded;
     }
 
     [RelayCommand]
@@ -200,7 +279,11 @@ public partial class TransactionsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ImportStatement() => _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
+    private void ImportStatement()
+    {
+        ImportViewModel.PendingStartupMode = ImportStartupMode.Monthly;
+        _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
+    }
 
     [RelayCommand]
     private void AddTransaction() => OpenEditor(isIncome: false);

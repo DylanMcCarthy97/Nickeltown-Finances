@@ -24,8 +24,6 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="12" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="12" />
-                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="Cash on hand" Style="{StaticResource FieldLabelStyle}" />
@@ -34,10 +32,6 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Shire bonds" Style="{StaticResource FieldLabelStyle}" />
                                     <ui:NumberBox Value="{Binding ShireBonds}" Minimum="0" SpinButtonPlacementMode="Hidden" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="PayPal" Style="{StaticResource FieldLabelStyle}" />
-                                    <ui:NumberBox Value="{Binding PayPalBalance}" Minimum="0" SpinButtonPlacementMode="Hidden" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -124,7 +118,6 @@
                             <ds:ReportLine Label="{Binding ClosingBalanceTitle}" Amount="{Binding ClosingBalance}" IsBold="True" LineMargin="0,0,0,8" />
                             <ds:ReportLine Label="Cash on hand (petty cash)" Amount="{Binding CashOnHand}" />
                             <ds:ReportLine Label="Bonds with the Shire" Amount="{Binding ShireBonds}" />
-                            <ds:ReportLine Label="PayPal balance" Amount="{Binding PayPalBalance}" />
                             <ds:ReportLine Label="Total moneys owned by the club" Amount="{Binding TotalFundsOwned}" IsBold="True" LineMargin="0,0,0,8" />
 
                             <Grid Margin="0,16,0,0">

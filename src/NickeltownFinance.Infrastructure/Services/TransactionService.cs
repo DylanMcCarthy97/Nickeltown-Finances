@@ -453,7 +453,10 @@ public class TransactionService : ITransactionService
             IsDeleted = txn.IsDeleted,
             AttachmentCount = attachmentCount,
             HasReceipt = hasReceipt,
-            ThumbnailPath = thumb
+            ThumbnailPath = thumb,
+            IsSquareDeposit = txn.IsSquareDeposit,
+            HasSquareDepositDetail = txn.IsSquareDeposit && txn.SquareDepositId is not null,
+            SquareDepositId = txn.SquareDepositId
         };
     }
 

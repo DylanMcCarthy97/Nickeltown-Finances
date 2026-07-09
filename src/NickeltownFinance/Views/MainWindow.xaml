@@ -98,31 +98,10 @@
                                    Command="{Binding SignOutCommand}"
                                    Margin="0,0,0,8" />
 
-                        <Border Padding="10,12"
-                                CornerRadius="12"
-                                Background="{StaticResource BrandInsetBrush}"
-                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="{Binding UserDisplayName}"
-                                           FontSize="12"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource BrandTextPrimaryBrush}"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{Binding UserRoleDisplay}"
-                                           FontSize="11"
-                                           Foreground="{StaticResource BrandMutedTextBrush}"
-                                           TextTrimming="CharacterEllipsis"
-                                           Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Border>
                     </StackPanel>
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
-                            <TextBlock Text="Main"
-                                       Style="{StaticResource CaptionTextStyle}"
-                                       Margin="12,0,0,8"
-                                       Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             <ui:Button Content="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarLabelConverter}, ConverterParameter=Dashboard}"
                                        Icon="{ui:SymbolIcon Home24}" ToolTip="Dashboard"
                                        Command="{Binding NavigateDashboardCommand}">
@@ -203,10 +182,6 @@
                                 </ui:Button.Style>
                             </ui:Button>
 
-                            <TextBlock Text="Admin"
-                                       Style="{StaticResource CaptionTextStyle}"
-                                       Margin="12,14,0,8"
-                                       Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             <ui:Button Content="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarLabelConverter}, ConverterParameter=Settings}"
                                        Icon="{ui:SymbolIcon Settings24}" ToolTip="Settings"
                                        Command="{Binding NavigateSettingsCommand}">
@@ -318,11 +293,6 @@
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrandPrimaryBrush}"
                            Margin="16,0"
-                           VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2"
-                           Text="{Binding UserDisplayName}"
-                           FontSize="12"
-                           Foreground="{StaticResource BrandMutedTextBrush}"
                            VerticalAlignment="Center" />
             </Grid>
         </Border>

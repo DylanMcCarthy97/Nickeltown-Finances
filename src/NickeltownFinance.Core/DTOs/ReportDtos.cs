@@ -51,6 +51,22 @@ public class TransactionListItem
 
     public ObjectId CategoryId { get; set; } = ObjectId.Empty;
 
+    /// <summary>True for ANZ Square transfer credits.</summary>
+    public bool IsSquareDeposit { get; set; }
+
+    /// <summary>True when a matched Square deposit breakdown is available.</summary>
+    public bool HasSquareDepositDetail { get; set; }
+
+    public ObjectId? SquareDepositId { get; set; }
+
+    public bool IsSquareAwaitingMatch => IsSquareDeposit && !HasSquareDepositDetail;
+
+    public string SquareStatusToolTip => HasSquareDepositDetail
+        ? "Square deposit matched — click to view breakdown"
+        : IsSquareAwaitingMatch
+            ? "Awaiting Square match — import Square transactions CSV"
+            : string.Empty;
+
     /// <summary>True for expenses that still need a receipt attached.</summary>
     public bool ReceiptRequired => ExpenseAmount > 0 && !HasReceipt;
 }

@@ -133,6 +133,12 @@ public interface ISquareImportService
     Task<(bool Success, string? Error)> UndoImportAsync(ObjectId batchId);
 }
 
+public interface ISquareDepositService
+{
+    /// <summary>Returns matched Square deposit breakdown for a bank transaction, or null when not linked.</summary>
+    Task<SquareDepositDetailDto?> GetDetailForBankTransactionAsync(ObjectId transactionId);
+}
+
 public interface ILegacyTreasurerImportService
 {
     Task<LegacyTreasurerAnalyseResult> AnalyseAsync(string filePath);

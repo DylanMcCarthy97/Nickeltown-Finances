@@ -23,7 +23,7 @@ public partial class ImportPage
         Vm?.OpenMobileReceiptUploadCommand.Execute(null);
 
     private void OnBankCardClick(object sender, MouseButtonEventArgs e) =>
-        Vm?.StartAnzImportCommand.Execute(null);
+        Vm?.StartMonthlyImportCommand.Execute(null);
 
     private void OnLegacyReportCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.StartLegacyImportCommand.Execute(null);
@@ -65,7 +65,7 @@ public partial class ImportPage
             return;
         }
 
-        Vm.StartAnzImportCommand.Execute(null);
+        Vm.StartMonthlyImportCommand.Execute(null);
         await Vm.AnalyseFileAsync(bankFile);
     }
 }

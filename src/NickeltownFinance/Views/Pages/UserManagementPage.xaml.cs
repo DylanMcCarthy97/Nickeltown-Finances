@@ -19,4 +19,10 @@ public partial class UserManagementPage : UserControl
         if (DataContext is UserManagementViewModel vm)
             vm.BrowseProfilePictureCommand.Execute(null);
     }
+
+    private void CloseEditor_OnClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (DataContext is UserManagementViewModel vm)
+            vm.SelectedUser = null;
+    }
 }

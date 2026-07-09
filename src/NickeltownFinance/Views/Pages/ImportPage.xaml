@@ -15,7 +15,7 @@
                 <StackPanel Margin="0,0,8,24">
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Imports" Style="{StaticResource PageTitleStyle}" />
-                        <TextBlock Text="Import your ANZ bank statement. Choose CSV, preview, review categories, import — done."
+                        <TextBlock Text="Import your monthly ANZ statement and Square transactions. The ledger stays clean — Square explains each deposit."
                                    Style="{StaticResource PageSubtitleStyle}" />
                     </StackPanel>
 
@@ -66,12 +66,12 @@
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
                                         HorizontalAlignment="Left">
-                                    <ui:SymbolIcon Symbol="BuildingBank24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
+                                    <ui:SymbolIcon Symbol="CalendarArrowCounterclockwise24" FontSize="22" Foreground="{StaticResource BrandPrimaryBrush}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <TextBlock Text="Import ANZ Statement" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBlock Text="CSV or Excel from internet banking" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
-                                <TextBlock Text="{Binding LastBankImportText, StringFormat=Last: {0}}" Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="Import Monthly Statements" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="Step 1: ANZ bank CSV · Step 2: Square CSV" Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,8" />
+                                <TextBlock Text="{Binding LastBankImportText, StringFormat=Last ANZ: {0}}" Style="{StaticResource MutedTextStyle}" />
                             </StackPanel>
                         </Border>
 
@@ -127,9 +127,9 @@
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <ds:StatisticCard Grid.Column="0" Title="Waiting review" Body="{Binding TransactionsWaitingReview}" />
-                        <ds:StatisticCard Grid.Column="2" Title="Duplicates found" Body="{Binding DuplicatesFound}" />
-                        <ds:StatisticCard Grid.Column="4" Title="Last bank import" Body="{Binding LastBankImportText}" />
+                        <ds:StatisticCard Grid.Column="0" Title="Square waiting match" Body="{Binding SquareDepositsWaitingMatch}" />
+                        <ds:StatisticCard Grid.Column="2" Title="Matched deposits" Body="{Binding MatchedDeposits}" />
+                        <ds:StatisticCard Grid.Column="4" Title="Last Square import" Body="{Binding LastSquareImportText}" />
                     </Grid>
                 </StackPanel>
             </ScrollViewer>
@@ -153,26 +153,36 @@
                                Command="{Binding ShowHubCommand}" />
                 </Grid>
 
-                <!-- Step 1 unused for ANZ-first flow; StartAnzImport jumps to step 2 -->
-                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
+                <!-- Step 1: Monthly intro -->
+                <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="32"
                         Visibility="{Binding ShowStep1, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <ui:SymbolIcon Symbol="BuildingBank24" FontSize="40" Foreground="{StaticResource BrandPrimaryBrush}"
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
+                        <ui:SymbolIcon Symbol="CalendarArrowCounterclockwise24" FontSize="44"
+                                       Foreground="{StaticResource BrandPrimaryBrush}"
                                        HorizontalAlignment="Center" Margin="0,0,0,16" />
-                        <TextBlock Text="ANZ Bank Statement" Style="{StaticResource SectionTitleStyle}" HorizontalAlignment="Center" />
-                        <TextBlock Text="Import your bank statement CSV or Excel export."
-                                   Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Center" Margin="0,8,0,16" />
-                        <ui:Button Content="Continue" Style="{StaticResource PrimaryButtonStyle}"
-                                   Command="{Binding StartAnzImportCommand}" HorizontalAlignment="Center" />
+                        <TextBlock Text="Monthly statement import" Style="{StaticResource SectionTitleStyle}" HorizontalAlignment="Center" />
+                        <TextBlock TextWrapping="Wrap" TextAlignment="Center" Style="{StaticResource BodyTextStyle}" Margin="0,12,0,20">
+                            <Run Text="1. Import your " /><Run FontWeight="SemiBold" Text="ANZ bank statement" /><Run Text=" — this updates the ledger." />
+                            <LineBreak /><LineBreak />
+                            <Run Text="2. Import your " /><Run FontWeight="SemiBold" Text="Square transactions CSV" /><Run Text=" — deposits are matched automatically." />
+                            <LineBreak /><LineBreak />
+                            <Run Text="Square sales are never added to the ledger. They only explain what each bank deposit contains." />
+                        </TextBlock>
+                        <ui:Button Content="Get started" Style="{StaticResource PrimaryButtonStyle}"
+                                   Command="{Binding NextStepCommand}" HorizontalAlignment="Center" />
                     </StackPanel>
                 </Border>
 
-                <!-- Step 2: File -->
+                <!-- Step 2 / 5: File -->
                 <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
                         Visibility="{Binding ShowStep2, Converter={StaticResource BoolToVisibilityConverter}}">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="40" Foreground="{StaticResource BrandPrimaryBrush}"
-                                       HorizontalAlignment="Center" Margin="0,0,0,16" />
+                                       HorizontalAlignment="Center" Margin="0,0,0,16"
+                                       Visibility="{Binding IsSquareFileStep, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                        <ui:SymbolIcon Symbol="Payment24" FontSize="40" Foreground="{StaticResource BrandPrimaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16"
+                                       Visibility="{Binding IsSquareFileStep, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <TextBlock Text="{Binding SummaryText}" Style="{StaticResource BodyTextStyle}" TextAlignment="Center" Margin="0,0,0,8" />
                         <TextBlock Text="{Binding FileName}" Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Center" Margin="0,0,0,16" />
                         <ui:Button Content="Select file" Icon="{ui:SymbolIcon FolderOpen24}"
@@ -200,7 +210,7 @@
 
                         <!-- ANZ preview -->
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
-                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowAnzWizardContent, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
@@ -214,7 +224,7 @@
 
                         <!-- Square grid -->
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding SquareRows}" IsReadOnly="False"
-                                        Visibility="{Binding IsSquareImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowSquareWizardContent, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Deposit Date" Binding="{Binding DepositDate, StringFormat=dd/MM/yyyy}" Width="110" IsReadOnly="True" />
@@ -239,7 +249,7 @@
                         <TextBlock Text="{Binding SummaryText}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
 
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
-                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowAnzWizardContent, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
@@ -264,7 +274,7 @@
                         </ds:AppDataGrid>
 
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding SquareRows}" IsReadOnly="False"
-                                        Visibility="{Binding IsSquareImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowSquareWizardContent, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Deposit Date" Binding="{Binding DepositDate, StringFormat=dd/MM/yyyy}" Width="110" IsReadOnly="True" />
@@ -277,29 +287,50 @@
                     </Grid>
                 </Border>
 
-                <!-- Step 5: Summary -->
+                <!-- Step 5 / 8: Summary -->
                 <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" Padding="24"
                         Visibility="{Binding ShowStep5, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel DataContext="{Binding LastResult}">
-                        <TextBlock Text="Import complete" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,16" />
-                        <UniformGrid Columns="4">
-                            <StackPanel Margin="0,0,12,12">
-                                <TextBlock Text="Imported" Style="{StaticResource DetailLabelStyle}" />
-                                <TextBlock Text="{Binding Imported}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandIncomeBrush}" />
-                            </StackPanel>
-                            <StackPanel Margin="0,0,12,12">
-                                <TextBlock Text="Skipped" Style="{StaticResource DetailLabelStyle}" />
-                                <TextBlock Text="{Binding Skipped}" FontSize="28" FontWeight="SemiBold" />
-                            </StackPanel>
-                            <StackPanel Margin="0,0,12,12">
-                                <TextBlock Text="Duplicates" Style="{StaticResource DetailLabelStyle}" />
-                                <TextBlock Text="{Binding Duplicates}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandAccentBrush}" />
-                            </StackPanel>
-                            <StackPanel Margin="0,0,12,12">
-                                <TextBlock Text="Errors" Style="{StaticResource DetailLabelStyle}" />
-                                <TextBlock Text="{Binding Errors}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandExpenseBrush}" />
-                            </StackPanel>
-                        </UniformGrid>
+                    <StackPanel>
+                        <StackPanel DataContext="{Binding LastResult}">
+                            <TextBlock Text="Import complete" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,16" />
+                            <UniformGrid Columns="4">
+                                <StackPanel Margin="0,0,12,12">
+                                    <TextBlock Text="Imported" Style="{StaticResource DetailLabelStyle}" />
+                                    <TextBlock Text="{Binding Imported}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandIncomeBrush}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,12">
+                                    <TextBlock Text="Skipped" Style="{StaticResource DetailLabelStyle}" />
+                                    <TextBlock Text="{Binding Skipped}" FontSize="28" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,12">
+                                    <TextBlock Text="Duplicates" Style="{StaticResource DetailLabelStyle}" />
+                                    <TextBlock Text="{Binding Duplicates}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandAccentBrush}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,12">
+                                    <TextBlock Text="Errors" Style="{StaticResource DetailLabelStyle}" />
+                                    <TextBlock Text="{Binding Errors}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BrandExpenseBrush}" />
+                                </StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,16,0,0"
+                                    Visibility="{Binding IsMonthlyImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Square matching" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Style="{StaticResource BodyTextStyle}" Margin="0,4,0,12" TextWrapping="Wrap">
+                                <Run Text="{Binding MatchedDeposits, Mode=OneWay}" />
+                                <Run Text=" deposits matched automatically." />
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12"
+                                       Visibility="{Binding HasSquareNeedsReview, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Run Text="{Binding NeedsReviewCount, Mode=OneWay}" />
+                                <Run Text=" deposit(s) need manual review." />
+                            </TextBlock>
+                            <ui:Button Content="Review unmatched deposits"
+                                       Style="{StaticResource SecondaryButtonStyle}"
+                                       Command="{Binding ShowReconciliationCommand}"
+                                       HorizontalAlignment="Left"
+                                       Visibility="{Binding HasSquareNeedsReview, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
