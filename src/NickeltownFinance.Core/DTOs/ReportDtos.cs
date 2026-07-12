@@ -1,4 +1,5 @@
 using LiteDB;
+using NickeltownFinance.Core.Enums;
 using NickeltownFinance.Core.Formatting;
 
 namespace NickeltownFinance.Core.DTOs;
@@ -154,6 +155,76 @@ public class ReportTransactionLine
     public string MoneyInDisplay => MoneyIn > 0 ? MoneyIn.ToString("C") : "—";
 
     public string MoneyOutDisplay => MoneyOut > 0 ? MoneyOut.ToString("C") : "—";
+
+    /// <summary>Square line-item breakdown when this bank row is a matched Square deposit.</summary>
+    public IReadOnlyList<SquareBreakdownLine> SquareItems { get; set; } = [];
+
+    public bool HasSquareItems => SquareItems.Count > 0;
+}
+
+public class SquareBreakdownLine
+{
+    public string Section { get; set; } = string.Empty;
+
+    public string ItemName { get; set; } = string.Empty;
+
+    public int Quantity { get; set; }
+
+    public decimal Amount { get; set; }
+
+    public string Label => Quantity > 1 ? $"{Quantity} × {ItemName}" : ItemName;
+
+    public string AmountDisplay => Amount > 0 ? Amount.ToString("C") : "—";
+}
+
+public class SquareBreakdownSection
+{
+    public string SectionName { get; set; } = string.Empty;
+
+    public IReadOnlyList<SquareBreakdownLine> Items { get; set; } = [];
+
+    public decimal SectionTotal { get; set; }
+}
+
+public class MonthDocumentInfo
+{
+    public ObjectId Id { get; set; } = ObjectId.Empty;
+
+    public int Year { get; set; }
+
+    public int Month { get; set; }
+
+    public MonthDocumentKind Kind { get; set; }
+
+    public string Title { get; set; } = string.Empty;
+
+    public string FileName { get; set; } = string.Empty;
+
+    public string FullPath { get; set; } = string.Empty;
+
+    public string? ThumbnailFullPath { get; set; }
+
+    public string ContentType { get; set; } = string.Empty;
+
+    public long SizeBytes { get; set; }
+
+    public string SizeDisplay => SizeBytes < 1024 * 1024
+        ? $"{SizeBytes / 1024.0:0.0} KB"
+        : $"{SizeBytes / (1024.0 * 1024.0):0.00} MB";
+
+    public DateTime DateAdded { get; set; }
+
+    public string AddedByName { get; set; } = string.Empty;
+
+    public bool IsImage { get; set; }
+
+    public bool IsPdf { get; set; }
+
+    public int PageCount { get; set; } = 1;
+
+    public IReadOnlyList<string> PreviewFullPaths { get; set; } = [];
+
+    public string DisplayLabel => string.IsNullOrWhiteSpace(Title) ? FileName : Title;
 }
 
 public class MonthlyReportData
@@ -204,6 +275,16 @@ public class MonthlyReportData
 
     /// <summary>Individual transactions with bank descriptions and categories.</summary>
     public IReadOnlyList<ReportTransactionLine> Transactions { get; set; } = [];
+
+    /// <summary>Aggregated Square sales behind matched bank deposits this month.</summary>
+    public IReadOnlyList<SquareBreakdownSection> SquareBreakdown { get; set; } = [];
+
+    public bool HasSquareBreakdown => SquareBreakdown.Count > 0;
+
+    /// <summary>Pitstop end-of-day reports attached to this calendar month.</summary>
+    public IReadOnlyList<MonthDocumentInfo> PitstopReports { get; set; } = [];
+
+    public bool HasPitstopReports => PitstopReports.Count > 0;
 
     public int TransactionCount => Transactions.Count;
 

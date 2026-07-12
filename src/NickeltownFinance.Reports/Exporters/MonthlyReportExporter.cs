@@ -102,6 +102,46 @@ public static class MonthlyReportExporter
                 r.ConstantItem(100).AlignRight().Text(data.TotalFundsOwned.ToString("C")).Bold();
             });
 
+            // Square breakdown for matched deposits
+            if (data.HasSquareBreakdown)
+            {
+                col.Item().PaddingTop(14).Text("Square transfer breakdown").Bold().FontSize(12).FontColor(Colors.Black);
+                col.Item().PaddingTop(2).Text("What made up the matched Square deposits this month.")
+                    .FontSize(9).FontColor(Colors.Grey.Medium);
+
+                foreach (var section in data.SquareBreakdown)
+                {
+                    col.Item().PaddingTop(8).Text(section.SectionName).SemiBold().FontSize(10);
+                    foreach (var item in section.Items)
+                    {
+                        col.Item().PaddingTop(2).PaddingLeft(8).Row(r =>
+                        {
+                            r.RelativeItem().Text(item.Label);
+                            r.ConstantItem(72).AlignRight().Text(item.Amount > 0 ? item.Amount.ToString("C") : "—");
+                        });
+                    }
+
+                    col.Item().PaddingTop(2).PaddingLeft(8).Row(r =>
+                    {
+                        r.RelativeItem().Text("Section total").SemiBold();
+                        r.ConstantItem(72).AlignRight().Text(section.SectionTotal.ToString("C")).SemiBold();
+                    });
+                }
+            }
+
+            if (data.HasPitstopReports)
+            {
+                col.Item().PaddingTop(14).Text("Pitstop event reports").Bold().FontSize(12).FontColor(Colors.Black);
+                col.Item().PaddingTop(2).Text("ClubPOS end-of-day reports attached to this month.")
+                    .FontSize(9).FontColor(Colors.Grey.Medium);
+
+                foreach (var report in data.PitstopReports)
+                {
+                    col.Item().PaddingTop(4).PaddingLeft(8).Text($"• {report.DisplayLabel} ({report.FileName})")
+                        .FontSize(10);
+                }
+            }
+
             // Transaction detail — bank descriptions
             col.Item().PaddingTop(16).Text("Bank transactions").Bold().FontSize(12).FontColor(Colors.Black);
             col.Item().Text("As shown on the ANZ statement, with the category assigned in Nickeltown Finance.")
@@ -146,6 +186,20 @@ public static class MonthlyReportExporter
                             .Text(txn.MoneyIn > 0 ? txn.MoneyIn.ToString("C") : "—");
                         table.Cell().Element(c => BodyCell(c, bg)).AlignRight()
                             .Text(txn.MoneyOut > 0 ? txn.MoneyOut.ToString("C") : "—");
+
+                        if (txn.HasSquareItems)
+                        {
+                            foreach (var item in txn.SquareItems)
+                            {
+                                table.Cell().Element(c => BodyCell(c, bg)).Text("").FontSize(7);
+                                table.Cell().Element(c => BodyCell(c, bg)).PaddingLeft(10)
+                                    .Text($"↳ {item.Label}").FontSize(7).FontColor(Colors.Grey.Darken1);
+                                table.Cell().Element(c => BodyCell(c, bg)).Text("Square").FontSize(7).FontColor(Colors.Grey.Medium);
+                                table.Cell().Element(c => BodyCell(c, bg)).AlignRight()
+                                    .Text(item.Amount > 0 ? item.Amount.ToString("C") : "—").FontSize(7);
+                                table.Cell().Element(c => BodyCell(c, bg)).Text("—").FontSize(7);
+                            }
+                        }
                     }
                 });
 
@@ -422,6 +476,40 @@ public static class MonthlyReportExporter
         }
 
         tx.Columns().AdjustToContents();
+
+        if (data.HasSquareBreakdown)
+        {
+            var sq = wb.Worksheets.Add("Square breakdown");
+            sq.Cell(1, 1).Value = "Section";
+            sq.Cell(1, 2).Value = "Item";
+            sq.Cell(1, 3).Value = "Quantity";
+            sq.Cell(1, 4).Value = "Amount";
+            sq.Range(1, 1, 1, 4).Style.Font.Bold = true;
+
+            var sqRow = 2;
+            foreach (var section in data.SquareBreakdown)
+            {
+                foreach (var item in section.Items)
+                {
+                    sq.Cell(sqRow, 1).Value = section.SectionName;
+                    sq.Cell(sqRow, 2).Value = item.ItemName;
+                    sq.Cell(sqRow, 3).Value = item.Quantity;
+                    sq.Cell(sqRow, 4).Value = item.Amount;
+                    sq.Cell(sqRow, 4).Style.NumberFormat.Format = "$#,##0.00";
+                    sqRow++;
+                }
+
+                sq.Cell(sqRow, 1).Value = section.SectionName;
+                sq.Cell(sqRow, 2).Value = "Section total";
+                sq.Cell(sqRow, 4).Value = section.SectionTotal;
+                sq.Cell(sqRow, 4).Style.NumberFormat.Format = "$#,##0.00";
+                sq.Row(sqRow).Style.Font.Bold = true;
+                sqRow += 2;
+            }
+
+            sq.Columns().AdjustToContents();
+        }
+
         wb.SaveAs(outputPath);
         return outputPath;
     }

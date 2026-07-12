@@ -3,6 +3,7 @@ using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
+using NickeltownFinance.Infrastructure.Import;
 using NickeltownFinance.Reports.Exporters;
 
 namespace NickeltownFinance.Infrastructure.Services;
@@ -18,6 +19,8 @@ public class ReportService : IReportService
     private readonly IUserRepository _userRepository;
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly ITreasurerMonthSnapshotRepository _snapshotRepository;
+    private readonly ISquareTransactionRepository _squareTransactionRepository;
+    private readonly IMonthDocumentService _monthDocumentService;
 
     public ReportService(
         IFinancialYearRepository financialYearRepository,
@@ -28,7 +31,9 @@ public class ReportService : IReportService
         ISessionService sessionService,
         IUserRepository userRepository,
         IAttachmentRepository attachmentRepository,
-        ITreasurerMonthSnapshotRepository snapshotRepository)
+        ITreasurerMonthSnapshotRepository snapshotRepository,
+        ISquareTransactionRepository squareTransactionRepository,
+        IMonthDocumentService monthDocumentService)
     {
         _financialYearRepository = financialYearRepository;
         _financialYearService = financialYearService;
@@ -39,6 +44,8 @@ public class ReportService : IReportService
         _userRepository = userRepository;
         _attachmentRepository = attachmentRepository;
         _snapshotRepository = snapshotRepository;
+        _squareTransactionRepository = squareTransactionRepository;
+        _monthDocumentService = monthDocumentService;
     }
 
     public Task<MonthlyReportData> BuildMonthlyReportAsync(ObjectId financialYearId, int year, int month, string notes = "")
@@ -80,13 +87,26 @@ public class ReportService : IReportService
             .OrderByDescending(x => x.Amount)
             .ToList();
 
+        var squareLinesByDeposit = monthTxns
+            .Where(t => t.SquareDepositId is not null)
+            .Select(t => t.SquareDepositId!)
+            .Distinct()
+            .ToDictionary(
+                id => id,
+                id => _squareTransactionRepository.GetByDeposit(id).ToList());
+
+        var allSquareLines = squareLinesByDeposit.Values.SelectMany(v => v).ToList();
+
         var transactions = monthTxns.Select(t => new ReportTransactionLine
         {
             Date = t.Date,
             Description = string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description.Trim(),
             CategoryName = categories.GetValueOrDefault(t.CategoryId)?.Name ?? "Uncategorised",
             MoneyIn = t.IncomeAmount,
-            MoneyOut = t.ExpenseAmount
+            MoneyOut = t.ExpenseAmount,
+            SquareItems = t.SquareDepositId is { } depositId && squareLinesByDeposit.TryGetValue(depositId, out var depositLines)
+                ? SquareDescriptionHelper.BuildBreakdownLines(depositLines)
+                : []
         }).ToList();
 
         var totalIncome = incomeByCat.Sum(x => x.Amount);
@@ -108,6 +128,12 @@ public class ReportService : IReportService
             TotalExpenses = totalExpenses,
             MonthlyProfit = totalIncome - totalExpenses,
             Transactions = transactions,
+            SquareBreakdown = SquareDescriptionHelper.BuildBreakdownSections(allSquareLines),
+            PitstopReports = _monthDocumentService
+                .GetForMonthAsync(year, month)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult(),
             Notes = notes,
             PreparedBy = preparedBy,
             PreparedByRole = role,

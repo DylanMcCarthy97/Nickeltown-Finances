@@ -189,6 +189,8 @@ public class SquareTransactionPreviewLine
 
     public string Description { get; set; } = string.Empty;
 
+    public string Location { get; set; } = string.Empty;
+
     public string PaymentId { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;

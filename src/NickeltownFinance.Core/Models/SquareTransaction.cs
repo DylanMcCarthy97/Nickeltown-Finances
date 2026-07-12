@@ -23,6 +23,9 @@ public class SquareTransaction : BaseEntity
 
     public string Description { get; set; } = string.Empty;
 
+    /// <summary>Square location (e.g. Bar, Pitstop).</summary>
+    public string Location { get; set; } = string.Empty;
+
     public string PaymentId { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;

@@ -1,4 +1,4 @@
-using LiteDB;
+﻿using LiteDB;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Infrastructure.Import;
@@ -37,7 +37,7 @@ public class SquareDepositService : ISquareDepositService
             .ToList();
 
         var groups = lines
-            .GroupBy(l => l.Description, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(l => SquareDescriptionHelper.GetGroupKey(l.Description), StringComparer.OrdinalIgnoreCase)
             .OrderBy(g => g.Key)
             .Select(g =>
             {

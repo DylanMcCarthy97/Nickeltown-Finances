@@ -40,4 +40,10 @@ public static class DocumentPreviewPaths
 
     public static string GetAttachmentThumbnailPath(LiteDB.ObjectId transactionId, LiteDB.ObjectId attachmentId) =>
         Path.Combine(GetAttachmentPreviewDirectory(transactionId, attachmentId), "thumbnail.jpg");
+
+    public static string GetMonthDocumentPreviewDirectory(LiteDB.ObjectId documentId) =>
+        Path.Combine(AppPaths.MonthDocumentsPath, documentId.ToString(), "previews");
+
+    public static string GetMonthDocumentPagePath(LiteDB.ObjectId documentId, int pageNumber) =>
+        Path.Combine(GetMonthDocumentPreviewDirectory(documentId), $"page{pageNumber}.jpg");
 }

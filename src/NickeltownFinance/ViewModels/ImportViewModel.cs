@@ -15,8 +15,8 @@ namespace NickeltownFinance.ViewModels;
 public enum ImportStartupMode
 {
     None,
-    Monthly,
-    MonthlyAtSquare
+    Anz,
+    Square
 }
 
 public partial class ImportViewModel : ViewModelBase
@@ -96,72 +96,37 @@ public partial class ImportViewModel : ViewModelBase
     public bool IsWizard => Section == "Wizard";
     public bool IsHistory => Section == "History";
     public bool IsRules => Section == "Rules";
-    public bool IsMonthlyImport => ImportType == "Monthly";
     public bool IsAnzImport => ImportType == "ANZ";
     public bool IsSquareImport => ImportType == "Square";
     public bool IsLegacyImport => ImportType == "Legacy";
-    public bool ShowAnzWizardContent => IsMonthlyImport ? WizardStep is >= 2 and <= 4 : IsAnzImport;
-    public bool ShowSquareWizardContent => IsMonthlyImport ? WizardStep is >= 5 and <= 7 : IsSquareImport;
-    public bool IsSquareFileStep => IsMonthlyImport && WizardStep == 5;
     public bool ShowDropZone => !HasPreview && !ShowMapping;
-    public bool CanGoNext => IsMonthlyImport
-        ? WizardStep switch
-        {
-            1 => true,
-            2 or 5 => HasPreview || ShowMapping,
-            3 or 6 => HasPreview,
-            4 or 7 => HasPreview && TransactionsToImport > 0,
-            _ => false
-        }
-        : WizardStep switch
-        {
-            1 => !string.IsNullOrWhiteSpace(ImportType),
-            2 => HasPreview || ShowMapping,
-            3 => HasPreview,
-            4 => HasPreview && TransactionsToImport > 0,
-            _ => false
-        };
-    public bool CanGoBack => IsMonthlyImport
-        ? WizardStep is > 1 and < 8 and not 5
-        : WizardStep > 1 && WizardStep < 5;
-    public bool ShowStep1 => IsMonthlyImport && WizardStep == 1;
-    public bool ShowStep2 => IsMonthlyImport ? WizardStep is 2 or 5 : WizardStep == 2;
-    public bool ShowStep3 => IsMonthlyImport ? WizardStep is 3 or 6 : WizardStep == 3;
-    public bool ShowStep4 => IsMonthlyImport ? WizardStep is 4 or 7 : WizardStep == 4;
-    public bool ShowStep5 => IsMonthlyImport ? WizardStep == 8 : WizardStep == 5;
-    public string WizardTitle => IsMonthlyImport
-        ? WizardStep switch
-        {
-            1 => "Monthly statement import",
-            2 => "Step 1 — ANZ bank statement",
-            3 => "Preview bank transactions",
-            4 => "Review categories",
-            5 => "Step 2 — Square transactions",
-            6 => "Preview Square deposits",
-            7 => "Review Square deposits",
-            8 => "Import complete",
-            _ => "Monthly import"
-        }
-        : WizardStep switch
-        {
-            1 => "Choose import type",
-            2 => "Select file",
-            3 => IsSquareImport ? "Preview deposits" : "Preview transactions",
-            4 => IsSquareImport ? "Review deposits" : "Review suggested categories",
-            5 => "Import complete",
-            _ => "Import"
-        };
-    public string StepIndicator => IsMonthlyImport
-        ? WizardStep switch
-        {
-            1 => "Import your ANZ statement, then your Square transactions for the month",
-            2 or 3 or 4 => "Step 1 of 3 — ANZ bank statement",
-            5 or 6 or 7 => "Step 2 of 3 — Square transactions",
-            8 => "Step 3 of 3 — Matching complete",
-            _ => string.Empty
-        }
-        : IsAnzImport
-            ? $"Step {Math.Clamp(WizardStep - 1, 1, 4)} of 4"
+    public bool CanGoNext => WizardStep switch
+    {
+        1 => !string.IsNullOrWhiteSpace(ImportType),
+        2 => HasPreview || ShowMapping,
+        3 => HasPreview,
+        4 => HasPreview && TransactionsToImport > 0,
+        _ => false
+    };
+    public bool CanGoBack => WizardStep > 1 && WizardStep < 5;
+    public bool ShowStep1 => WizardStep == 1;
+    public bool ShowStep2 => WizardStep == 2;
+    public bool ShowStep3 => WizardStep == 3;
+    public bool ShowStep4 => WizardStep == 4;
+    public bool ShowStep5 => WizardStep == 5;
+    public string WizardTitle => WizardStep switch
+    {
+        1 => "Choose import type",
+        2 => "Select file",
+        3 => IsSquareImport ? "Preview deposits" : "Preview transactions",
+        4 => IsSquareImport ? "Review deposits" : "Review suggested categories",
+        5 => "Import complete",
+        _ => "Import"
+    };
+    public string StepIndicator => IsAnzImport
+        ? $"Step {Math.Clamp(WizardStep - 1, 1, 4)} of 4"
+        : IsSquareImport
+            ? $"Step {Math.Min(WizardStep, 4)} of 4"
             : $"Step {Math.Min(WizardStep, 5)} of 5";
 
     public IReadOnlyList<string> StatusFilterOptions { get; } = ["All", "Ready", "Needs Review", "Duplicate", "Matched", "Ignored"];
@@ -191,12 +156,12 @@ public partial class ImportViewModel : ViewModelBase
 
         switch (PendingStartupMode)
         {
-            case ImportStartupMode.Monthly:
-                StartMonthlyImport();
+            case ImportStartupMode.Anz:
+                StartAnzImport();
                 PendingStartupMode = ImportStartupMode.None;
                 break;
-            case ImportStartupMode.MonthlyAtSquare:
-                StartMonthlyImportAtSquareStep();
+            case ImportStartupMode.Square:
+                StartSquareImport();
                 PendingStartupMode = ImportStartupMode.None;
                 break;
         }
@@ -245,13 +210,9 @@ public partial class ImportViewModel : ViewModelBase
     partial void OnWizardStepChanged(int value) => RaiseWizardProps();
     partial void OnImportTypeChanged(string value)
     {
-        OnPropertyChanged(nameof(IsMonthlyImport));
         OnPropertyChanged(nameof(IsAnzImport));
         OnPropertyChanged(nameof(IsSquareImport));
         OnPropertyChanged(nameof(IsLegacyImport));
-        OnPropertyChanged(nameof(ShowAnzWizardContent));
-        OnPropertyChanged(nameof(ShowSquareWizardContent));
-        OnPropertyChanged(nameof(IsSquareFileStep));
         OnPropertyChanged(nameof(WizardTitle));
         OnPropertyChanged(nameof(CanGoNext));
     }
@@ -283,9 +244,6 @@ public partial class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowStep3));
         OnPropertyChanged(nameof(ShowStep4));
         OnPropertyChanged(nameof(ShowStep5));
-        OnPropertyChanged(nameof(ShowAnzWizardContent));
-        OnPropertyChanged(nameof(ShowSquareWizardContent));
-        OnPropertyChanged(nameof(IsSquareFileStep));
         OnPropertyChanged(nameof(WizardTitle));
         OnPropertyChanged(nameof(StepIndicator));
     }
@@ -308,26 +266,6 @@ public partial class ImportViewModel : ViewModelBase
 
     [RelayCommand]
     private void ShowReconciliation() => _navigationService.Navigate<ReconciliationViewModel>();
-
-    [RelayCommand]
-    private void StartMonthlyImportAtSquareStep()
-    {
-        ResetWizardState();
-        ImportType = "Monthly";
-        WizardStep = 5;
-        Section = "Wizard";
-        SummaryText = "Select your Square transactions CSV to match bank deposits.";
-    }
-
-    [RelayCommand]
-    private void StartMonthlyImport()
-    {
-        ResetWizardState();
-        ImportType = "Monthly";
-        WizardStep = 1;
-        Section = "Wizard";
-        SummaryText = "Import your ANZ bank statement first, then your Square transactions CSV.";
-    }
 
     [RelayCommand]
     private void StartAnzImport()
@@ -377,13 +315,6 @@ public partial class ImportViewModel : ViewModelBase
     [RelayCommand]
     private async Task NextStepAsync()
     {
-        if (IsMonthlyImport && WizardStep == 1)
-        {
-            WizardStep = 2;
-            SummaryText = "Select your ANZ bank statement (CSV or Excel).";
-            return;
-        }
-
         if (WizardStep == 1)
         {
             if (string.IsNullOrWhiteSpace(ImportType))
@@ -418,37 +349,6 @@ public partial class ImportViewModel : ViewModelBase
             return;
         }
 
-        if (IsMonthlyImport && WizardStep == 4)
-        {
-            await ImportSelectedAsync();
-            return;
-        }
-
-        if (IsMonthlyImport && WizardStep == 5)
-        {
-            if (!HasPreview)
-            {
-                await SelectFileAsync();
-                if (!HasPreview)
-                    return;
-            }
-
-            WizardStep = 6;
-            return;
-        }
-
-        if (IsMonthlyImport && WizardStep == 6)
-        {
-            WizardStep = 7;
-            return;
-        }
-
-        if (IsMonthlyImport && WizardStep == 7)
-        {
-            await ImportSelectedAsync();
-            return;
-        }
-
         if (WizardStep == 4)
             await ImportSelectedAsync();
     }
@@ -466,20 +366,8 @@ public partial class ImportViewModel : ViewModelBase
             return;
         }
 
-        if (IsMonthlyImport && WizardStep == 2)
-        {
-            WizardStep = 1;
-            return;
-        }
-
-        if (IsMonthlyImport && WizardStep == 5)
-        {
-            _notificationService.ShowInfo("ANZ statement is already imported. Continue with Square or finish from the hub.");
-            return;
-        }
-
-        // ANZ/Legacy flow starts at step 2 (file select); back returns to the hub.
-        if (WizardStep == 2 && (IsAnzImport || IsLegacyImport))
+        // ANZ/Legacy/Square flows start at step 2 (file select); back returns to the hub.
+        if (WizardStep == 2 && (IsAnzImport || IsLegacyImport || IsSquareImport))
         {
             _ = ShowHubAsync();
             return;
@@ -491,7 +379,7 @@ public partial class ImportViewModel : ViewModelBase
     [RelayCommand]
     private async Task SelectFileAsync()
     {
-        if (IsSquareImport || IsSquareFileStep)
+        if (IsSquareImport)
         {
             var squareDialog = new OpenFileDialog
             {
@@ -758,9 +646,7 @@ public partial class ImportViewModel : ViewModelBase
             if (preview.Warnings.Count > 0)
                 _notificationService.ShowInfo(string.Join(" ", preview.Warnings.Take(3)));
 
-            if (Section == "Wizard" && IsMonthlyImport && WizardStep == 5)
-                WizardStep = 6;
-            else if (Section == "Wizard" && WizardStep == 2 && IsSquareImport)
+            if (Section == "Wizard" && WizardStep == 2 && IsSquareImport)
                 WizardStep = 3;
         }
         catch (Exception ex)
@@ -824,7 +710,7 @@ public partial class ImportViewModel : ViewModelBase
 
     private void RecalculateSummary()
     {
-        if (IsSquareImport || IsSquareFileStep || (IsMonthlyImport && WizardStep >= 5))
+        if (IsSquareImport)
         {
             TransactionsFound = SquareRows.Count;
             TransactionsToImport = SquareRows.Count(r => r.IsSelected);
@@ -844,7 +730,7 @@ public partial class ImportViewModel : ViewModelBase
     [RelayCommand]
     private void SelectAllNew()
     {
-        if (IsSquareImport || IsSquareFileStep)
+        if (IsSquareImport)
         {
             foreach (var row in SquareRows)
                 row.IsSelected = row.Status is ImportRowStatus.New or ImportRowStatus.NeedsReview;
@@ -878,7 +764,7 @@ public partial class ImportViewModel : ViewModelBase
     [RelayCommand]
     private void SelectAll()
     {
-        if (IsSquareImport || IsSquareFileStep)
+        if (IsSquareImport)
         {
             foreach (var row in SquareRows)
                 row.IsSelected = true;
@@ -895,7 +781,7 @@ public partial class ImportViewModel : ViewModelBase
     [RelayCommand]
     private void SelectNone()
     {
-        if (IsSquareImport || IsSquareFileStep)
+        if (IsSquareImport)
         {
             foreach (var row in SquareRows)
                 row.IsSelected = false;
@@ -932,8 +818,7 @@ public partial class ImportViewModel : ViewModelBase
             return;
         }
 
-        var committingSquare = IsSquareImport || (IsMonthlyImport && WizardStep == 7);
-        var committingAnz = IsAnzImport || IsLegacyImport || (IsMonthlyImport && WizardStep == 4);
+        var committingSquare = IsSquareImport;
 
         if (!committingSquare)
         {
@@ -943,7 +828,7 @@ public partial class ImportViewModel : ViewModelBase
             {
                 _notificationService.ShowInfo(
                     $"{needsCategory} transaction(s) still need a category. Review categories before importing.");
-                WizardStep = IsMonthlyImport ? 4 : 4;
+                WizardStep = 4;
                 return;
             }
         }
@@ -983,7 +868,7 @@ public partial class ImportViewModel : ViewModelBase
                     }).ToList()
                 });
             }
-            else if (IsLegacyImport && committingAnz)
+            else if (IsLegacyImport)
             {
                 LastResult = await _legacyImportService.CommitAsync(new LegacyTreasurerCommitRequest
                 {
@@ -1036,32 +921,14 @@ public partial class ImportViewModel : ViewModelBase
             }
 
             ShowResults = true;
-
-            if (IsMonthlyImport && WizardStep == 4)
-            {
-                WizardStep = 5;
-                HasPreview = false;
-                ShowMapping = false;
-                ParseFailure = null;
-                _allRows = [];
-                Rows = [];
-                SquareRows = [];
-                FileName = string.Empty;
-                RecalculateSummary();
-                SummaryText = $"ANZ imported ({LastResult.Imported} transactions). Now select your Square transactions CSV.";
-                _notificationService.ShowSuccess("ANZ statement imported. Continue with Square transactions.");
-            }
-            else
-            {
-                WizardStep = IsMonthlyImport ? 8 : 5;
-                SummaryText =
-                    $"Import complete — Imported {LastResult.Imported}, skipped {LastResult.Skipped}, " +
-                    $"duplicates {LastResult.Duplicates}, errors {LastResult.Errors}" +
-                    (LastResult.SquareMatched > 0 || LastResult.SquareNeedsReview > 0
-                        ? $", Square matched {LastResult.SquareMatched}, needs review {LastResult.SquareNeedsReview}"
-                        : string.Empty) +
-                    ".";
-            }
+            WizardStep = 5;
+            SummaryText =
+                $"Import complete — Imported {LastResult.Imported}, skipped {LastResult.Skipped}, " +
+                $"duplicates {LastResult.Duplicates}, errors {LastResult.Errors}" +
+                (LastResult.SquareMatched > 0 || LastResult.SquareNeedsReview > 0
+                    ? $", Square matched {LastResult.SquareMatched}, needs review {LastResult.SquareNeedsReview}"
+                    : string.Empty) +
+                ".";
 
             await RefreshHistoryAsync();
             await RefreshRulesAsync();

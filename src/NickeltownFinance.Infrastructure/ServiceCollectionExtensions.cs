@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFinancialYearRepository, FinancialYearRepository>();
         services.AddSingleton<ITransactionRepository, TransactionRepository>();
         services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
+        services.AddSingleton<IMonthDocumentRepository, MonthDocumentRepository>();
         services.AddSingleton<ICategorisationRuleRepository, CategorisationRuleRepository>();
         services.AddSingleton<IImportBatchRepository, ImportBatchRepository>();
         services.AddSingleton<ITreasurerMonthSnapshotRepository, TreasurerMonthSnapshotRepository>();
@@ -46,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISquareImportService, SquareImportService>();
         services.AddSingleton<ISquareDepositService, SquareDepositService>();
         services.AddSingleton<IAttachmentService, AttachmentService>();
+        services.AddSingleton<IMonthDocumentService, MonthDocumentService>();
 
         services.AddSingleton<IReceiptImportItemRepository, ReceiptImportItemRepository>();
         services.AddSingleton<IReceiptImportBatchRepository, ReceiptImportBatchRepository>();

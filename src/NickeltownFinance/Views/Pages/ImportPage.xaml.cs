@@ -23,7 +23,10 @@ public partial class ImportPage
         Vm?.OpenMobileReceiptUploadCommand.Execute(null);
 
     private void OnBankCardClick(object sender, MouseButtonEventArgs e) =>
-        Vm?.StartMonthlyImportCommand.Execute(null);
+        Vm?.StartAnzImportCommand.Execute(null);
+
+    private void OnSquareCardClick(object sender, MouseButtonEventArgs e) =>
+        Vm?.StartSquareImportCommand.Execute(null);
 
     private void OnLegacyReportCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.StartLegacyImportCommand.Execute(null);
@@ -61,11 +64,19 @@ public partial class ImportPage
 
         if (bankFile is null)
         {
-            AppDialog.Info("Import", "Drop an ANZ CSV/Excel statement or receipt images/PDFs.");
+            AppDialog.Info("Import", "Drop an ANZ CSV/Excel statement, Square CSV, or receipt images/PDFs.");
             return;
         }
 
-        Vm.StartMonthlyImportCommand.Execute(null);
+        if (bankFile.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) &&
+            File.ReadLines(bankFile).FirstOrDefault()?.Contains("Deposit ID", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Vm.StartSquareImportCommand.Execute(null);
+            await Vm.AnalyseSquareFileAsync(bankFile);
+            return;
+        }
+
+        Vm.StartAnzImportCommand.Execute(null);
         await Vm.AnalyseFileAsync(bankFile);
     }
 }

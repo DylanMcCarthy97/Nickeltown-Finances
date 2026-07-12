@@ -267,7 +267,7 @@ public partial class TransactionsViewModel : ViewModelBase
     [RelayCommand]
     private void ImportSquareStatement()
     {
-        ImportViewModel.PendingStartupMode = ImportStartupMode.MonthlyAtSquare;
+        ImportViewModel.PendingStartupMode = ImportStartupMode.Square;
         _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
     }
 
@@ -296,7 +296,7 @@ public partial class TransactionsViewModel : ViewModelBase
     [RelayCommand]
     private void ImportStatement()
     {
-        ImportViewModel.PendingStartupMode = ImportStartupMode.Monthly;
+        ImportViewModel.PendingStartupMode = ImportStartupMode.Anz;
         _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
     }
 

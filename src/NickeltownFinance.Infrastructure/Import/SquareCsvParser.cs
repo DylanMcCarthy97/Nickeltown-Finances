@@ -135,6 +135,7 @@ public static class SquareCsvParser
         public int NetIndex = -1;
         public int CustomerIndex = -1;
         public int DescriptionIndex = -1;
+        public int LocationIndex = -1;
         public int TenderNoteIndex = -1;
         public int CategoryIndex = -1;
         public int PaymentMethodIndex = -1;
@@ -172,6 +173,8 @@ public static class SquareCsvParser
                 map.TenderNoteIndex = i;
             else if (h is "DESCRIPTION" or "DETAILS" or "ITEM" or "TRANSACTION TYPE")
                 map.DescriptionIndex = map.DescriptionIndex < 0 ? i : map.DescriptionIndex;
+            else if (h is "LOCATION")
+                map.LocationIndex = i;
             else if (h is "CATEGORY" or "ITEM CATEGORY")
                 map.CategoryIndex = i;
             else if (h is "PAYMENT METHOD" or "CARD BRAND" or "SOURCE")
@@ -230,7 +233,8 @@ public static class SquareCsvParser
         var rawDescription = Get(map.DescriptionIndex);
         var tenderNote = Get(map.TenderNoteIndex);
         var customerColumn = Get(map.CustomerIndex);
-        var (description, customerName) = SquareDescriptionHelper.Parse(tenderNote, rawDescription, customerColumn);
+        var location = Get(map.LocationIndex);
+        var (description, customerName) = SquareDescriptionHelper.Parse(rawDescription, customerColumn);
 
         var fingerprint = ImportFingerprint.Compute(
             date,
@@ -246,6 +250,7 @@ public static class SquareCsvParser
             ExternalDepositId = depositId,
             CustomerName = customerName,
             Description = description,
+            Location = location,
             PaymentId = paymentId,
             Category = Get(map.CategoryIndex),
             GrossAmount = gross,

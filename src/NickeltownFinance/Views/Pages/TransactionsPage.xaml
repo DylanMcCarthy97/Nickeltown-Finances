@@ -216,7 +216,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="110" SortMemberPath="CategoryName" />
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="155" MinWidth="145" SortMemberPath="CategoryName" />
                             <DataGridTemplateColumn Header="Income" Width="90" SortMemberPath="IncomeAmount">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -250,7 +250,7 @@
                             <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="90" />
                             <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="110" />
                             <DataGridTextColumn Header="Created by" Binding="{Binding CreatedBy}" Width="95" />
-                            <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="140" />
+                            <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="185" MinWidth="170" />
                         </ds:AppDataGrid.Columns>
                     </ds:AppDataGrid>
 
@@ -339,7 +339,8 @@
                                                                     <StackPanel Margin="0,0,0,10">
                                                                         <TextBlock Text="{Binding Description}" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
                                                                         <TextBlock Text="{Binding CustomerName, StringFormat=• {0}}"
-                                                                                   Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0" />
+                                                                                   Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0"
+                                                                                   Visibility="{Binding CustomerName, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                         <TextBlock Text="{Binding Amount, Converter={StaticResource CurrencyConverter}}"
                                                                                    Style="{StaticResource BodyTextStyle}" Margin="0,2,0,0" />
                                                                         <TextBlock Text="{Binding TransactionTime, StringFormat=dd/MM/yyyy h:mm tt}"

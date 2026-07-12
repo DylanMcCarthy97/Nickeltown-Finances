@@ -72,8 +72,9 @@ public class AppDataGrid : DataGrid
 
             for (var i = 0; i < Math.Min(widths.Length, Columns.Count); i++)
             {
+                var minWidth = Math.Max(Columns[i].MinWidth, 24);
                 if (widths[i] > 24)
-                    Columns[i].Width = new DataGridLength(widths[i]);
+                    Columns[i].Width = new DataGridLength(Math.Max(widths[i], minWidth));
             }
         }
         catch

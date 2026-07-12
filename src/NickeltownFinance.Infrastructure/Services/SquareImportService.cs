@@ -149,6 +149,7 @@ public class SquareImportService : ISquareImportService
                         DepositDate = line.DepositDate?.Date ?? deposit.DepositDate,
                         CustomerName = line.CustomerName.Trim(),
                         Description = line.Description.Trim(),
+                        Location = line.Location.Trim(),
                         PaymentId = line.PaymentId.Trim(),
                         Category = line.Category.Trim(),
                         GrossAmount = line.GrossAmount,

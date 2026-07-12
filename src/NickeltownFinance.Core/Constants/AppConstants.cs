@@ -45,6 +45,8 @@ public static class AppPaths
 
     public static string AttachmentsPath => Path.Combine(FilesRoot, "attachments");
 
+    public static string MonthDocumentsPath => Path.Combine(FilesRoot, "month-documents");
+
     public static string InboxPath => Path.Combine(FilesRoot, "inbox");
 
     public static string ThumbnailsPath => Path.Combine(FilesRoot, "thumbnails");

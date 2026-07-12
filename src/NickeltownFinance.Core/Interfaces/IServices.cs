@@ -178,6 +178,39 @@ public interface ICategorisationService
     void EnsureDefaultRules();
 }
 
+public interface IMonthDocumentService
+{
+    Task<IReadOnlyList<MonthDocumentInfo>> GetForMonthAsync(
+        int year,
+        int month,
+        MonthDocumentKind kind = MonthDocumentKind.PitstopReport);
+
+    Task<MonthDocumentInfo> AddAsync(
+        int year,
+        int month,
+        string sourceFilePath,
+        MonthDocumentKind kind,
+        string? title = null);
+
+    Task<MonthDocumentInfo> AddFromBytesAsync(
+        int year,
+        int month,
+        byte[] data,
+        string fileName,
+        MonthDocumentKind kind,
+        string? title = null);
+
+    Task DeleteAsync(ObjectId documentId);
+
+    Task<string> GetFullPathAsync(ObjectId documentId);
+
+    AttachmentInfo ToAttachmentInfo(MonthDocumentInfo document);
+
+    bool IsSupportedFile(string fileName);
+
+    IReadOnlyList<string> SupportedExtensions { get; }
+}
+
 public interface IAttachmentService
 {
     Task<IReadOnlyList<AttachmentInfo>> GetForTransactionAsync(ObjectId transactionId);

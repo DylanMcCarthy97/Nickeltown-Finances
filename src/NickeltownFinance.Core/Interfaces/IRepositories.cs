@@ -72,6 +72,11 @@ public interface ITransactionRepository : IRepository<Transaction>
     void InsertMany(IEnumerable<Transaction> transactions);
 }
 
+public interface IMonthDocumentRepository : IRepository<MonthDocument>
+{
+    IEnumerable<MonthDocument> GetForMonth(int year, int month, MonthDocumentKind? kind = null);
+}
+
 public interface IAttachmentRepository : IRepository<Attachment>
 {
     IEnumerable<Attachment> GetByTransaction(ObjectId transactionId);
