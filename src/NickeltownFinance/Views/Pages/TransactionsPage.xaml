@@ -300,7 +300,7 @@
                                                         BorderBrush="{DynamicResource BrandBorderBrush}"
                                                         BorderThickness="0,0,0,1">
                                                     <StackPanel>
-                                                        <Button Style="{StaticResource ToolbarButtonStyle}"
+                                                        <ui:Button Style="{StaticResource ToolbarButtonStyle}"
                                                                 HorizontalContentAlignment="Stretch"
                                                                 Padding="0,4"
                                                                 Command="{Binding DataContext.ToggleSquareGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -329,7 +329,7 @@
                                                                 <TextBlock Grid.Column="2" Text="{Binding TotalAmount, Converter={StaticResource CurrencyConverter}}"
                                                                            Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
                                                             </Grid>
-                                                        </Button>
+                                                        </ui:Button>
 
                                                         <ItemsControl ItemsSource="{Binding Items}"
                                                                       Margin="18,4,0,0"
@@ -338,15 +338,12 @@
                                                                 <DataTemplate>
                                                                     <StackPanel Margin="0,0,0,10">
                                                                         <TextBlock Text="{Binding Description}" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
-                                                                        <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0">
-                                                                            <Run Text="• " />
-                                                                            <Run Text="{Binding CustomerName, Mode=OneWay}" />
-                                                                        </TextBlock>
+                                                                        <TextBlock Text="{Binding CustomerName, StringFormat=• {0}}"
+                                                                                   Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0" />
                                                                         <TextBlock Text="{Binding Amount, Converter={StaticResource CurrencyConverter}}"
                                                                                    Style="{StaticResource BodyTextStyle}" Margin="0,2,0,0" />
-                                                                        <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0">
-                                                                            <Run Text="{Binding TransactionTime, StringFormat=dd/MM/yyyy h:mm tt, Mode=OneWay}" />
-                                                                        </TextBlock>
+                                                                        <TextBlock Text="{Binding TransactionTime, StringFormat=dd/MM/yyyy h:mm tt}"
+                                                                                   Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0" />
                                                                     </StackPanel>
                                                                 </DataTemplate>
                                                             </ItemsControl.ItemTemplate>

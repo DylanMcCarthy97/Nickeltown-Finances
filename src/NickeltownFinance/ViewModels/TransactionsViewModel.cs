@@ -228,25 +228,40 @@ public partial class TransactionsViewModel : ViewModelBase
 
     private async Task LoadSquareDepositDetailAsync(ObjectId transactionId)
     {
-        ShowSquareDetail = false;
+        ShowSquareAwaitingMatch = false;
+        ShowSquareDetail = true;
         DetailThumbnail = null;
         DetailReceiptStatus = string.Empty;
         DetailAttachmentCount = 0;
+        SquareDepositGroups = [];
 
-        var detail = await _squareDepositService.GetDetailForBankTransactionAsync(transactionId);
-        if (detail is null || SelectedTransaction?.Id != transactionId)
+        try
         {
-            ClearDetailPanel();
-            return;
-        }
+            var detail = await _squareDepositService.GetDetailForBankTransactionAsync(transactionId);
+            if (detail is null || SelectedTransaction?.Id != transactionId)
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(ClearDetailPanel);
+                return;
+            }
 
-        ShowSquareDetail = true;
-        SquareDepositDate = detail.DepositDate.ToString("dd/MM/yyyy");
-        SquareGrossSales = detail.GrossSales;
-        SquareFees = detail.Fees;
-        SquareNetDeposit = detail.NetDeposit;
-        SquareDepositGroups = new ObservableCollection<SquareDepositGroupViewModel>(
-            detail.Groups.Select(g => new SquareDepositGroupViewModel(g)));
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (SelectedTransaction?.Id != transactionId)
+                    return;
+
+                SquareDepositDate = detail.DepositDate.ToString("dd/MM/yyyy");
+                SquareGrossSales = detail.GrossSales;
+                SquareFees = detail.Fees;
+                SquareNetDeposit = detail.NetDeposit;
+                SquareDepositGroups = new ObservableCollection<SquareDepositGroupViewModel>(
+                    detail.Groups.Select(g => new SquareDepositGroupViewModel(g)));
+            });
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Could not load Square deposit details: {ex.Message}";
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(ClearDetailPanel);
+        }
     }
 
     [RelayCommand]
