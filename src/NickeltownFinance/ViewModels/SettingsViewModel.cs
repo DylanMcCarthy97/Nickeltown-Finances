@@ -68,6 +68,9 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _showUpdateProgress;
     [ObservableProperty] private double _updateProgressPercent;
     [ObservableProperty] private bool _isUpdateProgressIndeterminate;
+    [ObservableProperty] private string _updateStageLabel = "On track";
+    [ObservableProperty] private string _updateProgressLabel = "0%";
+    [ObservableProperty] private string _updateDetailText = string.Empty;
 
     public string AppVersion => AppInfo.VersionLabel;
     public string InstallKindLabel => _appUpdateService.InstallKind == AppInstallKind.Msix ? "MSIX package" : "Portable";
@@ -640,6 +643,9 @@ public partial class SettingsViewModel : ViewModelBase
         ShowUpdateProgress = true;
         IsUpdateProgressIndeterminate = false;
         UpdateProgressPercent = 0;
+        UpdateStageLabel = "Leaving the pits — downloading";
+        UpdateProgressLabel = "0%";
+        UpdateDetailText = "Fetching the latest MSIX package…";
         UpdateStatusText = "Downloading update…";
         // Install may force-kill the process before Shutdown runs — skip backup either way.
         App.SkipShutdownBackup = true;
@@ -662,6 +668,9 @@ public partial class SettingsViewModel : ViewModelBase
                 UpdateStatusText = "Update installed. Restarting…";
                 UpdateProgressPercent = 100;
                 IsUpdateProgressIndeterminate = false;
+                UpdateStageLabel = "Chequered flag — restarting";
+                UpdateProgressLabel = "100%";
+                UpdateDetailText = "Update installed. Restarting the app…";
                 _notificationService.ShowSuccess("Update installed. Restarting…");
                 Application.Current.Shutdown();
             }
@@ -688,15 +697,26 @@ public partial class SettingsViewModel : ViewModelBase
     private void ApplyUpdateProgress(AppUpdateProgress progress)
     {
         UpdateStatusText = progress.Message;
+        UpdateDetailText = progress.Message;
         ShowUpdateProgress = true;
+        UpdateStageLabel = progress.Stage switch
+        {
+            AppUpdateStage.Downloading => "Leaving the pits — downloading",
+            AppUpdateStage.Installing => "Pit stop — installing",
+            AppUpdateStage.Restarting => "Chequered flag — restarting",
+            _ => "On track"
+        };
+
         if (progress.PercentComplete is double percent)
         {
             IsUpdateProgressIndeterminate = false;
             UpdateProgressPercent = percent;
+            UpdateProgressLabel = $"{Math.Clamp((int)Math.Round(percent), 0, 100)}%";
         }
         else
         {
             IsUpdateProgressIndeterminate = true;
+            UpdateProgressLabel = "…";
         }
     }
 

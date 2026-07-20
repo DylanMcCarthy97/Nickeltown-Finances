@@ -1,0 +1,153 @@
+<UserControl x:Class="NickeltownFinance.Controls.RaceTrackProgress"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             MinHeight="72">
+    <Border Background="#12151C"
+            BorderBrush="#2A3040"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="14,12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StageLabel, ElementName=Root}"
+                           FontWeight="SemiBold"
+                           FontSize="13"
+                           Foreground="{DynamicResource BrandTextPrimaryBrush}"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ProgressLabel, ElementName=Root}"
+                           FontWeight="Bold"
+                           FontSize="18"
+                           FontFamily="Consolas"
+                           Foreground="{DynamicResource BrandPrimaryBrush}"
+                           VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Asphalt track -->
+            <Grid x:Name="TrackHost"
+                  Grid.Row="2"
+                  Height="36"
+                  SizeChanged="TrackHost_OnSizeChanged"
+                  ClipToBounds="True">
+                <Border Background="#1A1F2A"
+                        CornerRadius="8"
+                        BorderBrush="#323848"
+                        BorderThickness="1" />
+
+                <!-- Lane dashes -->
+                <Rectangle Height="2"
+                           VerticalAlignment="Center"
+                           Margin="10,0,28,0"
+                           Stroke="#F5D547"
+                           StrokeThickness="2"
+                           StrokeDashArray="3 4"
+                           Opacity="0.85"
+                           SnapsToDevicePixels="True" />
+
+                <!-- Trailing glow (distance covered) -->
+                <Border x:Name="Trail"
+                        HorizontalAlignment="Left"
+                        CornerRadius="8,0,0,8"
+                        Opacity="0.55">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                            <GradientStop Color="#004B9EFF" Offset="0" />
+                            <GradientStop Color="#994B9EFF" Offset="0.75" />
+                            <GradientStop Color="#CC6BB0FF" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <!-- Car -->
+                <Canvas IsHitTestVisible="False">
+                    <Grid x:Name="Car"
+                          Canvas.Top="6"
+                          Width="34"
+                          Height="24"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <TranslateTransform x:Name="CarTransform" X="8" />
+                        </Grid.RenderTransform>
+
+                        <!-- Soft ground shadow -->
+                        <Ellipse Width="28" Height="6"
+                                 Fill="#66000000"
+                                 VerticalAlignment="Bottom"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,0,0,1" />
+
+                        <!-- Side-view race car -->
+                        <Canvas Width="34" Height="22">
+                            <!-- Chassis -->
+                            <Path Fill="#4B9EFF"
+                                  Data="M 2,14 L 5,14 L 8,7 L 18,6 L 23,11 L 31,12 L 31,16 L 2,16 Z" />
+                            <!-- Cabin / windscreen -->
+                            <Path Fill="#A8D4FF"
+                                  Data="M 10,8 L 17,7.2 L 20,11 L 11,11.5 Z" />
+                            <!-- Nose stripe -->
+                            <Rectangle Canvas.Left="26" Canvas.Top="12" Width="5" Height="3" Fill="#F5D547" RadiusX="1" RadiusY="1" />
+                            <!-- Wheels -->
+                            <Ellipse Canvas.Left="6" Canvas.Top="14" Width="7" Height="7" Fill="#0C0E13" Stroke="#6B7788" StrokeThickness="1" />
+                            <Ellipse Canvas.Left="22" Canvas.Top="14" Width="7" Height="7" Fill="#0C0E13" Stroke="#6B7788" StrokeThickness="1" />
+                            <Ellipse Canvas.Left="8" Canvas.Top="16" Width="3" Height="3" Fill="#A8B2C0" />
+                            <Ellipse Canvas.Left="24" Canvas.Top="16" Width="3" Height="3" Fill="#A8B2C0" />
+                        </Canvas>
+                    </Grid>
+                </Canvas>
+
+                <!-- Finish / chequered flag -->
+                <Border Width="14"
+                        Height="22"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Margin="0,0,6,0"
+                        CornerRadius="2"
+                        BorderBrush="#6B7788"
+                        BorderThickness="1"
+                        ClipToBounds="True">
+                    <Border.Background>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,7,7" ViewportUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <GeometryDrawing Brush="#F5F5F5">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,7,7" />
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="#1A1A1A">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,3.5,3.5" />
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="#1A1A1A">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="3.5,3.5,3.5,3.5" />
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Border.Background>
+                </Border>
+            </Grid>
+
+            <TextBlock Grid.Row="4"
+                       Text="{Binding DetailText, ElementName=Root}"
+                       Style="{StaticResource CaptionTextStyle}"
+                       TextWrapping="Wrap" />
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,5 +1,7 @@
 using ClosedXML.Excel;
 using NickeltownFinance.Core.DTOs;
+using PdfSharpCore.Pdf;
+using PdfSharpCore.Pdf.IO;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -14,21 +16,54 @@ public static class MonthlyReportExporter
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
+        var tempDir = Path.Combine(Path.GetTempPath(), "NickeltownFinance", "monthly-export", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            var mainPdfPath = Path.Combine(tempDir, "monthly-report.pdf");
+            GenerateMainPdf(data, mainPdfPath);
+
+            var appendixPdfs = BuildPitstopAppendixPdfs(data, tempDir);
+            if (appendixPdfs.Count == 0)
+            {
+                File.Copy(mainPdfPath, outputPath, overwrite: true);
+            }
+            else
+            {
+                MergePdfs([mainPdfPath, ..appendixPdfs], outputPath);
+            }
+
+            return outputPath;
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+            catch
+            {
+                // Best-effort cleanup of temp export files.
+            }
+        }
+    }
+
+    private static void GenerateMainPdf(MonthlyReportData data, string outputPath)
+    {
         Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(36);
-                page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken3));
+                page.Margin(28);
+                page.DefaultTextStyle(x => x.FontSize(9).FontColor(Colors.Grey.Darken3));
 
                 page.Header().Element(c => ComposeHeader(c, data));
                 page.Content().Element(c => ComposeContent(c, data));
                 page.Footer().Element(c => ComposeFooter(c, data));
             });
         }).GeneratePdf(outputPath);
-
-        return outputPath;
     }
 
     private static void ComposeHeader(IContainer container, MonthlyReportData data)
@@ -36,16 +71,16 @@ public static class MonthlyReportExporter
         container.Column(col =>
         {
             if (!string.IsNullOrWhiteSpace(data.LogoPath) && File.Exists(data.LogoPath))
-                col.Item().AlignCenter().Height(56).Width(110).Image(data.LogoPath).FitArea();
+                col.Item().AlignCenter().Height(44).Width(90).Image(data.LogoPath).FitArea();
 
-            col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(18).FontColor(Colors.Black);
-            col.Item().AlignCenter().Text("Monthly Treasurer Report").SemiBold().FontSize(13);
+            col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(16).FontColor(Colors.Black);
+            col.Item().AlignCenter().Text("Monthly Treasurer Report").SemiBold().FontSize(12);
             col.Item().AlignCenter().Text($"{data.PeriodLabel}  ·  Financial Year {data.FinancialYearName}")
-                .FontSize(11).FontColor(Colors.Grey.Darken2);
-            col.Item().PaddingTop(4).AlignCenter()
+                .FontSize(10).FontColor(Colors.Grey.Darken2);
+            col.Item().PaddingTop(2).AlignCenter()
                 .Text($"Signed by {data.PreparedBy} ({data.PreparedByRole})  ·  {data.PrintedAtDisplay}")
-                .FontSize(9).FontColor(Colors.Grey.Medium);
-            col.Item().PaddingVertical(8).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+                .FontSize(8).FontColor(Colors.Grey.Medium);
+            col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Medium);
         });
     }
 
@@ -54,7 +89,7 @@ public static class MonthlyReportExporter
         container.Column(col =>
         {
             // Summary strip
-            col.Item().Background(Colors.Grey.Lighten4).Padding(10).Row(row =>
+            col.Item().Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
             {
                 SummaryCell(row, "Opening balance", data.OpeningBalance);
                 SummaryCell(row, "Income", data.TotalIncome);
@@ -62,23 +97,23 @@ public static class MonthlyReportExporter
                 SummaryCell(row, data.ClosingBalanceTitle, data.ClosingBalance, bold: true);
             });
 
-            col.Item().PaddingTop(14).Text("Category summary").Bold().FontSize(12).FontColor(Colors.Black);
+            col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(11).FontColor(Colors.Black);
 
-            col.Item().PaddingTop(6).Row(row =>
+            col.Item().PaddingTop(4).Row(row =>
             {
                 row.RelativeItem().Element(c => CategoryBlock(c, "Income", data.IncomeByCategory, data.TotalIncome));
-                row.ConstantItem(16);
+                row.ConstantItem(12);
                 row.RelativeItem().Element(c => CategoryBlock(c, "Expenses", data.ExpensesByCategory, data.TotalExpenses));
             });
 
-            col.Item().PaddingTop(10).Row(r =>
+            col.Item().PaddingTop(6).Row(r =>
             {
                 r.RelativeItem().Text("Monthly profit / loss").Bold();
                 r.ConstantItem(100).AlignRight().Text(data.MonthlyProfit.ToString("C")).Bold();
             });
 
-            col.Item().PaddingTop(14).Text("Treasurer comments").Bold().FontSize(12).FontColor(Colors.Black);
-            col.Item().PaddingTop(4).Row(r =>
+            col.Item().PaddingTop(8).Text("Treasurer comments").Bold().FontSize(11).FontColor(Colors.Black);
+            col.Item().PaddingTop(2).Row(r =>
             {
                 r.RelativeItem().Text("Excludes petty cash — cash on hand");
                 r.ConstantItem(100).AlignRight().Text(data.CashOnHand.ToString("C"));
@@ -96,7 +131,7 @@ public static class MonthlyReportExporter
                     r.ConstantItem(100).AlignRight().Text(data.PayPalBalance.ToString("C"));
                 });
             }
-            col.Item().PaddingTop(4).Row(r =>
+            col.Item().PaddingTop(2).Row(r =>
             {
                 r.RelativeItem().Text("Total moneys owned by the club").Bold();
                 r.ConstantItem(100).AlignRight().Text(data.TotalFundsOwned.ToString("C")).Bold();
@@ -105,23 +140,23 @@ public static class MonthlyReportExporter
             // Square breakdown for matched deposits
             if (data.HasSquareBreakdown)
             {
-                col.Item().PaddingTop(14).Text("Square transfer breakdown").Bold().FontSize(12).FontColor(Colors.Black);
-                col.Item().PaddingTop(2).Text("What made up the matched Square deposits this month.")
-                    .FontSize(9).FontColor(Colors.Grey.Medium);
+                col.Item().PaddingTop(8).Text("Square transfer breakdown").Bold().FontSize(11).FontColor(Colors.Black);
+                col.Item().PaddingTop(1).Text("What made up the matched Square deposits this month.")
+                    .FontSize(8).FontColor(Colors.Grey.Medium);
 
                 foreach (var section in data.SquareBreakdown)
                 {
-                    col.Item().PaddingTop(8).Text(section.SectionName).SemiBold().FontSize(10);
+                    col.Item().PaddingTop(4).Text(section.SectionName).SemiBold().FontSize(9);
                     foreach (var item in section.Items)
                     {
-                        col.Item().PaddingTop(2).PaddingLeft(8).Row(r =>
+                        col.Item().PaddingTop(1).PaddingLeft(8).Row(r =>
                         {
                             r.RelativeItem().Text(item.Label);
                             r.ConstantItem(72).AlignRight().Text(item.Amount > 0 ? item.Amount.ToString("C") : "—");
                         });
                     }
 
-                    col.Item().PaddingTop(2).PaddingLeft(8).Row(r =>
+                    col.Item().PaddingTop(1).PaddingLeft(8).Row(r =>
                     {
                         r.RelativeItem().Text("Section total").SemiBold();
                         r.ConstantItem(72).AlignRight().Text(section.SectionTotal.ToString("C")).SemiBold();
@@ -129,31 +164,18 @@ public static class MonthlyReportExporter
                 }
             }
 
-            if (data.HasPitstopReports)
-            {
-                col.Item().PaddingTop(14).Text("Pitstop event reports").Bold().FontSize(12).FontColor(Colors.Black);
-                col.Item().PaddingTop(2).Text("ClubPOS end-of-day reports are included in full after the signature pages.")
-                    .FontSize(9).FontColor(Colors.Grey.Medium);
-
-                foreach (var report in data.PitstopReports)
-                {
-                    col.Item().PaddingTop(4).PaddingLeft(8).Text($"• {report.DisplayLabel} ({report.FileName})")
-                        .FontSize(10);
-                }
-            }
-
             // Transaction detail — bank descriptions
-            col.Item().PaddingTop(16).Text("Bank transactions").Bold().FontSize(12).FontColor(Colors.Black);
+            col.Item().PaddingTop(8).Text("Bank transactions").Bold().FontSize(11).FontColor(Colors.Black);
             col.Item().Text("As shown on the ANZ statement, with the category assigned in Nickeltown Finance.")
-                .FontSize(9).FontColor(Colors.Grey.Medium);
+                .FontSize(8).FontColor(Colors.Grey.Medium);
 
             if (data.Transactions.Count == 0)
             {
-                col.Item().PaddingTop(8).Text("No transactions in this month.").Italic().FontColor(Colors.Grey.Medium);
+                col.Item().PaddingTop(4).Text("No transactions in this month.").Italic().FontColor(Colors.Grey.Medium);
             }
             else
             {
-                col.Item().PaddingTop(8).Table(table =>
+                col.Item().PaddingTop(4).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
@@ -210,63 +232,120 @@ public static class MonthlyReportExporter
 
             if (!string.IsNullOrWhiteSpace(data.Notes))
             {
-                col.Item().PaddingTop(14).Text("Notes").Bold().FontSize(12).FontColor(Colors.Black);
+                col.Item().PaddingTop(8).Text("Notes").Bold().FontSize(11).FontColor(Colors.Black);
                 col.Item().Text(data.Notes);
             }
 
-            // Signature block
-            col.Item().PaddingTop(28).Element(c => ComposeSignatureBlock(c, data));
+            // Keep declaration with the report body when it fits (avoids a signature-only page).
+            col.Item().PaddingTop(10).ShowEntire().Element(c => ComposeSignatureBlock(c, data));
 
             if (data.HasPitstopReports)
                 ComposePitstopAppendix(col, data);
         });
     }
 
+    /// <summary>
+    /// Short divider page only — original Pitstop PDFs are concatenated after the QuestPDF output.
+    /// </summary>
     private static void ComposePitstopAppendix(ColumnDescriptor col, MonthlyReportData data)
     {
-        var isFirstReport = true;
+        col.Item().PageBreak();
+        col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(12).FontColor(Colors.Black);
+        col.Item().PaddingTop(2)
+            .Text("Full ClubPOS end-of-day reports follow as attached pages.")
+            .FontSize(8).FontColor(Colors.Grey.Medium);
+
         foreach (var report in data.PitstopReports)
         {
-            var images = ResolvePitstopExportImages(report);
-            col.Item().PageBreak();
+            col.Item().PaddingTop(6).Text(report.DisplayLabel).Bold().FontSize(10).FontColor(Colors.Black);
+            col.Item().PaddingTop(1).Text(report.FileName).FontSize(8).FontColor(Colors.Grey.Medium);
+            col.Item().PaddingTop(1)
+                .Text(DescribePitstopAppendixSource(report))
+                .FontSize(8).FontColor(Colors.Grey.Medium);
+        }
+    }
 
-            if (isFirstReport)
+    private static string DescribePitstopAppendixSource(MonthDocumentInfo report)
+    {
+        if (IsPitstopPdf(report) && File.Exists(report.FullPath))
+            return $"{Math.Max(1, report.PageCount)} page(s) attached from original PDF.";
+
+        var images = ResolvePitstopExportImages(report);
+        if (images.Count > 0)
+            return $"{images.Count} image page(s) attached.";
+
+        return "File unavailable — open the attachment from Nickeltown Finance.";
+    }
+
+    private static IReadOnlyList<string> BuildPitstopAppendixPdfs(MonthlyReportData data, string tempDir)
+    {
+        if (!data.HasPitstopReports)
+            return [];
+
+        var paths = new List<string>();
+        foreach (var report in data.PitstopReports)
+        {
+            if (IsPitstopPdf(report) && File.Exists(report.FullPath))
             {
-                col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(14).FontColor(Colors.Black);
-                col.Item().PaddingTop(4)
-                    .Text("Full ClubPOS end-of-day reports attached to this month.")
-                    .FontSize(9).FontColor(Colors.Grey.Medium);
-                isFirstReport = false;
-            }
-
-            col.Item().PaddingTop(12).Text(report.DisplayLabel).Bold().FontSize(12).FontColor(Colors.Black);
-            col.Item().PaddingTop(2).Text(report.FileName).FontSize(9).FontColor(Colors.Grey.Medium);
-
-            if (images.Count == 0)
-            {
-                col.Item().PaddingTop(10)
-                    .Text("Preview unavailable — open the attached file from Nickeltown Finance.")
-                    .Italic().FontColor(Colors.Grey.Medium);
+                paths.Add(report.FullPath);
                 continue;
             }
 
+            var imagePdf = CreateImageAppendixPdf(report, tempDir);
+            if (imagePdf is not null)
+                paths.Add(imagePdf);
+        }
+
+        return paths;
+    }
+
+    private static bool IsPitstopPdf(MonthDocumentInfo report) =>
+        report.IsPdf
+        || Path.GetExtension(report.FullPath).Equals(".pdf", StringComparison.OrdinalIgnoreCase)
+        || Path.GetExtension(report.FileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+
+    private static string? CreateImageAppendixPdf(MonthDocumentInfo report, string tempDir)
+    {
+        var images = ResolvePitstopExportImages(report);
+        if (images.Count == 0)
+            return null;
+
+        var path = Path.Combine(tempDir, $"{Guid.NewGuid():N}.pdf");
+        Document.Create(container =>
+        {
             for (var i = 0; i < images.Count; i++)
             {
-                if (i > 0)
-                    col.Item().PageBreak();
-
-                if (images.Count > 1)
+                var imagePath = images[i];
+                var pageIndex = i;
+                container.Page(page =>
                 {
-                    col.Item().PaddingTop(i == 0 ? 8 : 0)
-                        .Text($"Page {i + 1} of {images.Count}")
-                        .FontSize(8).FontColor(Colors.Grey.Medium);
-                }
+                    page.Size(PageSizes.A4);
+                    page.Margin(36);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken3));
 
-                // Leave room for title/caption on the first page of each report.
-                var maxHeight = i == 0 ? 640 : 720;
-                col.Item().PaddingTop(6).MaxHeight(maxHeight).Image(images[i]).FitArea();
+                    page.Content().Column(col =>
+                    {
+                        if (pageIndex == 0)
+                        {
+                            col.Item().Text(report.DisplayLabel).Bold().FontSize(12).FontColor(Colors.Black);
+                            col.Item().PaddingTop(2).Text(report.FileName).FontSize(9).FontColor(Colors.Grey.Medium);
+                        }
+
+                        if (images.Count > 1)
+                        {
+                            col.Item().PaddingTop(pageIndex == 0 ? 8 : 0)
+                                .Text($"Page {pageIndex + 1} of {images.Count}")
+                                .FontSize(8).FontColor(Colors.Grey.Medium);
+                        }
+
+                        var maxHeight = pageIndex == 0 ? 680 : 740;
+                        col.Item().PaddingTop(6).MaxHeight(maxHeight).Image(imagePath).FitArea();
+                    });
+                });
             }
-        }
+        }).GeneratePdf(path);
+
+        return path;
     }
 
     private static IReadOnlyList<string> ResolvePitstopExportImages(MonthDocumentInfo report)
@@ -300,56 +379,69 @@ public static class MonthlyReportExporter
         return ext is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp";
     }
 
+    private static void MergePdfs(IReadOnlyList<string> pdfPaths, string outputPath)
+    {
+        using var output = new PdfDocument();
+        foreach (var path in pdfPaths)
+        {
+            using var input = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+            for (var i = 0; i < input.PageCount; i++)
+                output.AddPage(input.Pages[i]);
+        }
+
+        output.Save(outputPath);
+    }
+
     private static void ComposeSignatureBlock(IContainer container, MonthlyReportData data)
     {
-        container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(14).Column(col =>
+        container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(10).Column(col =>
         {
-            col.Item().Text("Treasurer declaration").Bold().FontSize(11).FontColor(Colors.Black);
-            col.Item().PaddingTop(4)
+            col.Item().Text("Treasurer declaration").Bold().FontSize(10).FontColor(Colors.Black);
+            col.Item().PaddingTop(2)
                 .Text("I confirm this report is a true and fair summary of the club's bank transactions for the period.")
-                .FontSize(9).FontColor(Colors.Grey.Darken1);
+                .FontSize(8).FontColor(Colors.Grey.Darken1);
 
-            col.Item().PaddingTop(18).Row(row =>
+            col.Item().PaddingTop(10).Row(row =>
             {
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Full name").FontSize(8).FontColor(Colors.Grey.Medium);
-                    c.Item().PaddingTop(8).MinHeight(52).AlignBottom().Column(inner =>
+                    c.Item().Text("Full name").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().PaddingTop(4).MinHeight(36).AlignBottom().Column(inner =>
                     {
-                        inner.Item().Text(data.PreparedBy).SemiBold().FontSize(11);
-                        inner.Item().Text(data.PreparedByRole).FontSize(8).FontColor(Colors.Grey.Medium);
+                        inner.Item().Text(data.PreparedBy).SemiBold().FontSize(10);
+                        inner.Item().Text(data.PreparedByRole).FontSize(7).FontColor(Colors.Grey.Medium);
                     });
-                    c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                    c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                 });
 
-                row.ConstantItem(24);
+                row.ConstantItem(16);
 
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Signature").FontSize(8).FontColor(Colors.Grey.Medium);
-                    c.Item().PaddingTop(8).MinHeight(52).AlignBottom().Column(inner =>
+                    c.Item().Text("Signature").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().PaddingTop(4).MinHeight(36).AlignBottom().Column(inner =>
                     {
                         if (data.HasSignature)
                         {
-                            inner.Item().Height(40).Width(140).Image(data.SignatureImagePath!).FitArea();
-                            inner.Item().PaddingTop(4).Text("Digitally signed").FontSize(8).FontColor(Colors.Grey.Medium);
+                            inner.Item().Height(28).Width(120).Image(data.SignatureImagePath!).FitArea();
+                            inner.Item().PaddingTop(2).Text("Digitally signed").FontSize(7).FontColor(Colors.Grey.Medium);
                         }
                         else
                         {
-                            inner.Item().Text("Draw signature in Settings").FontSize(8).FontColor(Colors.Grey.Medium);
+                            inner.Item().Text("Draw signature in Settings").FontSize(7).FontColor(Colors.Grey.Medium);
                         }
                     });
-                    c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                    c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                 });
 
-                row.ConstantItem(24);
+                row.ConstantItem(16);
 
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Date").FontSize(8).FontColor(Colors.Grey.Medium);
-                    c.Item().PaddingTop(8).MinHeight(52).AlignBottom()
-                        .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(11);
-                    c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                    c.Item().Text("Date").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().PaddingTop(4).MinHeight(36).AlignBottom()
+                        .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(10);
+                    c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                 });
             });
         });
@@ -373,11 +465,11 @@ public static class MonthlyReportExporter
     {
         row.RelativeItem().Column(c =>
         {
-            c.Item().Text(label).FontSize(8).FontColor(Colors.Grey.Darken1);
+            c.Item().Text(label).FontSize(7).FontColor(Colors.Grey.Darken1);
             if (bold)
-                c.Item().Text(amount.ToString("C")).FontSize(11).Bold();
+                c.Item().Text(amount.ToString("C")).FontSize(10).Bold();
             else
-                c.Item().Text(amount.ToString("C")).FontSize(11);
+                c.Item().Text(amount.ToString("C")).FontSize(10);
         });
     }
 
@@ -387,9 +479,9 @@ public static class MonthlyReportExporter
         IReadOnlyList<CategoryTotal> items,
         decimal total)
     {
-        container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(col =>
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Column(col =>
         {
-            col.Item().Text(title).Bold().FontSize(11).FontColor(Colors.Black);
+            col.Item().Text(title).Bold().FontSize(10).FontColor(Colors.Black);
             if (items.Count == 0)
             {
                 col.Item().PaddingTop(4).Text("None").Italic().FontColor(Colors.Grey.Medium);
@@ -416,16 +508,16 @@ public static class MonthlyReportExporter
     }
 
     private static IContainer HeaderCell(IContainer container) =>
-        container.DefaultTextStyle(x => x.SemiBold().FontSize(8).FontColor(Colors.White))
+        container.DefaultTextStyle(x => x.SemiBold().FontSize(7).FontColor(Colors.White))
             .Background(Colors.Blue.Darken2)
-            .PaddingVertical(4)
-            .PaddingHorizontal(4);
+            .PaddingVertical(3)
+            .PaddingHorizontal(3);
 
     private static IContainer BodyCell(IContainer container, string background) =>
         container.Background(background)
-            .PaddingVertical(3)
-            .PaddingHorizontal(4)
-            .DefaultTextStyle(x => x.FontSize(8));
+            .PaddingVertical(2)
+            .PaddingHorizontal(3)
+            .DefaultTextStyle(x => x.FontSize(7));
 
     public static string ExportExcel(MonthlyReportData data, string outputPath)
     {
@@ -614,7 +706,7 @@ public static class MonthlyReportExporter
             }
 
             pit.Cell(pitRow + 1, 1).Value =
-                "Full report pages are embedded in the PDF export of this monthly report.";
+                "Full report pages are appended to the PDF export of this monthly report.";
             pit.Columns().AdjustToContents();
         }
 

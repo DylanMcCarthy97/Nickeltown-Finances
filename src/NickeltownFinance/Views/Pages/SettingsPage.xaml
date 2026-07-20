@@ -377,16 +377,16 @@
                                 <TextBlock Text="{Binding UpdateStatusText}"
                                            Style="{StaticResource CaptionTextStyle}"
                                            TextWrapping="Wrap"
-                                           Margin="0,0,0,8" />
+                                           Margin="0,0,0,8"
+                                           Visibility="{Binding ShowUpdateProgress, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
 
-                                <StackPanel Visibility="{Binding ShowUpdateProgress, Converter={StaticResource BoolToVisibilityConverter}}"
-                                            Margin="0,0,0,12">
-                                    <ProgressBar Minimum="0"
-                                                 Maximum="100"
-                                                 Height="8"
-                                                 Value="{Binding UpdateProgressPercent}"
-                                                 IsIndeterminate="{Binding IsUpdateProgressIndeterminate}" />
-                                </StackPanel>
+                                <ds:RaceTrackProgress Visibility="{Binding ShowUpdateProgress, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                      Margin="0,0,0,12"
+                                                      Progress="{Binding UpdateProgressPercent}"
+                                                      IsIndeterminate="{Binding IsUpdateProgressIndeterminate}"
+                                                      StageLabel="{Binding UpdateStageLabel}"
+                                                      ProgressLabel="{Binding UpdateProgressLabel}"
+                                                      DetailText="{Binding UpdateDetailText}" />
 
                                 <StackPanel Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
                                             Margin="0,0,0,14">

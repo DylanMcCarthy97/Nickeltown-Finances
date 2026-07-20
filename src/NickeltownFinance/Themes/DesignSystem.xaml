@@ -1200,13 +1200,17 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
-                    <Grid SnapsToDevicePixels="True">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3" />
+                    <!-- PART_Track is required so WPF can size PART_Indicator from Value. -->
+                    <Border x:Name="PART_Track"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="3"
+                            ClipToBounds="True"
+                            SnapsToDevicePixels="True">
                         <Border x:Name="PART_Indicator"
                                 Background="{TemplateBinding Foreground}"
                                 CornerRadius="3"
                                 HorizontalAlignment="Left" />
-                    </Grid>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
