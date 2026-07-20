@@ -165,29 +165,16 @@
                             </ContextMenu>
                         </ds:AppDataGrid.ContextMenu>
                         <ds:AppDataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="72">
+                            <DataGridTemplateColumn Header="" Width="48">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <ui:Button Icon="{ui:SymbolIcon Attach24}"
-                                                       ToolTip="View receipts"
-                                                       Style="{StaticResource ToolbarButtonStyle}"
-                                                       Visibility="{Binding HasReceipt, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                       Click="ReceiptIcon_OnClick"
-                                                       Padding="2" Margin="0,0,2,0" />
-                                            <ui:Button Icon="{ui:SymbolIcon Payment24}"
-                                                       ToolTip="{Binding SquareStatusToolTip}"
-                                                       Style="{StaticResource ToolbarButtonStyle}"
-                                                       Visibility="{Binding HasSquareDepositDetail, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                       Padding="2" Margin="0,0,2,0"
-                                                       Foreground="{StaticResource BrandSuccessBrush}" />
-                                            <ui:Button Icon="{ui:SymbolIcon Clock24}"
-                                                       ToolTip="{Binding SquareStatusToolTip}"
-                                                       Style="{StaticResource ToolbarButtonStyle}"
-                                                       Visibility="{Binding IsSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                       Padding="2"
-                                                       Foreground="{StaticResource BrandWarningBrush}" />
-                                        </StackPanel>
+                                        <ui:Button Icon="{ui:SymbolIcon Attach24}"
+                                                   ToolTip="View receipts"
+                                                   Style="{StaticResource ToolbarButtonStyle}"
+                                                   Visibility="{Binding HasReceipt, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                   Click="ReceiptIcon_OnClick"
+                                                   Padding="2"
+                                                   HorizontalAlignment="Center" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -202,20 +189,6 @@
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="95" SortMemberPath="Date" />
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" SortMemberPath="Description" />
-                            <DataGridTemplateColumn Header="Square" Width="88" SortMemberPath="IsSquareDeposit">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ds:StatusBadge Text="Matched"
-                                                            Tone="Success"
-                                                            Visibility="{Binding HasSquareDepositDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                            <ds:StatusBadge Text="Awaiting"
-                                                            Tone="Warning"
-                                                            Visibility="{Binding IsSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="155" MinWidth="145" SortMemberPath="CategoryName" />
                             <DataGridTemplateColumn Header="Income" Width="90" SortMemberPath="IncomeAmount">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -342,8 +315,8 @@
                                     </ItemsControl>
                                 </StackPanel>
 
-                                <!-- Receipt details -->
-                                <StackPanel Visibility="{Binding ShowSquareDetail, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <!-- Receipt details (expenses only) -->
+                                <StackPanel Visibility="{Binding ShowReceiptDetail, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <TextBlock Text="Transaction details" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
                                     <Border Height="120" CornerRadius="8" Background="#1e293b" Margin="0,0,0,12">
                                         <Image Source="{Binding DetailThumbnail}" Stretch="Uniform" MaxHeight="120" />
@@ -373,6 +346,18 @@
                                                    Command="{Binding RemoveReceiptCommand}"
                                                    HorizontalAlignment="Stretch" MinHeight="36" Margin="4,4,0,0" />
                                     </UniformGrid>
+                                </StackPanel>
+
+                                <!-- Income / general details (no receipt workflow) -->
+                                <StackPanel Visibility="{Binding ShowGeneralDetail, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Transaction details" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
+                                    <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SelectedTransaction.CategoryName, Mode=OneWay}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,8" />
+                                    <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="{Binding SelectedTransaction.Notes, Mode=OneWay}" Style="{StaticResource CaptionTextStyle}"
+                                               TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="Double-click to edit. For Square deposits you can also mark extra categories there."
+                                               Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>

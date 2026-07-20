@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.Helpers;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Services;
@@ -43,9 +44,9 @@ public partial class TransactionEditorViewModel : ViewModelBase
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private bool _alwaysUseCategoryForDescription = true;
     [ObservableProperty] private ObservableCollection<Category> _categories = [];
-    [ObservableProperty] private ObservableCollection<CategorySplitLineViewModel> _categorySplits = [];
+    [ObservableProperty] private ObservableCollection<CategorySplitLineViewModel> _categoryTags = [];
     [ObservableProperty] private bool _isSquareDeposit;
-    [ObservableProperty] private bool _splitAcrossCategories;
+    [ObservableProperty] private bool _markAdditionalCategories;
     [ObservableProperty] private ObservableCollection<AttachmentInfo> _attachments = [];
     [ObservableProperty] private AttachmentInfo? _selectedAttachment;
     [ObservableProperty] private AttachmentKind _selectedAttachmentKind = AttachmentKind.Receipt;
@@ -61,26 +62,7 @@ public partial class TransactionEditorViewModel : ViewModelBase
 
     public bool HasPendingMobileUpload => _trackedImportIds.Count > 0;
 
-    public bool ShowCategorySplit => IsSquareDeposit && IsIncome;
-
-    public decimal SplitAllocatedTotal => CategorySplits.Sum(s => s.Amount);
-
-    public decimal SplitRemaining => Math.Round(Amount - SplitAllocatedTotal, 2);
-
-    public string SplitStatusText
-    {
-        get
-        {
-            if (!SplitAcrossCategories)
-                return string.Empty;
-            var remaining = SplitRemaining;
-            if (Math.Abs(remaining) < 0.005m)
-                return "Split adds up correctly.";
-            return remaining > 0
-                ? $"{remaining:C} still to allocate."
-                : $"Over by {Math.Abs(remaining):C}.";
-        }
-    }
+    public bool ShowCategoryTags => true;
 
     public Array PaymentMethods => Enum.GetValues(typeof(PaymentMethod));
     public Array AttachmentKinds => Enum.GetValues(typeof(AttachmentKind));
@@ -181,7 +163,7 @@ public partial class TransactionEditorViewModel : ViewModelBase
                 Reference = txn.Reference;
                 Notes = txn.Notes;
                 IsSquareDeposit = txn.IsSquareDeposit;
-                LoadCategorySplits(txn);
+                LoadCategoryTags(txn);
                 UpdateTitle();
                 await ReloadAttachmentsAsync();
             }
@@ -203,9 +185,7 @@ public partial class TransactionEditorViewModel : ViewModelBase
         }
 
         UpdateTitle();
-        OnPropertyChanged(nameof(ShowCategorySplit));
-        if (!IsIncome)
-            SplitAcrossCategories = false;
+        OnPropertyChanged(nameof(ShowCategoryTags));
     }
 
     private async Task ReloadCategoriesForTypeAsync()
@@ -221,7 +201,7 @@ public partial class TransactionEditorViewModel : ViewModelBase
         var cats = await _categoryService.GetByTypeAsync(type);
         Categories = new ObservableCollection<Category>(cats);
         SelectedCategory ??= Categories.FirstOrDefault();
-        RefreshSplitCategoryOptions();
+        RefreshTagCategoryOptions();
     }
 
     private void UpdateTitle()
@@ -231,97 +211,59 @@ public partial class TransactionEditorViewModel : ViewModelBase
             : (IsIncome ? "New income" : "New expense");
     }
 
-    private void LoadCategorySplits(TransactionModel txn)
+    private void LoadCategoryTags(TransactionModel txn)
     {
-        DetachSplitLineHandlers();
-        CategorySplits.Clear();
+        DetachTagLineHandlers();
+        CategoryTags.Clear();
 
-        var allocations = txn.CategoryAllocations?
-            .Where(a => a.CategoryId != ObjectId.Empty && a.Amount > 0)
-            .ToList() ?? [];
-
-        var income = txn.IncomeAmount;
-        var validSplit = allocations.Count >= 2
-                         && income > 0
-                         && Math.Abs(allocations.Sum(a => a.Amount) - income) <= 0.02m;
-
-        if (validSplit)
+        var extras = TransactionCategoryHelper.GetExtraCategoryIds(txn).ToList();
+        if (extras.Count > 0)
         {
-            foreach (var allocation in allocations)
+            foreach (var id in extras)
             {
-                var line = new CategorySplitLineViewModel(
-                    Categories.FirstOrDefault(c => c.Id == allocation.CategoryId),
-                    allocation.Amount);
-                AttachSplitLineHandler(line);
-                CategorySplits.Add(line);
+                var line = new CategorySplitLineViewModel(Categories.FirstOrDefault(c => c.Id == id));
+                AttachTagLineHandler(line);
+                CategoryTags.Add(line);
             }
 
-            SplitAcrossCategories = true;
+            MarkAdditionalCategories = true;
         }
         else
         {
-            SplitAcrossCategories = false;
+            MarkAdditionalCategories = false;
         }
 
-        NotifySplitTotalsChanged();
-        OnPropertyChanged(nameof(ShowCategorySplit));
+        OnPropertyChanged(nameof(ShowCategoryTags));
     }
 
-    partial void OnIsSquareDepositChanged(bool value)
+    partial void OnMarkAdditionalCategoriesChanged(bool value)
     {
-        OnPropertyChanged(nameof(ShowCategorySplit));
-        if (!value)
-            SplitAcrossCategories = false;
-    }
-
-    partial void OnSplitAcrossCategoriesChanged(bool value)
-    {
-        if (value)
+        if (value && CategoryTags.Count == 0)
         {
-            if (CategorySplits.Count == 0)
-            {
-                var first = new CategorySplitLineViewModel(SelectedCategory, Amount > 0 ? Amount : 0);
-                var second = new CategorySplitLineViewModel(null, 0);
-                AttachSplitLineHandler(first);
-                AttachSplitLineHandler(second);
-                CategorySplits.Add(first);
-                CategorySplits.Add(second);
-            }
+            var line = new CategorySplitLineViewModel(null);
+            AttachTagLineHandler(line);
+            CategoryTags.Add(line);
         }
-
-        NotifySplitTotalsChanged();
     }
 
-    partial void OnAmountChanged(decimal value) => NotifySplitTotalsChanged();
-
-    private void AttachSplitLineHandler(CategorySplitLineViewModel line)
+    private void AttachTagLineHandler(CategorySplitLineViewModel line)
     {
-        line.PropertyChanged += OnSplitLinePropertyChanged;
+        line.PropertyChanged += OnTagLinePropertyChanged;
     }
 
-    private void DetachSplitLineHandlers()
+    private void DetachTagLineHandlers()
     {
-        foreach (var line in CategorySplits)
-            line.PropertyChanged -= OnSplitLinePropertyChanged;
+        foreach (var line in CategoryTags)
+            line.PropertyChanged -= OnTagLinePropertyChanged;
     }
 
-    private void OnSplitLinePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnTagLinePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(CategorySplitLineViewModel.Amount)
-            or nameof(CategorySplitLineViewModel.SelectedCategory))
-            NotifySplitTotalsChanged();
     }
 
-    private void NotifySplitTotalsChanged()
+    private void RefreshTagCategoryOptions()
     {
-        OnPropertyChanged(nameof(SplitAllocatedTotal));
-        OnPropertyChanged(nameof(SplitRemaining));
-        OnPropertyChanged(nameof(SplitStatusText));
-    }
-
-    private void RefreshSplitCategoryOptions()
-    {
-        foreach (var line in CategorySplits)
+        foreach (var line in CategoryTags)
         {
             if (line.SelectedCategory is null)
                 continue;
@@ -331,24 +273,23 @@ public partial class TransactionEditorViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AddCategorySplitLine()
+    private void AddCategoryTagLine()
     {
-        var remaining = Math.Max(0, SplitRemaining);
-        var line = new CategorySplitLineViewModel(null, remaining);
-        AttachSplitLineHandler(line);
-        CategorySplits.Add(line);
-        NotifySplitTotalsChanged();
+        var line = new CategorySplitLineViewModel(null);
+        AttachTagLineHandler(line);
+        CategoryTags.Add(line);
     }
 
     [RelayCommand]
-    private void RemoveCategorySplitLine(CategorySplitLineViewModel? line)
+    private void RemoveCategoryTagLine(CategorySplitLineViewModel? line)
     {
-        if (line is null || CategorySplits.Count <= 2)
+        if (line is null)
             return;
 
-        line.PropertyChanged -= OnSplitLinePropertyChanged;
-        CategorySplits.Remove(line);
-        NotifySplitTotalsChanged();
+        line.PropertyChanged -= OnTagLinePropertyChanged;
+        CategoryTags.Remove(line);
+        if (CategoryTags.Count == 0)
+            MarkAdditionalCategories = false;
     }
 
     [RelayCommand]
@@ -532,7 +473,7 @@ public partial class TransactionEditorViewModel : ViewModelBase
             return false;
         }
 
-        if (SelectedCategory is null && !SplitAcrossCategories)
+        if (SelectedCategory is null)
         {
             ErrorMessage = "Please select a category.";
             return false;
@@ -550,30 +491,23 @@ public partial class TransactionEditorViewModel : ViewModelBase
             return false;
         }
 
-        List<CategoryAllocation>? allocations = null;
-        if (SplitAcrossCategories && IsSquareDeposit && IsIncome)
+        List<CategoryAllocation> extraTags = [];
+        if (MarkAdditionalCategories)
         {
-            var lines = CategorySplits
-                .Where(s => s.SelectedCategory is not null && s.Amount > 0)
+            var primaryId = SelectedCategory.Id;
+            var tagIds = CategoryTags
+                .Select(x => x.SelectedCategory?.Id ?? ObjectId.Empty)
+                .Where(id => id != ObjectId.Empty && id != primaryId)
+                .Distinct()
                 .ToList();
-            if (lines.Count < 2)
+
+            if (tagIds.Count == 0)
             {
-                ErrorMessage = "Add at least two category lines to split this Square deposit.";
+                ErrorMessage = "Pick at least one extra category to mark, or turn off Also mark as.";
                 return false;
             }
 
-            var allocated = Math.Round(lines.Sum(s => s.Amount), 2);
-            if (Math.Abs(allocated - Amount) > 0.01m)
-            {
-                ErrorMessage = $"Split amounts must add up to {Amount:C} (currently {allocated:C}).";
-                return false;
-            }
-
-            allocations = lines.Select(s => new CategoryAllocation
-            {
-                CategoryId = s.SelectedCategory!.Id,
-                Amount = Math.Round(s.Amount, 2)
-            }).ToList();
+            extraTags = tagIds.Select(id => new CategoryAllocation { CategoryId = id }).ToList();
         }
 
         var txn = _editId != ObjectId.Empty
@@ -582,10 +516,8 @@ public partial class TransactionEditorViewModel : ViewModelBase
 
         txn.Date = Date;
         txn.Description = (Description ?? string.Empty).Trim();
-        txn.CategoryId = allocations?.FirstOrDefault()?.CategoryId
-                         ?? SelectedCategory?.Id
-                         ?? ObjectId.Empty;
-        txn.CategoryAllocations = allocations ?? [];
+        txn.CategoryId = SelectedCategory.Id;
+        txn.CategoryAllocations = extraTags;
         txn.PaymentMethod = SelectedPaymentMethod;
         txn.Reference = (Reference ?? string.Empty).Trim();
         txn.Notes = (Notes ?? string.Empty).Trim();
@@ -644,17 +576,13 @@ public partial class TransactionEditorViewModel : ViewModelBase
             await ReloadAttachmentsAsync();
             ClearMobileUploadState();
 
-            var rememberCategoryId = txn.CategoryId;
+            var rememberCategoryId = SelectedCategory.Id;
             if (AlwaysUseCategoryForDescription &&
-                allocations is null &&
                 rememberCategoryId != ObjectId.Empty &&
                 (_originalCategoryId is null || _originalCategoryId != rememberCategoryId))
                 await _categorisationService.RememberAsync(txn.Description, rememberCategoryId);
 
             _originalCategoryId = rememberCategoryId;
-            if (allocations?.FirstOrDefault() is { } firstAllocation)
-                SelectedCategory = Categories.FirstOrDefault(c => c.Id == firstAllocation.CategoryId)
-                                   ?? SelectedCategory;
             Saved?.Invoke(this, EventArgs.Empty);
 
             if (closeAfterSave)

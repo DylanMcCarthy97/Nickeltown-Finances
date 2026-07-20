@@ -5,42 +5,42 @@ namespace NickeltownFinance.Core.Helpers;
 
 public static class TransactionCategoryHelper
 {
-    public static IEnumerable<(ObjectId CategoryId, decimal Amount)> GetIncomeCategoryAmounts(Transaction txn)
+    public static IEnumerable<ObjectId> GetAllCategoryIds(Transaction txn)
     {
-        if (txn.IncomeAmount <= 0)
-            yield break;
+        if (txn.CategoryId != ObjectId.Empty)
+            yield return txn.CategoryId;
 
-        var splits = txn.CategoryAllocations?
-            .Where(a => a.CategoryId != ObjectId.Empty && a.Amount > 0)
-            .ToList() ?? [];
+        foreach (var id in GetExtraCategoryIds(txn))
+            yield return id;
+    }
 
-        if (splits.Count >= 2)
+    public static IEnumerable<ObjectId> GetExtraCategoryIds(Transaction txn)
+    {
+        var seen = new HashSet<ObjectId> { txn.CategoryId };
+        foreach (var allocation in txn.CategoryAllocations ?? [])
         {
-            var total = splits.Sum(a => a.Amount);
-            if (Math.Abs(total - txn.IncomeAmount) <= 0.02m)
-            {
-                foreach (var split in splits)
-                    yield return (split.CategoryId, split.Amount);
-                yield break;
-            }
+            if (allocation.CategoryId == ObjectId.Empty || !seen.Add(allocation.CategoryId))
+                continue;
+            yield return allocation.CategoryId;
         }
-
-        yield return (txn.CategoryId, txn.IncomeAmount);
     }
 
     public static string FormatCategoryDisplay(
         Transaction txn,
         IReadOnlyDictionary<ObjectId, Category> categories)
     {
-        var parts = GetIncomeCategoryAmounts(txn)
-            .Select(a => categories.TryGetValue(a.CategoryId, out var c) ? c.Name : "Unknown")
+        var parts = GetAllCategoryIds(txn)
+            .Select(id => categories.TryGetValue(id, out var c) ? c.Name : "Unknown")
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         if (parts.Count == 0)
-            return categories.TryGetValue(txn.CategoryId, out var fallback) ? fallback.Name : "Unknown";
+            return "Unknown";
 
         return string.Join(" + ", parts);
     }
+
+    public static bool MatchesCategoryFilter(Transaction txn, ObjectId categoryId) =>
+        categoryId != ObjectId.Empty && GetAllCategoryIds(txn).Any(id => id == categoryId);
 }

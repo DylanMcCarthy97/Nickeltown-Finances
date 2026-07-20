@@ -15,7 +15,7 @@ public partial class TransactionsPage : UserControl
         if (DataContext is not TransactionsViewModel vm || vm.SelectedTransaction is null)
             return;
 
-        if (vm.SelectedTransaction.HasSquareDepositDetail || vm.SelectedTransaction.IsSquareAwaitingMatch)
+        if (vm.SelectedTransaction.HasSquareDepositDetail)
             return;
 
         if (vm.SelectedTransaction.HasReceipt)

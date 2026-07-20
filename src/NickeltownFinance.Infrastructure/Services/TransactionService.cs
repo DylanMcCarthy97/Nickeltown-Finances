@@ -180,10 +180,9 @@ public class TransactionService : ITransactionService
                 }
             }
 
-            if (categoryFilter is not null && categoryFilter != ObjectId.Empty)
+            if (categoryFilter is { } filterId && filterId != ObjectId.Empty)
             {
-                var matchesCategory = txn.CategoryId == categoryFilter
-                    || TransactionCategoryHelper.GetIncomeCategoryAmounts(txn).Any(a => a.CategoryId == categoryFilter);
+                var matchesCategory = TransactionCategoryHelper.MatchesCategoryFilter(txn, filterId);
                 if (!matchesCategory)
                 {
                     if (hasActiveFilters && !txn.IsDeleted)
@@ -441,9 +440,7 @@ public class TransactionService : ITransactionService
             .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && File.Exists(p));
 
         categories.TryGetValue(txn.CategoryId, out var cat);
-        var categoryName = txn.IncomeAmount > 0
-            ? TransactionCategoryHelper.FormatCategoryDisplay(txn, categories)
-            : cat?.Name ?? "Unknown";
+        var categoryName = TransactionCategoryHelper.FormatCategoryDisplay(txn, categories);
 
         return new()
         {

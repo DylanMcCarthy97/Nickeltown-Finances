@@ -255,9 +255,9 @@ public partial class ReceiptViewerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void SelectPage(string? pageNumberText)
+    private void SelectPage(int pageNumber)
     {
-        if (!int.TryParse(pageNumberText, out var pageNumber))
+        if (pageNumber < 1)
             return;
 
         CurrentPageIndex = Math.Clamp(pageNumber - 1, 0, Math.Max(0, _currentPagePaths.Count - 1));

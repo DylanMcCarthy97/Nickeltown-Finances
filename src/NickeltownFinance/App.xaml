@@ -33,6 +33,7 @@
             <conv:StringEqualsConverter x:Key="StringEqualsConverter" />
             <conv:PathToImageSourceConverter x:Key="PathToImageSourceConverter" />
             <conv:RoleDisplayConverter x:Key="RoleDisplayConverter" />
+            <conv:PaymentMethodDisplayConverter x:Key="PaymentMethodDisplayConverter" />
             <conv:StatusBadgeBackgroundConverter x:Key="StatusBadgeBackgroundConverter" />
             <conv:PasswordStrengthBrushConverter x:Key="PasswordStrengthBrushConverter" />
             <conv:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />

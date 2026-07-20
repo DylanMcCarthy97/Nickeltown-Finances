@@ -224,17 +224,22 @@ public static class MonthlyReportExporter
 
     private static void ComposePitstopAppendix(ColumnDescriptor col, MonthlyReportData data)
     {
-        col.Item().PageBreak();
-        col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(14).FontColor(Colors.Black);
-        col.Item().PaddingTop(4)
-            .Text("Full ClubPOS end-of-day reports attached to this month.")
-            .FontSize(9).FontColor(Colors.Grey.Medium);
-
+        var isFirstReport = true;
         foreach (var report in data.PitstopReports)
         {
             var images = ResolvePitstopExportImages(report);
             col.Item().PageBreak();
-            col.Item().Text(report.DisplayLabel).Bold().FontSize(12).FontColor(Colors.Black);
+
+            if (isFirstReport)
+            {
+                col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(14).FontColor(Colors.Black);
+                col.Item().PaddingTop(4)
+                    .Text("Full ClubPOS end-of-day reports attached to this month.")
+                    .FontSize(9).FontColor(Colors.Grey.Medium);
+                isFirstReport = false;
+            }
+
+            col.Item().PaddingTop(12).Text(report.DisplayLabel).Bold().FontSize(12).FontColor(Colors.Black);
             col.Item().PaddingTop(2).Text(report.FileName).FontSize(9).FontColor(Colors.Grey.Medium);
 
             if (images.Count == 0)
@@ -257,7 +262,9 @@ public static class MonthlyReportExporter
                         .FontSize(8).FontColor(Colors.Grey.Medium);
                 }
 
-                col.Item().PaddingTop(6).MaxHeight(720).Image(images[i]).FitArea();
+                // Leave room for title/caption on the first page of each report.
+                var maxHeight = i == 0 ? 640 : 720;
+                col.Item().PaddingTop(6).MaxHeight(maxHeight).Image(images[i]).FitArea();
             }
         }
     }

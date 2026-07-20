@@ -60,13 +60,12 @@ public class TransactionListItem
 
     public ObjectId? SquareDepositId { get; set; }
 
-    public bool IsSquareAwaitingMatch => IsSquareDeposit && !HasSquareDepositDetail;
+    /// <summary>Square CSV matching is off — never show an awaiting-match state.</summary>
+    public bool IsSquareAwaitingMatch => false;
 
     public string SquareStatusToolTip => HasSquareDepositDetail
         ? "Square deposit matched — click to view breakdown"
-        : IsSquareAwaitingMatch
-            ? "Awaiting Square match — import Square transactions CSV"
-            : string.Empty;
+        : string.Empty;
 
     /// <summary>True for expenses that still need a receipt attached.</summary>
     public bool ReceiptRequired => ExpenseAmount > 0 && !HasReceipt;

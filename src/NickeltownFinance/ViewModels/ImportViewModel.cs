@@ -292,7 +292,7 @@ public partial class ImportViewModel : ViewModelBase
     private void StartSquareImport()
     {
         _notificationService.ShowInfo(
-            "Square CSV import is turned off. Import the ANZ statement, set each Square transfer's category, and open the transaction to split across categories when needed.");
+            "Square CSV import is turned off. Import the ANZ statement, set each Square transfer's category, and open the transaction to also mark other categories when needed.");
         Section = "Hub";
         WizardStep = 1;
     }

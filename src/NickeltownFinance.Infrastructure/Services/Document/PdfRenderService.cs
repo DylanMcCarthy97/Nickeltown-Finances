@@ -1,4 +1,5 @@
 using Docnet.Core;
+using Docnet.Core.Converters;
 using Docnet.Core.Models;
 using OpenCvSharp;
 using NickeltownFinance.Core.Helpers;
@@ -10,6 +11,8 @@ public sealed class PdfRenderService : IPdfRenderService
 {
     public const int DefaultRenderWidth = 1800;
     public const int MaxPagesPerDocument = 100;
+
+    private static readonly NaiveTransparencyRemover WhiteBackground = new();
 
     public bool IsAvailable { get; } = true;
 
@@ -50,7 +53,7 @@ public sealed class PdfRenderService : IPdfRenderService
                 return Task.FromResult<string?>(null);
 
             using var pageReader = reader.GetPageReader(pageIndex);
-            if (!TrySavePageAsJpeg(pageReader.GetPageWidth(), pageReader.GetPageHeight(), pageReader.GetImage(), outputFilePath))
+            if (!TrySavePageAsJpeg(pageReader.GetPageWidth(), pageReader.GetPageHeight(), pageReader.GetImage(WhiteBackground), outputFilePath))
                 return Task.FromResult<string?>(null);
 
             return Task.FromResult<string?>(outputFilePath);
@@ -86,9 +89,13 @@ public sealed class PdfRenderService : IPdfRenderService
                 cancellationToken.ThrowIfCancellationRequested();
                 var outputPath = Path.Combine(outputDirectory, $"page{pageIndex + 1}.jpg");
                 using var pageReader = reader.GetPageReader(pageIndex);
-                if (TrySavePageAsJpeg(pageReader.GetPageWidth(), pageReader.GetPageHeight(), pageReader.GetImage(), outputPath))
+                // Docnet returns transparent pixels as black unless composited onto a background.
+                if (TrySavePageAsJpeg(pageReader.GetPageWidth(), pageReader.GetPageHeight(), pageReader.GetImage(WhiteBackground), outputPath))
                     outputs.Add(outputPath);
             }
+
+            if (outputs.Count > 0)
+                File.WriteAllText(Path.Combine(outputDirectory, DocumentPreviewPaths.MonthDocumentRenderVersionMarker), "v2");
 
             return outputs;
         }
@@ -106,9 +113,9 @@ public sealed class PdfRenderService : IPdfRenderService
         if (rawBytes.Length == 0)
             return false;
 
-        using var rgba = Mat.FromPixelData(height, width, MatType.CV_8UC4, rawBytes);
+        using var bgra = Mat.FromPixelData(height, width, MatType.CV_8UC4, rawBytes);
         using var bgr = new Mat();
-        Cv2.CvtColor(rgba, bgr, ColorConversionCodes.BGRA2BGR);
+        Cv2.CvtColor(bgra, bgr, ColorConversionCodes.BGRA2BGR);
 
         Cv2.ImEncode(".jpg", bgr, out var jpegBytes, new ImageEncodingParam(ImwriteFlags.JpegQuality, 88));
         if (jpegBytes.Length == 0)

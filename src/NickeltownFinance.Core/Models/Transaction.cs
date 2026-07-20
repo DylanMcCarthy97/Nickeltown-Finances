@@ -48,18 +48,18 @@ public class Transaction : BaseEntity
     public bool IsSquareDeposit { get; set; }
 
     /// <summary>
-    /// Optional category split for deposits that cover more than one income type
-    /// (e.g. Bar Sales + Pitstop Sales). When present and totaling the transaction amount,
-    /// reports use these lines instead of <see cref="CategoryId"/> alone.
+    /// Extra category tags (labels only). Report totals use CategoryId and the full amount.
+    /// CategoryAllocation.Amount is unused (LiteDB compatibility).
     /// </summary>
     public List<CategoryAllocation> CategoryAllocations { get; set; } = [];
 }
 
-/// <summary>One category share of a split transaction.</summary>
+/// <summary>Extra category tag on a transaction (amount is ignored).</summary>
 public class CategoryAllocation
 {
     public ObjectId CategoryId { get; set; } = ObjectId.Empty;
 
+    /// <summary>Unused. Kept so existing LiteDB documents still deserialize.</summary>
     public decimal Amount { get; set; }
 }
 

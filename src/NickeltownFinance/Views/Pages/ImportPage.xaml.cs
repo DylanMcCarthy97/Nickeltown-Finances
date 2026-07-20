@@ -77,7 +77,7 @@ public partial class ImportPage
                 "Square CSV",
                 "Square transaction import is turned off for now.\n\n" +
                 "Import your ANZ statement instead, set each Square transfer's category, " +
-                "then open the transaction to split across categories if needed.");
+                "then open the transaction to also mark other categories if needed.");
             return;
         }
 

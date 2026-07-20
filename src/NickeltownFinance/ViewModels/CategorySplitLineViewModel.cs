@@ -6,15 +6,13 @@ namespace NickeltownFinance.ViewModels;
 public partial class CategorySplitLineViewModel : ObservableObject
 {
     [ObservableProperty] private Category? _selectedCategory;
-    [ObservableProperty] private decimal _amount;
 
     public CategorySplitLineViewModel()
     {
     }
 
-    public CategorySplitLineViewModel(Category? category, decimal amount)
+    public CategorySplitLineViewModel(Category? category)
     {
         SelectedCategory = category;
-        Amount = amount;
     }
 }

@@ -183,7 +183,7 @@ public class MonthDocumentService : IMonthDocumentService
     }
 
     /// <summary>
-    /// Backfills page previews for documents attached before all pages were rendered.
+    /// Backfills / refreshes page previews for attached documents.
     /// </summary>
     private async Task EnsurePreviewsAsync(MonthDocument document)
     {
@@ -199,8 +199,11 @@ public class MonthDocumentService : IMonthDocumentService
         var ext = Path.GetExtension(fullPath).ToLowerInvariant();
         if (ext == ".pdf")
         {
+            var previewDir = DocumentPreviewPaths.GetMonthDocumentPreviewDirectory(document.Id);
+            var versionMarker = Path.Combine(previewDir, DocumentPreviewPaths.MonthDocumentRenderVersionMarker);
             var pageCount = Math.Max(1, _pdfRenderService.GetPageCount(fullPath));
-            if (existing.Count >= pageCount)
+            var previewsCurrent = existing.Count >= pageCount && File.Exists(versionMarker);
+            if (previewsCurrent)
             {
                 if (document.PageCount != pageCount)
                 {

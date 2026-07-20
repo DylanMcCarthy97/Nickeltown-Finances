@@ -69,12 +69,11 @@ public class ReportService : IReportService
         var categories = _categoryRepository.GetAll().ToDictionary(c => c.Id);
 
         var incomeByCat = monthTxns.Where(t => t.IncomeAmount > 0)
-            .SelectMany(t => TransactionCategoryHelper.GetIncomeCategoryAmounts(t))
-            .GroupBy(x => x.CategoryId)
+            .GroupBy(t => t.CategoryId)
             .Select(g => new CategoryTotal
             {
                 CategoryName = categories.GetValueOrDefault(g.Key)?.Name ?? "Unknown",
-                Amount = g.Sum(x => x.Amount)
+                Amount = g.Sum(x => x.IncomeAmount)
             })
             .OrderByDescending(x => x.Amount)
             .ToList();
@@ -183,12 +182,11 @@ public class ReportService : IReportService
         }
 
         var incomeByCat = txns.Where(t => t.IncomeAmount > 0)
-            .SelectMany(t => TransactionCategoryHelper.GetIncomeCategoryAmounts(t))
-            .GroupBy(x => x.CategoryId)
+            .GroupBy(t => t.CategoryId)
             .Select(g => new CategoryTotal
             {
                 CategoryName = categories.GetValueOrDefault(g.Key)?.Name ?? "Unknown",
-                Amount = g.Sum(x => x.Amount)
+                Amount = g.Sum(x => x.IncomeAmount)
             })
             .OrderByDescending(x => x.Amount)
             .ToList();

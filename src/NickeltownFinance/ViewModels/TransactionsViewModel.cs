@@ -45,6 +45,8 @@ public partial class TransactionsViewModel : ViewModelBase
     [ObservableProperty] private int _detailAttachmentCount;
     [ObservableProperty] private bool _showDetailPanel;
     [ObservableProperty] private bool _showSquareDetail;
+    [ObservableProperty] private bool _showReceiptDetail;
+    [ObservableProperty] private bool _showGeneralDetail;
     [ObservableProperty] private bool _showSquareAwaitingMatch;
     [ObservableProperty] private string _squareDepositDate = string.Empty;
     [ObservableProperty] private decimal _squareGrossSales;
@@ -187,16 +189,20 @@ public partial class TransactionsViewModel : ViewModelBase
 
         if (value.HasSquareDepositDetail)
         {
+            ShowReceiptDetail = false;
+            ShowGeneralDetail = false;
             ShowSquareAwaitingMatch = false;
             _ = LoadSquareDepositDetailAsync(value.Id);
             return;
         }
 
-        if (value.IsSquareAwaitingMatch)
+        ShowSquareDetail = false;
+        ShowSquareAwaitingMatch = false;
+
+        if (value.ExpenseAmount > 0)
         {
-            // Square CSV matching UI hidden — categorise the ANZ transfer instead.
-            ShowSquareDetail = false;
-            ShowSquareAwaitingMatch = false;
+            ShowReceiptDetail = true;
+            ShowGeneralDetail = false;
             DetailReceiptStatus = value.ReceiptStatusText;
             DetailAttachmentCount = value.AttachmentCount;
             DetailThumbnail = string.IsNullOrWhiteSpace(value.ThumbnailPath) || !File.Exists(value.ThumbnailPath)
@@ -205,19 +211,19 @@ public partial class TransactionsViewModel : ViewModelBase
             return;
         }
 
-        ShowSquareDetail = false;
-        ShowSquareAwaitingMatch = false;
-        DetailReceiptStatus = value.ReceiptStatusText;
-        DetailAttachmentCount = value.AttachmentCount;
-        DetailThumbnail = string.IsNullOrWhiteSpace(value.ThumbnailPath) || !File.Exists(value.ThumbnailPath)
-            ? null
-            : Converters.ImageLoadHelper.LoadUnlocked(value.ThumbnailPath);
+        ShowReceiptDetail = false;
+        ShowGeneralDetail = true;
+        DetailReceiptStatus = string.Empty;
+        DetailAttachmentCount = 0;
+        DetailThumbnail = null;
     }
 
     private void ClearDetailPanel()
     {
         ShowSquareDetail = false;
         ShowSquareAwaitingMatch = false;
+        ShowReceiptDetail = false;
+        ShowGeneralDetail = false;
         DetailThumbnail = null;
         DetailReceiptStatus = string.Empty;
         DetailAttachmentCount = 0;
@@ -232,6 +238,8 @@ public partial class TransactionsViewModel : ViewModelBase
     {
         ShowSquareAwaitingMatch = false;
         ShowSquareDetail = true;
+        ShowReceiptDetail = false;
+        ShowGeneralDetail = false;
         DetailThumbnail = null;
         DetailReceiptStatus = string.Empty;
         DetailAttachmentCount = 0;
@@ -242,7 +250,11 @@ public partial class TransactionsViewModel : ViewModelBase
             var detail = await _squareDepositService.GetDetailForBankTransactionAsync(transactionId);
             if (detail is null || SelectedTransaction?.Id != transactionId)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(ClearDetailPanel);
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ShowSquareDetail = false;
+                    ShowGeneralDetail = true;
+                });
                 return;
             }
 
@@ -262,7 +274,11 @@ public partial class TransactionsViewModel : ViewModelBase
         catch (Exception ex)
         {
             ErrorMessage = $"Could not load Square deposit details: {ex.Message}";
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(ClearDetailPanel);
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                ShowSquareDetail = false;
+                ShowGeneralDetail = true;
+            });
         }
     }
 
@@ -271,7 +287,7 @@ public partial class TransactionsViewModel : ViewModelBase
     private void ImportSquareStatement()
     {
         _notificationService.ShowInfo(
-            "Square CSV import is turned off. Set this transfer's category, or open it and use Split across categories when one deposit covers more than one income type.");
+            "Square CSV import is turned off. Set this transfer's category, or open it and use Also mark as other categories when needed.");
     }
 
     [RelayCommand]

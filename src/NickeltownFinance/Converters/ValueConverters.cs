@@ -194,6 +194,15 @@ public class RoleDisplayConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+public class PaymentMethodDisplayConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is PaymentMethod method ? method.ToDisplayName() : value?.ToString() ?? string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 public class StatusBadgeBackgroundConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

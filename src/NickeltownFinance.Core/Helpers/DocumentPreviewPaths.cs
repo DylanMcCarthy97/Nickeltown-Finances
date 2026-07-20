@@ -44,6 +44,9 @@ public static class DocumentPreviewPaths
     public static string GetMonthDocumentPreviewDirectory(LiteDB.ObjectId documentId) =>
         Path.Combine(AppPaths.MonthDocumentsPath, documentId.ToString(), "previews");
 
+    /// <summary>Written after PDF pages are rendered with white-background compositing.</summary>
+    public const string MonthDocumentRenderVersionMarker = ".render-v2-whitebg";
+
     public static string GetMonthDocumentPagePath(LiteDB.ObjectId documentId, int pageNumber) =>
         Path.Combine(GetMonthDocumentPreviewDirectory(documentId), $"page{pageNumber}.jpg");
 }

@@ -111,8 +111,7 @@
                             <StackPanel Grid.Row="1" Margin="0,0,0,14">
                                 <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" />
                                 <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
-                                          DisplayMemberPath="Name" Height="40"
-                                          IsEnabled="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolConverter}}" />
+                                          DisplayMemberPath="Name" Height="40" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
                                 <TextBlock Text="Payment method" Style="{StaticResource FieldLabelStyle}" />
@@ -121,44 +120,36 @@
                             </StackPanel>
 
                             <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,0,0,14"
-                                        Visibility="{Binding ShowCategorySplit, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <CheckBox Content="Split across categories"
-                                          IsChecked="{Binding SplitAcrossCategories}"
+                                        Visibility="{Binding ShowCategoryTags, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <CheckBox Content="Also mark as other categories"
+                                          IsChecked="{Binding MarkAdditionalCategories}"
                                           Margin="0,0,0,8" />
-                                <TextBlock Text="Use this when one Square deposit covers more than one income type (e.g. Bar Sales and Pitstop Sales)."
+                                <TextBlock Text="Tags only — the full amount stays on the main category above. Use this when one transaction should also show under another category (e.g. bar + pitstop, or fixing a legacy import)."
                                            Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,0,0,8"
-                                           Visibility="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-                                <StackPanel Visibility="{Binding SplitAcrossCategories, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <ItemsControl ItemsSource="{Binding CategorySplits}">
+                                           Visibility="{Binding MarkAdditionalCategories, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                <StackPanel Visibility="{Binding MarkAdditionalCategories, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ItemsControl ItemsSource="{Binding CategoryTags}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Grid Margin="0,0,0,8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="12" />
-                                                        <ColumnDefinition Width="140" />
                                                         <ColumnDefinition Width="8" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
                                                               SelectedItem="{Binding SelectedCategory}"
                                                               DisplayMemberPath="Name" Height="36" />
-                                                    <ui:NumberBox Grid.Column="2" Value="{Binding Amount}" Minimum="0" Height="36"
-                                                                  SpinButtonPlacementMode="Hidden" />
-                                                    <ui:Button Grid.Column="4" Appearance="Secondary" Content="Remove"
-                                                               Command="{Binding DataContext.RemoveCategorySplitLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    <ui:Button Grid.Column="2" Appearance="Secondary" Content="Remove"
+                                                               Command="{Binding DataContext.RemoveCategoryTagLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                CommandParameter="{Binding}" Padding="10,4" />
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                        <ui:Button Appearance="Secondary" Content="Add category"
-                                                   Command="{Binding AddCategorySplitLineCommand}"
-                                                   Padding="12,6" Margin="0,0,12,0" />
-                                        <TextBlock Text="{Binding SplitStatusText}" VerticalAlignment="Center"
-                                                   Style="{StaticResource MutedTextStyle}" />
-                                    </StackPanel>
+                                    <ui:Button Appearance="Secondary" Content="Add category"
+                                               Command="{Binding AddCategoryTagLineCommand}"
+                                               Padding="12,6" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </StackPanel>
 
@@ -168,8 +159,7 @@
                                             PlaceholderText="What was this for?" FontSize="15" />
                                 <CheckBox Content="Always use this category for this description"
                                           IsChecked="{Binding AlwaysUseCategoryForDescription}"
-                                          Margin="0,8,0,0"
-                                          Visibility="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                          Margin="0,8,0,0" />
                             </StackPanel>
 
                             <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Margin="0,0,0,14">
