@@ -238,43 +238,7 @@ public static class MonthlyReportExporter
 
             // Keep declaration with the report body when it fits (avoids a signature-only page).
             col.Item().PaddingTop(10).ShowEntire().Element(c => ComposeSignatureBlock(c, data));
-
-            if (data.HasPitstopReports)
-                ComposePitstopAppendix(col, data);
         });
-    }
-
-    /// <summary>
-    /// Short divider page only — original Pitstop PDFs are concatenated after the QuestPDF output.
-    /// </summary>
-    private static void ComposePitstopAppendix(ColumnDescriptor col, MonthlyReportData data)
-    {
-        col.Item().PageBreak();
-        col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(12).FontColor(Colors.Black);
-        col.Item().PaddingTop(2)
-            .Text("Full ClubPOS end-of-day reports follow as attached pages.")
-            .FontSize(8).FontColor(Colors.Grey.Medium);
-
-        foreach (var report in data.PitstopReports)
-        {
-            col.Item().PaddingTop(6).Text(report.DisplayLabel).Bold().FontSize(10).FontColor(Colors.Black);
-            col.Item().PaddingTop(1).Text(report.FileName).FontSize(8).FontColor(Colors.Grey.Medium);
-            col.Item().PaddingTop(1)
-                .Text(DescribePitstopAppendixSource(report))
-                .FontSize(8).FontColor(Colors.Grey.Medium);
-        }
-    }
-
-    private static string DescribePitstopAppendixSource(MonthDocumentInfo report)
-    {
-        if (IsPitstopPdf(report) && File.Exists(report.FullPath))
-            return $"{Math.Max(1, report.PageCount)} page(s) attached from original PDF.";
-
-        var images = ResolvePitstopExportImages(report);
-        if (images.Count > 0)
-            return $"{images.Count} image page(s) attached.";
-
-        return "File unavailable — open the attachment from Nickeltown Finance.";
     }
 
     private static IReadOnlyList<string> BuildPitstopAppendixPdfs(MonthlyReportData data, string tempDir)
