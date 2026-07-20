@@ -2,6 +2,7 @@
 using LiteDB;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.FinancialYears;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Infrastructure.Import;
@@ -119,6 +120,17 @@ public class LegacyTreasurerImportService : ILegacyTreasurerImportService
         };
         _importBatchRepository.Insert(batch);
 
+        var selectedRows = request.Rows
+            .Where(r => r.IsSelected && r.Status != ImportRowStatus.Ignored && r.Status != ImportRowStatus.Duplicate)
+            .OrderBy(r => r.Date)
+            .ToList();
+
+        var yearsCreated = selectedRows.Count > 0
+            ? _financialYearService.EnsureYearsForDates(selectedRows.Select(r => r.Date))
+            : 0;
+
+        SeedLegacyOpeningBalances(request.Months);
+
         var toInsert = new List<TransactionModel>();
 
         foreach (var row in request.Rows)
@@ -235,7 +247,7 @@ public class LegacyTreasurerImportService : ILegacyTreasurerImportService
             }
         }
 
-        _financialYearService.RecalculateAllOpeningBalances();
+        _financialYearService.RecalculateAfterLegacyImport(selectedRows.Select(r => r.Date));
 
         sw.Stop();
         batch.TransactionsImported = imported;
@@ -244,6 +256,8 @@ public class LegacyTreasurerImportService : ILegacyTreasurerImportService
         batch.Errors = errors;
         batch.ProcessingTimeMs = sw.Elapsed.TotalMilliseconds;
         batch.ErrorMessages = errorMessages;
+        if (yearsCreated > 0)
+            batch.ErrorMessages.Add($"Created {yearsCreated} financial year(s) from legacy transaction dates.");
         if (snapshotsImported > 0)
             batch.ErrorMessages.Add($"Saved holdings for {snapshotsImported} month(s).");
         _importBatchRepository.Update(batch);
@@ -341,5 +355,23 @@ public class LegacyTreasurerImportService : ILegacyTreasurerImportService
         preview.DuplicateConfidence = 0.9;
         preview.MatchedTransactionId = candidates[0].Id;
         preview.IsSelected = false;
+    }
+
+    private void SeedLegacyOpeningBalances(IReadOnlyList<LegacyTreasurerMonthSummary> months)
+    {
+        var seededYears = new HashSet<ObjectId>();
+        foreach (var month in months.Where(m => !m.IsSkipped).OrderBy(m => m.Year).ThenBy(m => m.Month))
+        {
+            if (month.OpeningBankBalance == 0)
+                continue;
+
+            var anchorDate = month.PeriodFrom?.Date ?? new DateTime(month.Year, month.Month, 1);
+            var fy = _financialYearService.EnsureYearForDate(anchorDate);
+            if (seededYears.Contains(fy.Id))
+                continue;
+
+            if (_financialYearService.TrySeedLegacyYearOpening(fy.Id, anchorDate, month.OpeningBankBalance))
+                seededYears.Add(fy.Id);
+        }
     }
 }

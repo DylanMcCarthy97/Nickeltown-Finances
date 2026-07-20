@@ -99,6 +99,7 @@ public partial class ImportViewModel : ViewModelBase
     public bool IsAnzImport => ImportType == "ANZ";
     public bool IsSquareImport => ImportType == "Square";
     public bool IsLegacyImport => ImportType == "Legacy";
+    public bool ShowsTransactionGrid => IsAnzImport || IsLegacyImport;
     public bool ShowDropZone => !HasPreview && !ShowMapping;
     public bool CanGoNext => WizardStep switch
     {
@@ -123,7 +124,7 @@ public partial class ImportViewModel : ViewModelBase
         5 => "Import complete",
         _ => "Import"
     };
-    public string StepIndicator => IsAnzImport
+    public string StepIndicator => IsAnzImport || IsLegacyImport
         ? $"Step {Math.Clamp(WizardStep - 1, 1, 4)} of 4"
         : IsSquareImport
             ? $"Step {Math.Min(WizardStep, 4)} of 4"
@@ -213,7 +214,9 @@ public partial class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsAnzImport));
         OnPropertyChanged(nameof(IsSquareImport));
         OnPropertyChanged(nameof(IsLegacyImport));
+        OnPropertyChanged(nameof(ShowsTransactionGrid));
         OnPropertyChanged(nameof(WizardTitle));
+        OnPropertyChanged(nameof(StepIndicator));
         OnPropertyChanged(nameof(CanGoNext));
     }
     partial void OnHasPreviewChanged(bool value)
@@ -574,9 +577,13 @@ public partial class ImportViewModel : ViewModelBase
             HasPreview = true;
             var monthCount = preview.Months.Count(m => !m.IsSkipped);
             RecalculateSummary();
+            var minDate = preview.Rows.Min(r => r.Date);
+            var maxDate = preview.Rows.Max(r => r.Date);
             SummaryText =
-                $"Legacy workbook loaded: {monthCount} month(s), {preview.Rows.Count} transactions. " +
-                $"Cash on hand and Shire bonds will be saved per month.";
+                $"Legacy workbook loaded: {monthCount} month(s), {preview.Rows.Count} transactions " +
+                $"({minDate:MMM yyyy} – {maxDate:MMM yyyy}). " +
+                "Missing financial years are created automatically from transaction dates. " +
+                "Cash on hand and Shire bonds will be saved per month.";
 
             if (preview.Warnings.Count > 0)
                 _notificationService.ShowInfo(string.Join(" ", preview.Warnings.Take(3)));
@@ -922,13 +929,16 @@ public partial class ImportViewModel : ViewModelBase
 
             ShowResults = true;
             WizardStep = 5;
+            var fyNote = LastResult.ErrorMessages.FirstOrDefault(m =>
+                m.StartsWith("Created ", StringComparison.OrdinalIgnoreCase) &&
+                m.Contains("financial year", StringComparison.OrdinalIgnoreCase));
             SummaryText =
                 $"Import complete — Imported {LastResult.Imported}, skipped {LastResult.Skipped}, " +
                 $"duplicates {LastResult.Duplicates}, errors {LastResult.Errors}" +
                 (LastResult.SquareMatched > 0 || LastResult.SquareNeedsReview > 0
                     ? $", Square matched {LastResult.SquareMatched}, needs review {LastResult.SquareNeedsReview}"
                     : string.Empty) +
-                ".";
+                (fyNote is not null ? $". {fyNote.TrimEnd('.')}." : ".");
 
             await RefreshHistoryAsync();
             await RefreshRulesAsync();

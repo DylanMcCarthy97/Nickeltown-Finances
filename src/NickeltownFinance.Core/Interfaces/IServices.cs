@@ -328,6 +328,22 @@ public interface IFinancialYearService
     FinancialYear EnsureYearForDate(DateTime date);
 
     /// <summary>
+    /// Ensures a financial year exists for every date, creating missing years in chronological order
+    /// so opening balances can carry forward correctly during bulk historical imports.
+    /// </summary>
+    int EnsureYearsForDates(IEnumerable<DateTime> dates);
+
+    /// <summary>
+    /// Seeds opening/starting balance from a legacy treasurer workbook when the year has no transactions yet.
+    /// </summary>
+    bool TrySeedLegacyYearOpening(ObjectId financialYearId, DateTime startingDate, decimal openingBankBalance);
+
+    /// <summary>
+    /// Recalculates opening balances after a legacy import without disturbing pre-tracking historical years.
+    /// </summary>
+    void RecalculateAfterLegacyImport(IEnumerable<DateTime> importedDates);
+
+    /// <summary>
     /// Creates the next financial year from the active year end date, carries forward
     /// the closing balance, and archives the previous year. No manual configuration.
     /// </summary>

@@ -212,6 +212,68 @@ public class FinancialYearService : IFinancialYearService
         return _repository.GetById(entity.Id) ?? entity;
     }
 
+    public int EnsureYearsForDates(IEnumerable<DateTime> dates)
+    {
+        var countBefore = GetAll().Count;
+        var startMonth = _settingsService.FinancialYearStartMonth;
+        var openingDates = dates
+            .Select(d => FinancialYearPeriod.ForDate(d.Date, startMonth).OpeningDate)
+            .Distinct()
+            .OrderBy(d => d);
+
+        foreach (var openingDate in openingDates)
+            EnsureYearForDate(openingDate.AddDays(7));
+
+        return GetAll().Count - countBefore;
+    }
+
+    public bool TrySeedLegacyYearOpening(ObjectId financialYearId, DateTime startingDate, decimal openingBankBalance)
+    {
+        if (openingBankBalance == 0)
+            return false;
+
+        var fy = _repository.GetById(financialYearId);
+        if (fy is null || fy.IsLocked || HasTransactions(financialYearId))
+            return false;
+
+        var day = startingDate.Date;
+        if (day < fy.OpeningDate.Date || day > fy.EndDate.Date)
+            return false;
+
+        fy.StartingDate = day;
+        fy.StartingBalance = openingBankBalance;
+        fy.OpeningBalance = openingBankBalance;
+        fy.ModifiedDate = DateTime.UtcNow;
+        _repository.Update(fy);
+
+        if (_viewingYear?.Id == fy.Id)
+            _viewingYear = fy;
+
+        return true;
+    }
+
+    public void RecalculateAfterLegacyImport(IEnumerable<DateTime> importedDates)
+    {
+        var (trackingDate, _) = GetTrackingStart();
+        var affectedYearIds = importedDates
+            .Select(d => EnsureYearForDate(d).Id)
+            .Distinct()
+            .ToList();
+
+        foreach (var yearId in affectedYearIds)
+        {
+            var fy = _repository.GetById(yearId);
+            if (fy is null || fy.OpeningDate.Date < trackingDate)
+                continue;
+
+            RecalculateOpeningBalance(yearId);
+        }
+
+        // Forward years may still need chaining even if they had no new transactions.
+        foreach (var fy in GetAll().Where(y => y.OpeningDate.Date >= trackingDate))
+            RecalculateOpeningBalance(fy.Id);
+    }
+
     public Task<(bool Success, string? Error)> CreateNextYearAsync()
     {
         var current = GetCurrent()

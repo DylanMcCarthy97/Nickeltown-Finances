@@ -209,9 +209,9 @@
                             <ui:Button Content="Select none" Style="{StaticResource GroupedSecondaryButtonWideStyle}" Command="{Binding SelectNoneCommand}" Margin="{StaticResource ButtonGroupMargin}" />
                         </WrapPanel>
 
-                        <!-- ANZ preview -->
+                        <!-- ANZ / legacy preview -->
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
-                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowsTransactionGrid, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
@@ -250,7 +250,7 @@
                         <TextBlock Text="{Binding SummaryText}" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
 
                         <ds:AppDataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="False"
-                                        Visibility="{Binding IsAnzImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        Visibility="{Binding ShowsTransactionGrid, Converter={StaticResource BoolToVisibilityConverter}}">
                             <ds:AppDataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Import" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                                 <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="80" IsReadOnly="True" />
