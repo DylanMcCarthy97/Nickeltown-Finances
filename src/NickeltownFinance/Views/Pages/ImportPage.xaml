@@ -7,7 +7,7 @@
              AllowDrop="True"
              Drop="OnDrop"
              DragOver="OnDragOver">
-    <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}" IsErrorCompact="True">
+    <ds:PageShell IsBusy="{Binding IsBusy}" LoadingMessage="{Binding LoadingMessage}" ErrorMessage="{Binding ErrorMessage}" IsErrorCompact="True">
         <Grid>
             <!-- Hub -->
             <ScrollViewer VerticalScrollBarVisibility="Auto"

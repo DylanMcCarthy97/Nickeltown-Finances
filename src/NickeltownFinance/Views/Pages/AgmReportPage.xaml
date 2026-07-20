@@ -4,7 +4,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:ds="clr-namespace:NickeltownFinance.Controls"
              Style="{StaticResource PageRootStyle}">
-    <ds:PageShell IsBusy="{Binding IsBusy}" ErrorMessage="{Binding ErrorMessage}">
+    <ds:PageShell IsBusy="{Binding IsBusy}" LoadingMessage="{Binding LoadingMessage}" ErrorMessage="{Binding ErrorMessage}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
                 <ds:SurfaceCard CardMargin="0,0,0,16">

@@ -99,7 +99,7 @@ public partial class AgmReportViewModel : ViewModelBase
     {
         if (SelectedFinancialYear is null) return;
 
-        IsBusy = true;
+        BeginBusy("On track — building AGM report…");
         try
         {
             ReportData = await _reportService.BuildAgmReportAsync(SelectedFinancialYear.Id);
@@ -113,7 +113,7 @@ public partial class AgmReportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
@@ -121,24 +121,48 @@ public partial class AgmReportViewModel : ViewModelBase
     private async Task ExportPdfAsync()
     {
         if (ReportData is null || SelectedFinancialYear is null) return;
-        ApplyHoldingsToReport();
-        _reportService.ApplyPrintDate(ReportData);
-        var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.pdf");
-        await _reportService.ExportAgmPdfAsync(ReportData, path);
-        _notificationService.ShowSuccess($"PDF saved to {path}");
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        BeginBusy("Finish line — exporting PDF…");
+        try
+        {
+            ApplyHoldingsToReport();
+            _reportService.ApplyPrintDate(ReportData);
+            var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.pdf");
+            await _reportService.ExportAgmPdfAsync(ReportData, path);
+            _notificationService.ShowSuccess($"PDF saved to {path}");
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            EndBusy();
+        }
     }
 
     [RelayCommand]
     private async Task ExportExcelAsync()
     {
         if (ReportData is null || SelectedFinancialYear is null) return;
-        ApplyHoldingsToReport();
-        _reportService.ApplyPrintDate(ReportData);
-        var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.xlsx");
-        await _reportService.ExportAgmExcelAsync(ReportData, path);
-        _notificationService.ShowSuccess($"Excel saved to {path}");
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        BeginBusy("Finish line — exporting Excel…");
+        try
+        {
+            ApplyHoldingsToReport();
+            _reportService.ApplyPrintDate(ReportData);
+            var path = Path.Combine(AppPaths.ExportsPath, $"AGMReport_{SelectedFinancialYear.Name.Replace("/", "-")}.xlsx");
+            await _reportService.ExportAgmExcelAsync(ReportData, path);
+            _notificationService.ShowSuccess($"Excel saved to {path}");
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            EndBusy();
+        }
     }
 
     [RelayCommand]

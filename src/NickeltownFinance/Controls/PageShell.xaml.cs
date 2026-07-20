@@ -20,7 +20,7 @@ public partial class PageShell : UserControl
 
     public static readonly DependencyProperty LoadingMessageProperty =
         DependencyProperty.Register(nameof(LoadingMessage), typeof(string), typeof(PageShell),
-            new PropertyMetadata("Loading..."));
+            new PropertyMetadata("On track…"));
 
     public static readonly DependencyProperty ErrorMessageProperty =
         DependencyProperty.Register(nameof(ErrorMessage), typeof(string), typeof(PageShell),

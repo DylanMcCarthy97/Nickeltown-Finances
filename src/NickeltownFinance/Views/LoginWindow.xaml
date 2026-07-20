@@ -48,10 +48,17 @@
                            HorizontalAlignment="Center"
                            TextAlignment="Center" />
 
+                <TextBlock Text="Club treasurer tools for Nickeltown Flounderers Auto Club"
+                           Style="{StaticResource CaptionTextStyle}"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Margin="0,8,0,4" />
+
                 <TextBlock Text="Sign in to continue"
                            Style="{StaticResource CaptionTextStyle}"
                            HorizontalAlignment="Center"
-                           Margin="0,8,0,28" />
+                           Margin="0,4,0,28" />
 
                 <TextBlock Text="Username" Style="{StaticResource FieldLabelStyle}" />
                 <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"

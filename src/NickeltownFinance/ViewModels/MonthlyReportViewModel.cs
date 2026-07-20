@@ -128,7 +128,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
     {
         if (SelectedFinancialYear is null) return;
 
-        IsBusy = true;
+        BeginBusy("On track — building monthly report…");
         try
         {
             ReportData = await _reportService.BuildMonthlyReportAsync(
@@ -144,7 +144,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
@@ -161,7 +161,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         if (dialog.ShowDialog() != true)
             return;
 
-        IsBusy = true;
+        BeginBusy("Pit stop — attaching event report…");
         try
         {
             foreach (var file in dialog.FileNames)
@@ -185,7 +185,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
@@ -252,24 +252,48 @@ public partial class MonthlyReportViewModel : ViewModelBase
     private async Task ExportPdfAsync()
     {
         if (ReportData is null) return;
-        ApplyHoldingsToReport();
-        _reportService.ApplyPrintDate(ReportData);
-        var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.pdf");
-        await _reportService.ExportMonthlyPdfAsync(ReportData, path);
-        _notificationService.ShowSuccess($"PDF saved to {path}");
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        BeginBusy("Finish line — exporting PDF…");
+        try
+        {
+            ApplyHoldingsToReport();
+            _reportService.ApplyPrintDate(ReportData);
+            var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.pdf");
+            await _reportService.ExportMonthlyPdfAsync(ReportData, path);
+            _notificationService.ShowSuccess($"PDF saved to {path}");
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            EndBusy();
+        }
     }
 
     [RelayCommand]
     private async Task ExportExcelAsync()
     {
         if (ReportData is null) return;
-        ApplyHoldingsToReport();
-        _reportService.ApplyPrintDate(ReportData);
-        var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.xlsx");
-        await _reportService.ExportMonthlyExcelAsync(ReportData, path);
-        _notificationService.ShowSuccess($"Excel saved to {path}");
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        BeginBusy("Finish line — exporting Excel…");
+        try
+        {
+            ApplyHoldingsToReport();
+            _reportService.ApplyPrintDate(ReportData);
+            var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.xlsx");
+            await _reportService.ExportMonthlyExcelAsync(ReportData, path);
+            _notificationService.ShowSuccess($"Excel saved to {path}");
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            EndBusy();
+        }
     }
 
     [RelayCommand]

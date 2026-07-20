@@ -177,7 +177,7 @@ public partial class ImportViewModel : ViewModelBase
         if (receiptPaths.Count == 0)
             return false;
 
-        IsBusy = true;
+        BeginBusy("Green flag — queuing receipts…");
         try
         {
             var imported = await _receiptImportService.ImportFromDesktopAsync(receiptPaths);
@@ -192,7 +192,7 @@ public partial class ImportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
@@ -422,7 +422,7 @@ public partial class ImportViewModel : ViewModelBase
 
     public async Task AnalyseFileAsync(string filePath, AnzColumnMapping? mapping)
     {
-        IsBusy = true;
+        BeginBusy("Leaving the pits — reading statement…");
         ErrorMessage = null;
         ShowResults = false;
         ShowMapping = false;
@@ -509,13 +509,13 @@ public partial class ImportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
     public async Task AnalyseLegacyFileAsync(string filePath)
     {
-        IsBusy = true;
+        BeginBusy("Leaving the pits — reading legacy workbook…");
         ErrorMessage = null;
         ShowResults = false;
         ShowMapping = false;
@@ -593,13 +593,13 @@ public partial class ImportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
     public async Task AnalyseSquareFileAsync(string filePath)
     {
-        IsBusy = true;
+        BeginBusy("Leaving the pits — reading Square file…");
         ErrorMessage = null;
         ShowResults = false;
         LastResult = null;
@@ -658,7 +658,7 @@ public partial class ImportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 
@@ -845,7 +845,7 @@ public partial class ImportViewModel : ViewModelBase
         if (!AppDialog.Confirm("Import summary", confirmMessage, confirmText: "Import", cancelText: "Cancel"))
             return;
 
-        IsBusy = true;
+        BeginBusy("Green flag — importing…");
         try
         {
             if (committingSquare)
@@ -941,7 +941,7 @@ public partial class ImportViewModel : ViewModelBase
         }
         finally
         {
-            IsBusy = false;
+            EndBusy();
         }
     }
 

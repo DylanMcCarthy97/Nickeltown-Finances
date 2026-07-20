@@ -358,7 +358,7 @@
                                 <TextBlock Text="{Binding AppVersion}" FontWeight="SemiBold" Margin="0,0,0,10" />
                                 <TextBlock Text="Installation" Style="{StaticResource FieldLabelStyle}" />
                                 <TextBlock Text="{Binding InstallKindLabel}" Margin="0,0,0,10" />
-                                <TextBlock Text="Nickeltown Finance — club bookkeeping, receipts, and reports."
+                                <TextBlock Text="Nickeltown Finance — bookkeeping for Nickeltown Flounderers Auto Club: receipts, Pitstop reports, and AGM packs."
                                            Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
                             </StackPanel>
                         </ds:SurfaceCard>

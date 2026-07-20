@@ -668,7 +668,7 @@ public partial class SettingsViewModel : ViewModelBase
                 UpdateStatusText = "Update installed. Restarting…";
                 UpdateProgressPercent = 100;
                 IsUpdateProgressIndeterminate = false;
-                UpdateStageLabel = "Chequered flag — restarting";
+                UpdateStageLabel = "Finish line — restarting";
                 UpdateProgressLabel = "100%";
                 UpdateDetailText = "Update installed. Restarting the app…";
                 _notificationService.ShowSuccess("Update installed. Restarting…");
@@ -703,7 +703,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             AppUpdateStage.Downloading => "Leaving the pits — downloading",
             AppUpdateStage.Installing => "Pit stop — installing",
-            AppUpdateStage.Restarting => "Chequered flag — restarting",
+            AppUpdateStage.Restarting => "Finish line — restarting",
             _ => "On track"
         };
 

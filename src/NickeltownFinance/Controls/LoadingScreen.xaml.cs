@@ -11,7 +11,7 @@ public partial class LoadingScreen : UserControl
 
     public static readonly DependencyProperty MessageProperty =
         DependencyProperty.Register(nameof(Message), typeof(string), typeof(LoadingScreen),
-            new PropertyMetadata("Loading..."));
+            new PropertyMetadata("On track…"));
 
     public LoadingScreen() => InitializeComponent();
 

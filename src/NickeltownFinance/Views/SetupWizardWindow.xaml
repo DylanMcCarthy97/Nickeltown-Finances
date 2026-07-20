@@ -39,19 +39,19 @@
                     Margin="8"
                     Padding="28,24">
             <StackPanel>
-                <TextBlock Text="Set up your club finances"
+                <TextBlock Text="Set up your club's books"
                            FontSize="22"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrandTextPrimaryBrush}"
                            Margin="0,0,0,6" />
-                <TextBlock Text="Four details and you are ready. Financial years are calculated automatically from transaction dates."
+                <TextBlock Text="Nickeltown Flounderers Auto Club Kambalda — four details and you are ready. Financial years are calculated automatically from transaction dates."
                            TextWrapping="Wrap"
                            Foreground="{StaticResource BrandMutedTextBrush}"
                            Margin="0,0,0,20" />
 
                 <TextBlock Text="Club name" Style="{StaticResource FieldLabelStyle}" />
                 <ui:TextBox Text="{Binding ClubName, UpdateSourceTrigger=PropertyChanged}"
-                            PlaceholderText="e.g. Nickeltown Flounderers Inc."
+                            PlaceholderText="e.g. Nickeltown Flounderers Inc. Auto Club Kambalda"
                             Margin="0,0,0,12" />
 
                 <TextBlock Text="Financial year starts" Style="{StaticResource FieldLabelStyle}" />
