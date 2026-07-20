@@ -90,6 +90,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -110,7 +111,8 @@
                             <StackPanel Grid.Row="1" Margin="0,0,0,14">
                                 <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" />
                                 <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
-                                          DisplayMemberPath="Name" Height="40" />
+                                          DisplayMemberPath="Name" Height="40"
+                                          IsEnabled="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolConverter}}" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
                                 <TextBlock Text="Payment method" Style="{StaticResource FieldLabelStyle}" />
@@ -118,22 +120,65 @@
                                           Height="40" />
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,0,0,14">
+                            <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,0,0,14"
+                                        Visibility="{Binding ShowCategorySplit, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <CheckBox Content="Split across categories"
+                                          IsChecked="{Binding SplitAcrossCategories}"
+                                          Margin="0,0,0,8" />
+                                <TextBlock Text="Use this when one Square deposit covers more than one income type (e.g. Bar Sales and Pitstop Sales)."
+                                           Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                           Visibility="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                <StackPanel Visibility="{Binding SplitAcrossCategories, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ItemsControl ItemsSource="{Binding CategorySplits}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="12" />
+                                                        <ColumnDefinition Width="140" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              SelectedItem="{Binding SelectedCategory}"
+                                                              DisplayMemberPath="Name" Height="36" />
+                                                    <ui:NumberBox Grid.Column="2" Value="{Binding Amount}" Minimum="0" Height="36"
+                                                                  SpinButtonPlacementMode="Hidden" />
+                                                    <ui:Button Grid.Column="4" Appearance="Secondary" Content="Remove"
+                                                               Command="{Binding DataContext.RemoveCategorySplitLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               CommandParameter="{Binding}" Padding="10,4" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <ui:Button Appearance="Secondary" Content="Add category"
+                                                   Command="{Binding AddCategorySplitLineCommand}"
+                                                   Padding="12,6" Margin="0,0,12,0" />
+                                        <TextBlock Text="{Binding SplitStatusText}" VerticalAlignment="Center"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Margin="0,0,0,14">
                                 <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}" />
                                 <ui:TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
                                             PlaceholderText="What was this for?" FontSize="15" />
                                 <CheckBox Content="Always use this category for this description"
                                           IsChecked="{Binding AlwaysUseCategoryForDescription}"
-                                          Margin="0,8,0,0" />
+                                          Margin="0,8,0,0"
+                                          Visibility="{Binding SplitAcrossCategories, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             </StackPanel>
 
-                            <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Margin="0,0,0,14">
+                            <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Margin="0,0,0,14">
                                 <TextBlock Text="Reference / invoice #" Style="{StaticResource FieldLabelStyle}" />
                                 <ui:TextBox Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
                                             PlaceholderText="Invoice or receipt number (optional)" />
                             </StackPanel>
 
-                            <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
+                            <StackPanel Grid.Row="5" Grid.ColumnSpan="3">
                                 <TextBlock Text="Notes (optional)" Style="{StaticResource FieldLabelStyle}" />
                                 <ui:TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                             PlaceholderText="Optional notes" />

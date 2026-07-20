@@ -28,9 +28,10 @@ public partial class ImportRowViewModel : ObservableObject
 
     public ObservableCollection<Category> Categories { get; set; } = [];
 
-    public string CategoryDisplay => IsSquareDeposit
-        ? "Square Deposit"
-        : SelectedCategory?.Name ?? (Status == ImportRowStatus.NeedsReview ? "Needs Review" : string.Empty);
+    public string CategoryDisplay =>
+        SelectedCategory?.Name
+        ?? (IsSquareDeposit ? "Needs category" : null)
+        ?? (Status == ImportRowStatus.NeedsReview ? "Needs Review" : string.Empty);
 
     public string BalanceDisplay => Balance?.ToString("C") ?? "—";
 

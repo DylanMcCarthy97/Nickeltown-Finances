@@ -25,8 +25,9 @@ public partial class ImportPage
     private void OnBankCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.StartAnzImportCommand.Execute(null);
 
-    private void OnSquareCardClick(object sender, MouseButtonEventArgs e) =>
-        Vm?.StartSquareImportCommand.Execute(null);
+    // Square CSV import hidden for now — mark Square ANZ transfers by category instead.
+    // private void OnSquareCardClick(object sender, MouseButtonEventArgs e) =>
+    //     Vm?.StartSquareImportCommand.Execute(null);
 
     private void OnLegacyReportCardClick(object sender, MouseButtonEventArgs e) =>
         Vm?.StartLegacyImportCommand.Execute(null);
@@ -64,15 +65,19 @@ public partial class ImportPage
 
         if (bankFile is null)
         {
-            AppDialog.Info("Import", "Drop an ANZ CSV/Excel statement, Square CSV, or receipt images/PDFs.");
+            AppDialog.Info("Import", "Drop an ANZ CSV/Excel statement or receipt images/PDFs.");
             return;
         }
 
+        // Square CSV import disabled — use ANZ statement and mark Square transfers by category.
         if (bankFile.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) &&
             File.ReadLines(bankFile).FirstOrDefault()?.Contains("Deposit ID", StringComparison.OrdinalIgnoreCase) == true)
         {
-            Vm.StartSquareImportCommand.Execute(null);
-            await Vm.AnalyseSquareFileAsync(bankFile);
+            AppDialog.Info(
+                "Square CSV",
+                "Square transaction import is turned off for now.\n\n" +
+                "Import your ANZ statement instead, set each Square transfer's category, " +
+                "then open the transaction to split across categories if needed.");
             return;
         }
 

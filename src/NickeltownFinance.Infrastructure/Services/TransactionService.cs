@@ -3,7 +3,9 @@ using LiteDB;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.Helpers;
 using NickeltownFinance.Core.Interfaces;
+using NickeltownFinance.Core.Models;
 using TransactionModel = NickeltownFinance.Core.Models.Transaction;
 
 
@@ -135,7 +137,7 @@ public class TransactionService : ITransactionService
                 displayBalance = balanceById.GetValueOrDefault(txn.Id);
             }
             
-            var item = MapToListItem(txn, cat, displayBalance, attachments, hasReceipt, attachmentCount);
+            var item = MapToListItem(txn, categories, displayBalance, attachments, hasReceipt, attachmentCount);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -178,13 +180,16 @@ public class TransactionService : ITransactionService
                 }
             }
 
-            if (categoryFilter is not null && categoryFilter != ObjectId.Empty && txn.CategoryId != categoryFilter)
+            if (categoryFilter is not null && categoryFilter != ObjectId.Empty)
             {
-                // If this transaction doesn't match the category filter but we're using filtered balance,
-                // we need to revert the balance update we just made
-                if (hasActiveFilters && !txn.IsDeleted)
-                    filteredBalance -= txn.IncomeAmount - txn.ExpenseAmount;
-                continue;
+                var matchesCategory = txn.CategoryId == categoryFilter
+                    || TransactionCategoryHelper.GetIncomeCategoryAmounts(txn).Any(a => a.CategoryId == categoryFilter);
+                if (!matchesCategory)
+                {
+                    if (hasActiveFilters && !txn.IsDeleted)
+                        filteredBalance -= txn.IncomeAmount - txn.ExpenseAmount;
+                    continue;
+                }
             }
 
             items.Add(item);
@@ -199,11 +204,11 @@ public class TransactionService : ITransactionService
         var txn = _transactionRepository.GetById(id);
         if (txn is null) return Task.FromResult<TransactionListItem?>(null);
 
-        var cat = _categoryRepository.GetById(txn.CategoryId);
+        var categories = _categoryRepository.GetAll().ToDictionary(c => c.Id);
         var balance = CalculateRunningBalance(txn.FinancialYearId, txn.Id);
         var attachments = _attachmentRepository.GetByTransaction(txn.Id).ToList();
         return Task.FromResult<TransactionListItem?>(MapToListItem(
-            txn, cat, balance,
+            txn, categories, balance,
             attachments,
             attachments.Any(a => a.Kind == AttachmentKind.Receipt),
             attachments.Count));
@@ -317,11 +322,15 @@ public class TransactionService : ITransactionService
             Date = txn.Date,
             Description = txn.Description + " (Copy)",
             CategoryId = txn.CategoryId,
+            CategoryAllocations = txn.CategoryAllocations?
+                .Select(a => new CategoryAllocation { CategoryId = a.CategoryId, Amount = a.Amount })
+                .ToList() ?? [],
             IncomeAmount = txn.IncomeAmount,
             ExpenseAmount = txn.ExpenseAmount,
             PaymentMethod = txn.PaymentMethod,
             Reference = txn.Reference,
             Notes = txn.Notes,
+            IsSquareDeposit = txn.IsSquareDeposit,
             FinancialYearId = txn.FinancialYearId,
             CreatedByUserId = user?.Id ?? ObjectId.Empty,
             CreatedByName = user?.DisplayName ?? "System",
@@ -421,7 +430,7 @@ public class TransactionService : ITransactionService
 
     private static TransactionListItem MapToListItem(
         TransactionModel txn,
-        Core.Models.Category? cat,
+        IReadOnlyDictionary<ObjectId, Category> categories,
         decimal balance,
         IReadOnlyList<Core.Models.Attachment> attachments,
         bool hasReceipt = false,
@@ -431,12 +440,17 @@ public class TransactionService : ITransactionService
             .Select(a => ResolveThumbnail(a))
             .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && File.Exists(p));
 
+        categories.TryGetValue(txn.CategoryId, out var cat);
+        var categoryName = txn.IncomeAmount > 0
+            ? TransactionCategoryHelper.FormatCategoryDisplay(txn, categories)
+            : cat?.Name ?? "Unknown";
+
         return new()
         {
             Id = txn.Id,
             Date = txn.Date,
             Description = txn.Description,
-            CategoryName = cat?.Name ?? "Unknown",
+            CategoryName = categoryName,
             CategoryColour = cat?.Colour ?? "#1565C0",
             CategoryId = txn.CategoryId,
             IncomeAmount = txn.IncomeAmount,

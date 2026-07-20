@@ -28,13 +28,14 @@ public class CategorisationService : ICategorisationService
 
         if (rule.Action == CategorisationRuleAction.SquareDeposit)
         {
+            // Default suggestion for ANZ "TRANSFER FROM SQUARE" — treasurer can change or split in the editor.
             var squareCategory = FindCategory("Square Deposits", CategoryType.Income)
                                  ?? FindCategory("Bar Sales", CategoryType.Income);
 
             return Task.FromResult(new CategorisationSuggestion
             {
                 CategoryId = squareCategory?.Id,
-                CategoryName = squareCategory?.Name ?? "Square Deposit",
+                CategoryName = squareCategory?.Name ?? "Square Deposits",
                 IsSquareDeposit = true
             });
         }
@@ -106,10 +107,10 @@ public class CategorisationService : ICategorisationService
                 MatchText = r.MatchText,
                 CategoryId = r.CategoryId,
                 CategoryName = r.Action == CategorisationRuleAction.SquareDeposit
-                    ? "Square Deposit"
+                    ? "Square Deposits (mark or split in editor)"
                     : categories.TryGetValue(r.CategoryId, out var c) ? c.Name : "Unknown",
                 Action = r.Action,
-                ActionDisplay = r.Action == CategorisationRuleAction.SquareDeposit ? "Square Deposit" : "Category",
+                ActionDisplay = r.Action == CategorisationRuleAction.SquareDeposit ? "Square transfer" : "Category",
                 Priority = r.Priority,
                 IsSystem = r.IsSystem,
                 HitCount = r.HitCount,
@@ -145,6 +146,9 @@ public class CategorisationService : ICategorisationService
         EnsureCategory("Food", CategoryType.Expense, "#FB8C00");
         EnsureCategory("Rates", CategoryType.Expense, "#8E24AA");
         EnsureCategory("Square Deposits", CategoryType.Income, "#00897B");
+        EnsureCategory("Bar Sales", CategoryType.Income, "#388E3C");
+        EnsureCategory("Pitstop Sales", CategoryType.Income, "#43A047");
+        EnsureCategory("Membership Fees", CategoryType.Income, "#2E7D32");
 
         UpsertRule("BWS", "Bar Stock", CategoryType.Expense, priority: 50, isSystem: true);
         UpsertRule("WOOLWORTHS", "Food", CategoryType.Expense, priority: 50, isSystem: true);

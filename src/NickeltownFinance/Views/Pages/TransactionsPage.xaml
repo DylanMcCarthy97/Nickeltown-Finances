@@ -258,22 +258,8 @@
                             Visibility="{Binding ShowDetailPanel, Converter={StaticResource BoolToVisibilityConverter}}">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
-                                <!-- Square deposit breakdown -->
+                                <!-- Square deposit breakdown (matched history only; CSV import hidden) -->
                                 <StackPanel Visibility="{Binding ShowSquareDetail, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <StackPanel Visibility="{Binding ShowSquareAwaitingMatch, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <TextBlock Text="Awaiting Square match" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
-                                        <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,12">
-                                            This bank deposit is from Square but hasn't been matched to a Square payout yet.
-                                            Import your Square transactions CSV to see what payments made up this deposit.
-                                        </TextBlock>
-                                        <ui:Button Content="Import Square CSV"
-                                                   Style="{StaticResource PrimaryButtonStyle}"
-                                                   Icon="{ui:SymbolIcon Payment24}"
-                                                   Command="{Binding ImportSquareStatementCommand}"
-                                                   HorizontalAlignment="Stretch" Margin="0,0,0,16" />
-                                    </StackPanel>
-
-                                    <StackPanel Visibility="{Binding ShowSquareAwaitingMatch, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                     <TextBlock Text="Square Deposit" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12" />
 
                                     <TextBlock Text="Deposit Date" Style="{StaticResource FieldLabelStyle}" />
@@ -354,7 +340,6 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    </StackPanel>
                                 </StackPanel>
 
                                 <!-- Receipt details -->

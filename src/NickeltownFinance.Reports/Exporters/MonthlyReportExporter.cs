@@ -132,7 +132,7 @@ public static class MonthlyReportExporter
             if (data.HasPitstopReports)
             {
                 col.Item().PaddingTop(14).Text("Pitstop event reports").Bold().FontSize(12).FontColor(Colors.Black);
-                col.Item().PaddingTop(2).Text("ClubPOS end-of-day reports attached to this month.")
+                col.Item().PaddingTop(2).Text("ClubPOS end-of-day reports are included in full after the signature pages.")
                     .FontSize(9).FontColor(Colors.Grey.Medium);
 
                 foreach (var report in data.PitstopReports)
@@ -216,7 +216,81 @@ public static class MonthlyReportExporter
 
             // Signature block
             col.Item().PaddingTop(28).Element(c => ComposeSignatureBlock(c, data));
+
+            if (data.HasPitstopReports)
+                ComposePitstopAppendix(col, data);
         });
+    }
+
+    private static void ComposePitstopAppendix(ColumnDescriptor col, MonthlyReportData data)
+    {
+        col.Item().PageBreak();
+        col.Item().Text("Appendix — Pitstop event reports").Bold().FontSize(14).FontColor(Colors.Black);
+        col.Item().PaddingTop(4)
+            .Text("Full ClubPOS end-of-day reports attached to this month.")
+            .FontSize(9).FontColor(Colors.Grey.Medium);
+
+        foreach (var report in data.PitstopReports)
+        {
+            var images = ResolvePitstopExportImages(report);
+            col.Item().PageBreak();
+            col.Item().Text(report.DisplayLabel).Bold().FontSize(12).FontColor(Colors.Black);
+            col.Item().PaddingTop(2).Text(report.FileName).FontSize(9).FontColor(Colors.Grey.Medium);
+
+            if (images.Count == 0)
+            {
+                col.Item().PaddingTop(10)
+                    .Text("Preview unavailable — open the attached file from Nickeltown Finance.")
+                    .Italic().FontColor(Colors.Grey.Medium);
+                continue;
+            }
+
+            for (var i = 0; i < images.Count; i++)
+            {
+                if (i > 0)
+                    col.Item().PageBreak();
+
+                if (images.Count > 1)
+                {
+                    col.Item().PaddingTop(i == 0 ? 8 : 0)
+                        .Text($"Page {i + 1} of {images.Count}")
+                        .FontSize(8).FontColor(Colors.Grey.Medium);
+                }
+
+                col.Item().PaddingTop(6).MaxHeight(720).Image(images[i]).FitArea();
+            }
+        }
+    }
+
+    private static IReadOnlyList<string> ResolvePitstopExportImages(MonthDocumentInfo report)
+    {
+        var fromPreviews = report.PreviewFullPaths
+            .Where(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path) && IsQuestPdfSupportedImage(path))
+            .ToList();
+        if (fromPreviews.Count > 0)
+            return fromPreviews;
+
+        if (!string.IsNullOrWhiteSpace(report.FullPath)
+            && File.Exists(report.FullPath)
+            && IsQuestPdfSupportedImage(report.FullPath))
+        {
+            return [report.FullPath];
+        }
+
+        if (!string.IsNullOrWhiteSpace(report.ThumbnailFullPath)
+            && File.Exists(report.ThumbnailFullPath)
+            && IsQuestPdfSupportedImage(report.ThumbnailFullPath))
+        {
+            return [report.ThumbnailFullPath];
+        }
+
+        return [];
+    }
+
+    private static bool IsQuestPdfSupportedImage(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp";
     }
 
     private static void ComposeSignatureBlock(IContainer container, MonthlyReportData data)
@@ -508,6 +582,33 @@ public static class MonthlyReportExporter
             }
 
             sq.Columns().AdjustToContents();
+        }
+
+        if (data.HasPitstopReports)
+        {
+            var pit = wb.Worksheets.Add("Pitstop reports");
+            pit.Cell(1, 1).Value = "Title";
+            pit.Cell(1, 2).Value = "File name";
+            pit.Cell(1, 3).Value = "Pages";
+            pit.Cell(1, 4).Value = "Added";
+            pit.Cell(1, 5).Value = "Added by";
+            pit.Range(1, 1, 1, 5).Style.Font.Bold = true;
+
+            var pitRow = 2;
+            foreach (var report in data.PitstopReports)
+            {
+                pit.Cell(pitRow, 1).Value = report.DisplayLabel;
+                pit.Cell(pitRow, 2).Value = report.FileName;
+                pit.Cell(pitRow, 3).Value = Math.Max(1, report.PageCount);
+                pit.Cell(pitRow, 4).Value = report.DateAdded.ToLocalTime();
+                pit.Cell(pitRow, 4).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                pit.Cell(pitRow, 5).Value = report.AddedByName;
+                pitRow++;
+            }
+
+            pit.Cell(pitRow + 1, 1).Value =
+                "Full report pages are embedded in the PDF export of this monthly report.";
+            pit.Columns().AdjustToContents();
         }
 
         wb.SaveAs(outputPath);

@@ -287,14 +287,14 @@ public partial class ImportViewModel : ViewModelBase
         SummaryText = "Select your legacy Income and Expense Statement workbook (.xlsx).";
     }
 
+    // Square CSV import hidden for now — use ANZ import and mark transfers by category.
     [RelayCommand]
     private void StartSquareImport()
     {
-        ResetWizardState();
-        ImportType = "Square";
-        WizardStep = 2;
-        Section = "Wizard";
-        SummaryText = "Select your Square transactions CSV export.";
+        _notificationService.ShowInfo(
+            "Square CSV import is turned off. Import the ANZ statement, set each Square transfer's category, and open the transaction to split across categories when needed.");
+        Section = "Hub";
+        WizardStep = 1;
     }
 
     [RelayCommand]
@@ -310,7 +310,7 @@ public partial class ImportViewModel : ViewModelBase
     private void SelectAnzType() => ImportType = "ANZ";
 
     [RelayCommand]
-    private void SelectSquareType() => ImportType = "Square";
+    private void SelectSquareType() => ImportType = "ANZ";
 
     [RelayCommand]
     private async Task NextStepAsync()
@@ -823,7 +823,7 @@ public partial class ImportViewModel : ViewModelBase
         if (!committingSquare)
         {
             var needsCategory = _allRows.Count(r =>
-                r.IsSelected && !r.IsSquareDeposit && r.SelectedCategory is null);
+                r.IsSelected && r.SelectedCategory is null);
             if (needsCategory > 0)
             {
                 _notificationService.ShowInfo(

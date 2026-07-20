@@ -194,12 +194,14 @@ public partial class TransactionsViewModel : ViewModelBase
 
         if (value.IsSquareAwaitingMatch)
         {
-            ShowSquareDetail = true;
-            ShowSquareAwaitingMatch = true;
-            DetailThumbnail = null;
-            DetailReceiptStatus = string.Empty;
-            DetailAttachmentCount = 0;
-            SquareDepositGroups = [];
+            // Square CSV matching UI hidden — categorise the ANZ transfer instead.
+            ShowSquareDetail = false;
+            ShowSquareAwaitingMatch = false;
+            DetailReceiptStatus = value.ReceiptStatusText;
+            DetailAttachmentCount = value.AttachmentCount;
+            DetailThumbnail = string.IsNullOrWhiteSpace(value.ThumbnailPath) || !File.Exists(value.ThumbnailPath)
+                ? null
+                : Converters.ImageLoadHelper.LoadUnlocked(value.ThumbnailPath);
             return;
         }
 
@@ -264,11 +266,12 @@ public partial class TransactionsViewModel : ViewModelBase
         }
     }
 
+    // Square CSV import hidden for now.
     [RelayCommand]
     private void ImportSquareStatement()
     {
-        ImportViewModel.PendingStartupMode = ImportStartupMode.Square;
-        _serviceProvider.GetRequiredService<INavigationService>().Navigate<ImportViewModel>();
+        _notificationService.ShowInfo(
+            "Square CSV import is turned off. Set this transfer's category, or open it and use Split across categories when one deposit covers more than one income type.");
     }
 
     [RelayCommand]

@@ -6,6 +6,13 @@ public enum AppInstallKind
     Msix
 }
 
+public enum AppUpdateStage
+{
+    Downloading,
+    Installing,
+    Restarting
+}
+
 public sealed record AppUpdateInfo(
     string Version,
     string ReleaseTag,
@@ -24,3 +31,9 @@ public sealed record AppUpdateApplyResult(
     bool Success,
     bool RestartRequired,
     string? ErrorMessage);
+
+/// <param name="PercentComplete">0–100 when known; null for indeterminate stages.</param>
+public sealed record AppUpdateProgress(
+    AppUpdateStage Stage,
+    double? PercentComplete,
+    string Message);

@@ -1,6 +1,7 @@
 using LiteDB;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.Helpers;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Infrastructure.Import;
@@ -68,11 +69,12 @@ public class ReportService : IReportService
         var categories = _categoryRepository.GetAll().ToDictionary(c => c.Id);
 
         var incomeByCat = monthTxns.Where(t => t.IncomeAmount > 0)
-            .GroupBy(t => t.CategoryId)
+            .SelectMany(t => TransactionCategoryHelper.GetIncomeCategoryAmounts(t))
+            .GroupBy(x => x.CategoryId)
             .Select(g => new CategoryTotal
             {
                 CategoryName = categories.GetValueOrDefault(g.Key)?.Name ?? "Unknown",
-                Amount = g.Sum(x => x.IncomeAmount)
+                Amount = g.Sum(x => x.Amount)
             })
             .OrderByDescending(x => x.Amount)
             .ToList();
@@ -101,7 +103,7 @@ public class ReportService : IReportService
         {
             Date = t.Date,
             Description = string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description.Trim(),
-            CategoryName = categories.GetValueOrDefault(t.CategoryId)?.Name ?? "Uncategorised",
+            CategoryName = TransactionCategoryHelper.FormatCategoryDisplay(t, categories),
             MoneyIn = t.IncomeAmount,
             MoneyOut = t.ExpenseAmount,
             SquareItems = t.SquareDepositId is { } depositId && squareLinesByDeposit.TryGetValue(depositId, out var depositLines)
@@ -181,11 +183,12 @@ public class ReportService : IReportService
         }
 
         var incomeByCat = txns.Where(t => t.IncomeAmount > 0)
-            .GroupBy(t => t.CategoryId)
+            .SelectMany(t => TransactionCategoryHelper.GetIncomeCategoryAmounts(t))
+            .GroupBy(x => x.CategoryId)
             .Select(g => new CategoryTotal
             {
                 CategoryName = categories.GetValueOrDefault(g.Key)?.Name ?? "Unknown",
-                Amount = g.Sum(x => x.IncomeAmount)
+                Amount = g.Sum(x => x.Amount)
             })
             .OrderByDescending(x => x.Amount)
             .ToList();

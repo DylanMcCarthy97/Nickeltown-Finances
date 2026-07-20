@@ -46,6 +46,21 @@ public class Transaction : BaseEntity
 
     /// <summary>True when description rules identify this as a Square deposit transfer.</summary>
     public bool IsSquareDeposit { get; set; }
+
+    /// <summary>
+    /// Optional category split for deposits that cover more than one income type
+    /// (e.g. Bar Sales + Pitstop Sales). When present and totaling the transaction amount,
+    /// reports use these lines instead of <see cref="CategoryId"/> alone.
+    /// </summary>
+    public List<CategoryAllocation> CategoryAllocations { get; set; } = [];
+}
+
+/// <summary>One category share of a split transaction.</summary>
+public class CategoryAllocation
+{
+    public ObjectId CategoryId { get; set; } = ObjectId.Empty;
+
+    public decimal Amount { get; set; }
 }
 
 

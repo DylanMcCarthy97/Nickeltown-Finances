@@ -12,7 +12,7 @@ public interface IAppUpdateService
 
     Task<AppUpdateApplyResult> DownloadAndApplyUpdateAsync(
         AppUpdateInfo update,
-        IProgress<string>? progress = null,
+        IProgress<AppUpdateProgress>? progress = null,
         CancellationToken cancellationToken = default);
 
     Task OpenReleaseNotesAsync(AppUpdateInfo update, CancellationToken cancellationToken = default);

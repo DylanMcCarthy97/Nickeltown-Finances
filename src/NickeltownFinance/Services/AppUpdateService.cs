@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.Versioning;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NickeltownFinance.Core;
 using NickeltownFinance.Core.Interfaces;
@@ -72,7 +74,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
     public async Task<AppUpdateApplyResult> DownloadAndApplyUpdateAsync(
         AppUpdateInfo update,
-        IProgress<string>? progress = null,
+        IProgress<AppUpdateProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(update.MsixDownloadUrl))
@@ -85,13 +87,18 @@ public sealed class AppUpdateService : IAppUpdateService
 
         try
         {
-            progress?.Report("Downloading update…");
-            var packagePath = await DownloadPackageAsync(update, cancellationToken);
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.Downloading, 0, "Downloading update…"));
+            var packagePath = await DownloadPackageAsync(update, progress, cancellationToken);
 
-            progress?.Report("Installing update…");
+            // Schedule relaunch before install — ForceApplicationShutdown often kills this process mid-call.
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.Installing, 0, "Preparing restart…"));
+            ScheduleRelaunchAfterExit();
+
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.Installing, 0, "Installing update…"));
             if (IsPackaged())
             {
-                await ApplyMsixUpdateAsync(packagePath, cancellationToken);
+                await ApplyMsixUpdateAsync(packagePath, progress, cancellationToken);
+                progress?.Report(new AppUpdateProgress(AppUpdateStage.Restarting, 100, "Update installed. Restarting…"));
                 return new AppUpdateApplyResult(true, true, null);
             }
 
@@ -101,6 +108,10 @@ public sealed class AppUpdateService : IAppUpdateService
                 UseShellExecute = true
             });
 
+            progress?.Report(new AppUpdateProgress(
+                AppUpdateStage.Restarting,
+                100,
+                "App Installer opened. This app will close and reopen after install."));
             return new AppUpdateApplyResult(true, true, null);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -156,7 +167,10 @@ public sealed class AppUpdateService : IAppUpdateService
         }
     }
 
-    private static async Task<string> DownloadPackageAsync(AppUpdateInfo update, CancellationToken cancellationToken)
+    private static async Task<string> DownloadPackageAsync(
+        AppUpdateInfo update,
+        IProgress<AppUpdateProgress>? progress,
+        CancellationToken cancellationToken)
     {
         var folder = Path.Combine(Path.GetTempPath(), "NickeltownFinance", "updates");
         Directory.CreateDirectory(folder);
@@ -170,25 +184,189 @@ public sealed class AppUpdateService : IAppUpdateService
         if (File.Exists(destination))
             File.Delete(destination);
 
-        using var response = await DownloadClient.GetAsync(update.MsixDownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await DownloadClient.GetAsync(
+            update.MsixDownloadUrl,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
 
+        var totalBytes = response.Content.Headers.ContentLength;
         await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
         await using var output = File.Create(destination);
-        await input.CopyToAsync(output, cancellationToken);
+
+        var buffer = new byte[81920];
+        long bytesRead = 0;
+        var lastReportedPercent = -1;
+        var lastReportUtc = DateTime.MinValue;
+
+        int read;
+        while ((read = await input.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            bytesRead += read;
+
+            var now = DateTime.UtcNow;
+            if (totalBytes is > 0)
+            {
+                var percent = Math.Clamp(100.0 * bytesRead / totalBytes.Value, 0, 100);
+                var wholePercent = (int)percent;
+                if (wholePercent != lastReportedPercent || (now - lastReportUtc).TotalMilliseconds >= 250)
+                {
+                    lastReportedPercent = wholePercent;
+                    lastReportUtc = now;
+                    progress?.Report(new AppUpdateProgress(
+                        AppUpdateStage.Downloading,
+                        percent,
+                        $"Downloading update… {wholePercent}% ({FormatBytes(bytesRead)} / {FormatBytes(totalBytes.Value)})"));
+                }
+            }
+            else if ((now - lastReportUtc).TotalMilliseconds >= 400)
+            {
+                lastReportUtc = now;
+                progress?.Report(new AppUpdateProgress(
+                    AppUpdateStage.Downloading,
+                    null,
+                    $"Downloading update… {FormatBytes(bytesRead)}"));
+            }
+        }
+
+        progress?.Report(new AppUpdateProgress(
+            AppUpdateStage.Downloading,
+            100,
+            $"Download complete ({FormatBytes(bytesRead)})."));
         return destination;
     }
 
-    private static async Task ApplyMsixUpdateAsync(string packagePath, CancellationToken cancellationToken)
+    private static async Task ApplyMsixUpdateAsync(
+        string packagePath,
+        IProgress<AppUpdateProgress>? progress,
+        CancellationToken cancellationToken)
     {
         var uri = new Uri(Path.GetFullPath(packagePath));
-        var result = await new PackageManager().AddPackageAsync(
+        var operation = new PackageManager().AddPackageAsync(
             uri,
             null,
-            DeploymentOptions.ForceApplicationShutdown).AsTask().WaitAsync(cancellationToken);
+            DeploymentOptions.ForceApplicationShutdown | DeploymentOptions.ForceUpdateFromAnyVersion);
+
+        operation.Progress = (_, deploymentProgress) =>
+        {
+            var percent = Math.Clamp((double)deploymentProgress.percentage, 0, 100);
+            progress?.Report(new AppUpdateProgress(
+                AppUpdateStage.Installing,
+                percent,
+                $"Installing update… {(int)percent}%"));
+        };
+
+        var result = await operation.AsTask().WaitAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(result.ErrorText))
             throw new InvalidOperationException(result.ErrorText);
+    }
+
+    /// <summary>
+    /// Starts a detached helper that waits for this process to exit, then relaunches the app
+    /// via execution alias and Appx package fallbacks. Must run before ForceApplicationShutdown.
+    /// </summary>
+    private void ScheduleRelaunchAfterExit()
+    {
+        try
+        {
+            var folder = Path.Combine(Path.GetTempPath(), "NickeltownFinance", "updates");
+            Directory.CreateDirectory(folder);
+
+            var scriptPath = Path.Combine(folder, "relaunch-after-update.cmd");
+            var pid = Environment.ProcessId;
+            string? packageFamilyName = null;
+            try
+            {
+                if (IsPackaged())
+                    packageFamilyName = Package.Current.Id.FamilyName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not resolve package family name for relaunch.");
+            }
+
+            var portableExe = Environment.ProcessPath;
+
+            var script = new StringBuilder();
+            script.AppendLine("@echo off");
+            script.AppendLine("setlocal EnableExtensions");
+            script.AppendLine($":wait_exit");
+            script.AppendLine($"tasklist /FI \"PID eq {pid}\" 2>NUL | find \"{pid}\" >NUL");
+            script.AppendLine("if not errorlevel 1 (");
+            script.AppendLine("  timeout /t 1 /nobreak >NUL");
+            script.AppendLine("  goto wait_exit");
+            script.AppendLine(")");
+            script.AppendLine("rem Give deployment a moment to finish registering the package.");
+            script.AppendLine("timeout /t 3 /nobreak >NUL");
+            script.AppendLine();
+            script.AppendLine("set /a attempts=0");
+            script.AppendLine(":try_launch");
+            script.AppendLine("set /a attempts+=1");
+            script.AppendLine("if %attempts% GTR 40 goto give_up");
+            script.AppendLine();
+            script.AppendLine("where nickeltownfinance.exe >NUL 2>&1");
+            script.AppendLine("if not errorlevel 1 (");
+            script.AppendLine("  start \"\" nickeltownfinance.exe");
+            script.AppendLine("  exit /b 0");
+            script.AppendLine(")");
+            script.AppendLine();
+
+            if (!string.IsNullOrWhiteSpace(packageFamilyName))
+            {
+                script.AppendLine($"start \"\" explorer.exe shell:AppsFolder\\{packageFamilyName}!App");
+                script.AppendLine("timeout /t 2 /nobreak >NUL");
+                script.AppendLine("tasklist /FI \"IMAGENAME eq NickeltownFinance.exe\" 2>NUL | find /I \"NickeltownFinance.exe\" >NUL");
+                script.AppendLine("if not errorlevel 1 exit /b 0");
+            }
+
+            script.AppendLine();
+            script.AppendLine("for /f \"usebackq delims=\" %%P in (`powershell -NoProfile -Command \"(Get-AppxPackage -Name NickeltownFinance | Select-Object -First 1).PackageFamilyName\"`) do (");
+            script.AppendLine("  if not \"%%P\"==\"\" (");
+            script.AppendLine("    start \"\" explorer.exe shell:AppsFolder\\%%P!App");
+            script.AppendLine("    timeout /t 2 /nobreak >NUL");
+            script.AppendLine("    tasklist /FI \"IMAGENAME eq NickeltownFinance.exe\" 2>NUL | find /I \"NickeltownFinance.exe\" >NUL");
+            script.AppendLine("    if not errorlevel 1 exit /b 0");
+            script.AppendLine("  )");
+            script.AppendLine(")");
+            script.AppendLine();
+
+            if (!string.IsNullOrWhiteSpace(portableExe) && File.Exists(portableExe))
+            {
+                script.AppendLine($"if exist \"{portableExe}\" (");
+                script.AppendLine($"  start \"\" \"{portableExe}\"");
+                script.AppendLine("  exit /b 0");
+                script.AppendLine(")");
+                script.AppendLine();
+            }
+
+            script.AppendLine("timeout /t 3 /nobreak >NUL");
+            script.AppendLine("goto try_launch");
+            script.AppendLine();
+            script.AppendLine(":give_up");
+            script.AppendLine("exit /b 1");
+
+            File.WriteAllText(scriptPath, script.ToString(), Encoding.ASCII);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"{scriptPath}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
+
+            _logger.LogInformation(
+                "Scheduled post-update relaunch helper for PID {Pid} (family={FamilyName})",
+                pid,
+                packageFamilyName ?? "(unknown)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to schedule post-update relaunch helper.");
+        }
     }
 
     private static bool IsPackaged()
@@ -202,6 +380,22 @@ public sealed class AppUpdateService : IAppUpdateService
         {
             return false;
         }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double value = bytes;
+        var unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return unit == 0
+            ? $"{bytes} {units[unit]}"
+            : string.Create(CultureInfo.InvariantCulture, $"{value:0.#} {units[unit]}");
     }
 
     private static HttpClient CreateDownloadClient()

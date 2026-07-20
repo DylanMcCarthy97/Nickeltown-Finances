@@ -15,7 +15,7 @@
                 <StackPanel Margin="0,0,8,24">
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Imports" Style="{StaticResource PageTitleStyle}" />
-                        <TextBlock Text="Import bank statements and Square transactions separately. The ledger stays clean — Square only explains each deposit."
+                        <TextBlock Text="Import ANZ bank statements, receipts, and legacy treasurer reports."
                                    Style="{StaticResource PageSubtitleStyle}" />
                     </StackPanel>
 
@@ -77,6 +77,7 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Square CSV import hidden for now — mark Square bank transfers by category on ANZ import instead.
                         <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnSquareCardClick">
                             <StackPanel>
@@ -90,8 +91,9 @@
                                 <TextBlock Text="{Binding LastSquareImportText, StringFormat=Last: {0}}" Style="{StaticResource MutedTextStyle}" />
                             </StackPanel>
                         </Border>
+                        -->
 
-                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnLegacyReportCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -105,7 +107,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Row="2" Grid.Column="4" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnHistoryCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -119,7 +121,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Row="4" Grid.Column="0" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
+                        <Border Grid.Row="2" Grid.Column="4" Style="{StaticResource AppCardStyle}" Padding="20" MinHeight="148" Cursor="Hand"
                                 MouseLeftButtonUp="OnRulesCardClick">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBadgeLargeStyle}" Background="{StaticResource BrandAccentFillBrush}" Margin="0,0,0,12"
@@ -144,8 +146,11 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <ds:StatisticCard Grid.Column="0" Title="Waiting review" Body="{Binding TransactionsWaitingReview}" />
+                        <!-- Square waiting match hidden while Square CSV import is disabled.
                         <ds:StatisticCard Grid.Column="2" Title="Square waiting match" Body="{Binding SquareDepositsWaitingMatch}" />
-                        <ds:StatisticCard Grid.Column="4" Title="Last bank import" Body="{Binding LastBankImportText}" />
+                        -->
+                        <ds:StatisticCard Grid.Column="2" Title="Last bank import" Body="{Binding LastBankImportText}" />
+                        <ds:StatisticCard Grid.Column="4" Title="Recent imports" Body="{Binding RecentImportCount}" />
                     </Grid>
                 </StackPanel>
             </ScrollViewer>
@@ -257,8 +262,7 @@
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding Categories}"
                                                       SelectedItem="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="Name"
-                                                      IsEnabled="{Binding IsSquareDeposit, Converter={StaticResource InverseBoolConverter}}" />
+                                                      DisplayMemberPath="Name" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

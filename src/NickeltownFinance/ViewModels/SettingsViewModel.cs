@@ -65,6 +65,9 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string? _availableUpdateNotes;
     [ObservableProperty] private bool _isCheckingForUpdates;
     [ObservableProperty] private bool _isInstallingUpdate;
+    [ObservableProperty] private bool _showUpdateProgress;
+    [ObservableProperty] private double _updateProgressPercent;
+    [ObservableProperty] private bool _isUpdateProgressIndeterminate;
 
     public string AppVersion => AppInfo.VersionLabel;
     public string InstallKindLabel => _appUpdateService.InstallKind == AppInstallKind.Msix ? "MSIX package" : "Portable";
@@ -587,6 +590,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         IsCheckingForUpdates = true;
         UpdateStatusText = "Checking for updates…";
+        ShowUpdateProgress = false;
         UpdateAvailable = false;
         AvailableUpdateVersion = null;
         AvailableUpdateNotes = null;
@@ -633,14 +637,21 @@ public partial class SettingsViewModel : ViewModelBase
             return;
 
         IsInstallingUpdate = true;
+        ShowUpdateProgress = true;
+        IsUpdateProgressIndeterminate = false;
+        UpdateProgressPercent = 0;
         UpdateStatusText = "Downloading update…";
+        // Install may force-kill the process before Shutdown runs — skip backup either way.
+        App.SkipShutdownBackup = true;
 
         try
         {
-            var progress = new Progress<string>(status => UpdateStatusText = status);
+            var progress = new Progress<AppUpdateProgress>(ApplyUpdateProgress);
             var result = await _appUpdateService.DownloadAndApplyUpdateAsync(_pendingUpdate, progress);
             if (!result.Success)
             {
+                ShowUpdateProgress = false;
+                App.SkipShutdownBackup = false;
                 UpdateStatusText = result.ErrorMessage ?? "Update failed.";
                 _notificationService.ShowError(UpdateStatusText);
                 return;
@@ -648,8 +659,10 @@ public partial class SettingsViewModel : ViewModelBase
 
             if (result.RestartRequired)
             {
+                UpdateStatusText = "Update installed. Restarting…";
+                UpdateProgressPercent = 100;
+                IsUpdateProgressIndeterminate = false;
                 _notificationService.ShowSuccess("Update installed. Restarting…");
-                App.SkipShutdownBackup = true;
                 Application.Current.Shutdown();
             }
         }
@@ -671,6 +684,21 @@ public partial class SettingsViewModel : ViewModelBase
     private bool CanInstallUpdate() => UpdateAvailable && _pendingUpdate is not null && !IsInstallingUpdate;
 
     private bool CanOpenReleaseNotes() => _pendingUpdate is not null;
+
+    private void ApplyUpdateProgress(AppUpdateProgress progress)
+    {
+        UpdateStatusText = progress.Message;
+        ShowUpdateProgress = true;
+        if (progress.PercentComplete is double percent)
+        {
+            IsUpdateProgressIndeterminate = false;
+            UpdateProgressPercent = percent;
+        }
+        else
+        {
+            IsUpdateProgressIndeterminate = true;
+        }
+    }
 
     partial void OnUpdateAvailableChanged(bool value)
     {

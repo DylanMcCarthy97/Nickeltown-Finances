@@ -263,7 +263,7 @@
                                     Visibility="{Binding PitstopReports, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
                                 <StackPanel>
                                     <TextBlock Text="Pitstop event reports" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                                    <TextBlock Text="ClubPOS end-of-day reports attached to this month."
+                                    <TextBlock Text="ClubPOS end-of-day reports attached to this month. Full pages are included when you export the PDF."
                                                Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" />
 
                                     <ItemsControl ItemsSource="{Binding PitstopReports}">

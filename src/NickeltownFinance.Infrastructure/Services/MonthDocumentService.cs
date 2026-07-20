@@ -39,13 +39,16 @@ public class MonthDocumentService : IMonthDocumentService
     public bool IsSupportedFile(string fileName) =>
         Supported.Contains(Path.GetExtension(fileName));
 
-    public Task<IReadOnlyList<MonthDocumentInfo>> GetForMonthAsync(
+    public async Task<IReadOnlyList<MonthDocumentInfo>> GetForMonthAsync(
         int year,
         int month,
         MonthDocumentKind kind = MonthDocumentKind.PitstopReport)
     {
-        var items = _repository.GetForMonth(year, month, kind).Select(Map).ToList();
-        return Task.FromResult<IReadOnlyList<MonthDocumentInfo>>(items);
+        var documents = _repository.GetForMonth(year, month, kind).ToList();
+        foreach (var document in documents)
+            await EnsurePreviewsAsync(document);
+
+        return documents.Select(Map).ToList();
     }
 
     public async Task<MonthDocumentInfo> AddAsync(
@@ -156,14 +159,14 @@ public class MonthDocumentService : IMonthDocumentService
             var ext = Path.GetExtension(fullPath).ToLowerInvariant();
             if (ext == ".pdf")
             {
-                var pagePath = DocumentPreviewPaths.GetMonthDocumentPagePath(document.Id, 1);
-                Directory.CreateDirectory(Path.GetDirectoryName(pagePath)!);
-                var rendered = await _pdfRenderService.RenderPageAsync(fullPath, pagePath, pageIndex: 0);
-                if (rendered is not null)
+                var previewDir = DocumentPreviewPaths.GetMonthDocumentPreviewDirectory(document.Id);
+                var rendered = await _pdfRenderService.RenderAllPagesAsync(fullPath, previewDir);
+                if (rendered.Count > 0)
                 {
-                    document.PageCount = Math.Max(1, _pdfRenderService.GetPageCount(fullPath));
-                    document.PreviewPagesJson = DocumentPreviewPaths.Serialize([AppPaths.ToRelativePath(pagePath)]);
-                    document.ThumbnailRelativePath = AppPaths.ToRelativePath(pagePath);
+                    document.PageCount = rendered.Count;
+                    var relativePaths = rendered.Select(AppPaths.ToRelativePath).ToList();
+                    document.PreviewPagesJson = DocumentPreviewPaths.Serialize(relativePaths);
+                    document.ThumbnailRelativePath = relativePaths[0];
                 }
             }
             else if (ImageExtensions.Contains(ext))
@@ -176,6 +179,46 @@ public class MonthDocumentService : IMonthDocumentService
         catch
         {
             // previews are optional
+        }
+    }
+
+    /// <summary>
+    /// Backfills page previews for documents attached before all pages were rendered.
+    /// </summary>
+    private async Task EnsurePreviewsAsync(MonthDocument document)
+    {
+        var fullPath = AppPaths.ResolvePath(document.RelativePath);
+        if (!File.Exists(fullPath))
+            return;
+
+        var existing = DocumentPreviewPaths.Parse(document.PreviewPagesJson)
+            .Select(AppPaths.ResolvePath)
+            .Where(File.Exists)
+            .ToList();
+
+        var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+        if (ext == ".pdf")
+        {
+            var pageCount = Math.Max(1, _pdfRenderService.GetPageCount(fullPath));
+            if (existing.Count >= pageCount)
+            {
+                if (document.PageCount != pageCount)
+                {
+                    document.PageCount = pageCount;
+                    _repository.Update(document);
+                }
+                return;
+            }
+
+            await ApplyPreviewsAsync(document, fullPath);
+            _repository.Update(document);
+            return;
+        }
+
+        if (ImageExtensions.Contains(ext) && existing.Count == 0)
+        {
+            await ApplyPreviewsAsync(document, fullPath);
+            _repository.Update(document);
         }
     }
 

@@ -377,7 +377,16 @@
                                 <TextBlock Text="{Binding UpdateStatusText}"
                                            Style="{StaticResource CaptionTextStyle}"
                                            TextWrapping="Wrap"
-                                           Margin="0,0,0,12" />
+                                           Margin="0,0,0,8" />
+
+                                <StackPanel Visibility="{Binding ShowUpdateProgress, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Margin="0,0,0,12">
+                                    <ProgressBar Minimum="0"
+                                                 Maximum="100"
+                                                 Height="8"
+                                                 Value="{Binding UpdateProgressPercent}"
+                                                 IsIndeterminate="{Binding IsUpdateProgressIndeterminate}" />
+                                </StackPanel>
 
                                 <StackPanel Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
                                             Margin="0,0,0,14">
@@ -400,6 +409,7 @@
                                                Icon="{ui:SymbolIcon ArrowDownload24}"
                                                Command="{Binding InstallUpdateCommand}"
                                                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
+                                               IsEnabled="{Binding IsInstallingUpdate, Converter={StaticResource InverseBoolConverter}}"
                                                Margin="{StaticResource ButtonGroupMargin}" />
                                     <ui:Button Content="Release notes"
                                                Style="{StaticResource GroupedSecondaryButtonExtraWideStyle}"
