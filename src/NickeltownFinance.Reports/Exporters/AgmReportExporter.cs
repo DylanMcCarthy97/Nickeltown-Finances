@@ -14,24 +14,58 @@ public static class AgmReportExporter
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
+        var tempPath = Path.Combine(Path.GetTempPath(), $"agm-test-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            GenerateAgmPdf(data, tempPath, baseFontSize: 11);
+            
+            var pageCount = CountPdfPages(tempPath);
+            if (pageCount > 1)
+            {
+                var enlargedFontSize = 13;
+                GenerateAgmPdf(data, outputPath, baseFontSize: enlargedFontSize);
+            }
+            else
+            {
+                File.Copy(tempPath, outputPath, overwrite: true);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+
+        return outputPath;
+    }
+
+    private static void GenerateAgmPdf(AgmReportData data, string outputPath, int baseFontSize)
+    {
+        var headerTitleSize = baseFontSize + 7;
+        var headerSubtitleSize = baseFontSize + 3;
+        var headerYearSize = baseFontSize + 1;
+        var sectionHeaderSize = baseFontSize + 2;
+
         Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
                 page.Margin(40);
-                page.DefaultTextStyle(x => x.FontSize(11));
+                page.DefaultTextStyle(x => x.FontSize(baseFontSize));
 
                 page.Header().Column(col =>
                 {
                     if (!string.IsNullOrWhiteSpace(data.LogoPath) && File.Exists(data.LogoPath))
                         col.Item().AlignCenter().Height(64).Width(120).Image(data.LogoPath).FitArea();
-                    col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(18);
-                    col.Item().AlignCenter().Text("Annual General Meeting Report").FontSize(14);
-                    col.Item().AlignCenter().Text($"Financial Year {data.FinancialYearName}").FontSize(12);
+                    col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(headerTitleSize);
+                    col.Item().AlignCenter().Text("Annual General Meeting Report").FontSize(headerSubtitleSize);
+                    col.Item().AlignCenter().Text($"Financial Year {data.FinancialYearName}").FontSize(headerYearSize);
                     col.Item().AlignCenter()
                         .Text($"Signed by {data.PreparedBy} ({data.PreparedByRole})  ·  {data.PrintedAtDisplay}")
-                        .FontSize(9).FontColor(Colors.Grey.Medium);
+                        .FontSize(baseFontSize - 2).FontColor(Colors.Grey.Medium);
                     col.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Medium);
                 });
 
@@ -43,7 +77,7 @@ public static class AgmReportExporter
                         r.ConstantItem(100).AlignRight().Text(data.OpeningBalance.ToString("C"));
                     });
 
-                    col.Item().PaddingTop(15).Text("MONTHLY SUMMARY").Bold().FontSize(13);
+                    col.Item().PaddingTop(15).Text("MONTHLY SUMMARY").Bold().FontSize(sectionHeaderSize);
                     col.Item().PaddingTop(5).Row(r =>
                     {
                         r.RelativeItem().Text("Month").Bold();
@@ -123,36 +157,36 @@ public static class AgmReportExporter
 
                     col.Item().PaddingTop(28).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(14).Column(sig =>
                     {
-                        sig.Item().Text("Treasurer declaration").Bold().FontSize(11);
+                        sig.Item().Text("Treasurer declaration").Bold().FontSize(baseFontSize);
                         sig.Item().PaddingTop(4)
                             .Text("I confirm this report is a true and fair summary of the club's finances for the financial year.")
-                            .FontSize(9).FontColor(Colors.Grey.Darken1);
+                            .FontSize(baseFontSize - 2).FontColor(Colors.Grey.Darken1);
                         sig.Item().PaddingTop(16).Row(row =>
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("Full name").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("Full name").FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(8).MinHeight(52).AlignBottom().Column(inner =>
                                 {
-                                    inner.Item().Text(data.PreparedBy).SemiBold().FontSize(11);
-                                    inner.Item().Text(data.PreparedByRole).FontSize(8).FontColor(Colors.Grey.Medium);
+                                    inner.Item().Text(data.PreparedBy).SemiBold().FontSize(baseFontSize);
+                                    inner.Item().Text(data.PreparedByRole).FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                 });
                                 c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                             });
                             row.ConstantItem(20);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("Signature").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("Signature").FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(8).MinHeight(52).AlignBottom().Column(inner =>
                                 {
                                     if (data.HasSignature)
                                     {
                                         inner.Item().Height(40).Width(140).Image(data.SignatureImagePath!).FitArea();
-                                        inner.Item().PaddingTop(4).Text("Digitally signed").FontSize(8).FontColor(Colors.Grey.Medium);
+                                        inner.Item().PaddingTop(4).Text("Digitally signed").FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                     }
                                     else
                                     {
-                                        inner.Item().Text("Draw signature in Settings").FontSize(8).FontColor(Colors.Grey.Medium);
+                                        inner.Item().Text("Draw signature in Settings").FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                     }
                                 });
                                 c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
@@ -160,9 +194,9 @@ public static class AgmReportExporter
                             row.ConstantItem(20);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("Date").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("Date").FontSize(baseFontSize - 3).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(8).MinHeight(52).AlignBottom()
-                                    .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(11);
+                                    .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(baseFontSize);
                                 c.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                             });
                         });
@@ -173,8 +207,12 @@ public static class AgmReportExporter
                     $"Nickeltown Finance  ·  Signed by {data.PreparedBy}  ·  {data.PrintedAtDisplay}");
             });
         }).GeneratePdf(outputPath);
+    }
 
-        return outputPath;
+    private static int CountPdfPages(string pdfPath)
+    {
+        using var doc = PdfSharpCore.Pdf.IO.PdfReader.Open(pdfPath, PdfSharpCore.Pdf.IO.PdfDocumentOpenMode.InformationOnly);
+        return doc.PageCount;
     }
 
     public static string ExportExcel(AgmReportData data, string outputPath)
