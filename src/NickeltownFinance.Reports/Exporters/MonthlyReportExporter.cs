@@ -51,59 +51,105 @@ public static class MonthlyReportExporter
 
     private static void GenerateMainPdf(MonthlyReportData data, string outputPath)
     {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"monthly-test-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            GenerateMonthlyPdfWithFontSize(data, tempPath, baseFontSize: 9);
+            
+            var pageCount = CountPdfPages(tempPath);
+            if (pageCount > 1)
+            {
+                var enlargedFontSize = 10;
+                GenerateMonthlyPdfWithFontSize(data, outputPath, baseFontSize: enlargedFontSize);
+            }
+            else
+            {
+                File.Copy(tempPath, outputPath, overwrite: true);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
+
+    private static void GenerateMonthlyPdfWithFontSize(MonthlyReportData data, string outputPath, int baseFontSize)
+    {
+        var headerTitleSize = baseFontSize + 7;
+        var headerSubtitleSize = baseFontSize + 3;
+        var headerMetaSize = baseFontSize + 1;
+        var sectionHeaderSize = baseFontSize + 2;
+
         Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
                 page.Margin(28);
-                page.DefaultTextStyle(x => x.FontSize(9).FontColor(Colors.Grey.Darken3));
+                page.DefaultTextStyle(x => x.FontSize(baseFontSize).FontColor(Colors.Grey.Darken3));
 
-                page.Header().Element(c => ComposeHeader(c, data));
-                page.Content().Element(c => ComposeContent(c, data));
-                page.Footer().Element(c => ComposeFooter(c, data));
+                page.Header().Element(c => ComposeHeader(c, data, headerTitleSize, headerSubtitleSize, headerMetaSize));
+                page.Content().Element(c => ComposeContent(c, data, baseFontSize, sectionHeaderSize));
+                page.Footer().Element(c => ComposeFooter(c, data, baseFontSize - 1));
             });
         }).GeneratePdf(outputPath);
     }
 
-    private static void ComposeHeader(IContainer container, MonthlyReportData data)
+    private static int CountPdfPages(string pdfPath)
+    {
+        using var doc = PdfReader.Open(pdfPath, PdfDocumentOpenMode.InformationOnly);
+        return doc.PageCount;
+    }
+
+    private static void ComposeHeader(IContainer container, MonthlyReportData data, int titleSize, int subtitleSize, int metaSize)
     {
         container.Column(col =>
         {
             if (!string.IsNullOrWhiteSpace(data.LogoPath) && File.Exists(data.LogoPath))
                 col.Item().AlignCenter().Height(44).Width(90).Image(data.LogoPath).FitArea();
 
-            col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(16).FontColor(Colors.Black);
-            col.Item().AlignCenter().Text("Monthly Treasurer Report").SemiBold().FontSize(12);
+            col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(titleSize).FontColor(Colors.Black);
+            col.Item().AlignCenter().Text("Monthly Treasurer Report").SemiBold().FontSize(subtitleSize);
             col.Item().AlignCenter().Text($"{data.PeriodLabel}  ·  Financial Year {data.FinancialYearName}")
-                .FontSize(10).FontColor(Colors.Grey.Darken2);
+                .FontSize(metaSize).FontColor(Colors.Grey.Darken2);
             col.Item().PaddingTop(2).AlignCenter()
                 .Text($"Signed by {data.PreparedBy} ({data.PreparedByRole})  ·  {data.PrintedAtDisplay}")
-                .FontSize(8).FontColor(Colors.Grey.Medium);
+                .FontSize(metaSize - 2).FontColor(Colors.Grey.Medium);
             col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Medium);
         });
     }
 
-    private static void ComposeContent(IContainer container, MonthlyReportData data)
+    private static void ComposeContent(IContainer container, MonthlyReportData data, int baseFontSize, int sectionHeaderSize)
     {
+        var summaryCellLabelSize = baseFontSize - 2;
+        var summaryCellValueSize = baseFontSize + 1;
+        var categoryBlockTitleSize = baseFontSize + 1;
+        var squareItemSize = baseFontSize;
+        var tableHeaderSize = baseFontSize - 2;
+        var tableCellSize = baseFontSize - 2;
+        var squareDetailSize = tableCellSize;
+
         container.Column(col =>
         {
             // Summary strip
             col.Item().Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
             {
-                SummaryCell(row, "Opening balance", data.OpeningBalance);
-                SummaryCell(row, "Income", data.TotalIncome);
-                SummaryCell(row, "Expenses", data.TotalExpenses);
-                SummaryCell(row, data.ClosingBalanceTitle, data.ClosingBalance, bold: true);
+                SummaryCell(row, "Opening balance", data.OpeningBalance, summaryCellLabelSize, summaryCellValueSize);
+                SummaryCell(row, "Income", data.TotalIncome, summaryCellLabelSize, summaryCellValueSize);
+                SummaryCell(row, "Expenses", data.TotalExpenses, summaryCellLabelSize, summaryCellValueSize);
+                SummaryCell(row, data.ClosingBalanceTitle, data.ClosingBalance, summaryCellLabelSize, summaryCellValueSize, bold: true);
             });
 
-            col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(11).FontColor(Colors.Black);
+            col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(sectionHeaderSize).FontColor(Colors.Black);
 
             col.Item().PaddingTop(4).Row(row =>
             {
-                row.RelativeItem().Element(c => CategoryBlock(c, "Income", data.IncomeByCategory, data.TotalIncome));
+                row.RelativeItem().Element(c => CategoryBlock(c, "Income", data.IncomeByCategory, data.TotalIncome, categoryBlockTitleSize, baseFontSize));
                 row.ConstantItem(12);
-                row.RelativeItem().Element(c => CategoryBlock(c, "Expenses", data.ExpensesByCategory, data.TotalExpenses));
+                row.RelativeItem().Element(c => CategoryBlock(c, "Expenses", data.ExpensesByCategory, data.TotalExpenses, categoryBlockTitleSize, baseFontSize));
             });
 
             col.Item().PaddingTop(6).Row(r =>
@@ -112,7 +158,7 @@ public static class MonthlyReportExporter
                 r.ConstantItem(100).AlignRight().Text(data.MonthlyProfit.ToString("C")).Bold();
             });
 
-            col.Item().PaddingTop(8).Text("Treasurer comments").Bold().FontSize(11).FontColor(Colors.Black);
+            col.Item().PaddingTop(8).Text("Treasurer comments").Bold().FontSize(sectionHeaderSize).FontColor(Colors.Black);
             col.Item().PaddingTop(2).Row(r =>
             {
                 r.RelativeItem().Text("Excludes petty cash — cash on hand");
@@ -140,13 +186,13 @@ public static class MonthlyReportExporter
             // Square breakdown for matched deposits
             if (data.HasSquareBreakdown)
             {
-                col.Item().PaddingTop(8).Text("Square transfer breakdown").Bold().FontSize(11).FontColor(Colors.Black);
+                col.Item().PaddingTop(8).Text("Square transfer breakdown").Bold().FontSize(sectionHeaderSize).FontColor(Colors.Black);
                 col.Item().PaddingTop(1).Text("What made up the matched Square deposits this month.")
-                    .FontSize(8).FontColor(Colors.Grey.Medium);
+                    .FontSize(baseFontSize - 1).FontColor(Colors.Grey.Medium);
 
                 foreach (var section in data.SquareBreakdown)
                 {
-                    col.Item().PaddingTop(4).Text(section.SectionName).SemiBold().FontSize(9);
+                    col.Item().PaddingTop(4).Text(section.SectionName).SemiBold().FontSize(squareItemSize);
                     foreach (var item in section.Items)
                     {
                         col.Item().PaddingTop(1).PaddingLeft(8).Row(r =>
@@ -165,9 +211,9 @@ public static class MonthlyReportExporter
             }
 
             // Transaction detail — bank descriptions
-            col.Item().PaddingTop(8).Text("Bank transactions").Bold().FontSize(11).FontColor(Colors.Black);
+            col.Item().PaddingTop(8).Text("Bank transactions").Bold().FontSize(sectionHeaderSize).FontColor(Colors.Black);
             col.Item().Text("As shown on the ANZ statement, with the category assigned in Nickeltown Finance.")
-                .FontSize(8).FontColor(Colors.Grey.Medium);
+                .FontSize(baseFontSize - 1).FontColor(Colors.Grey.Medium);
 
             if (data.Transactions.Count == 0)
             {
@@ -188,11 +234,11 @@ public static class MonthlyReportExporter
 
                     table.Header(header =>
                     {
-                        header.Cell().Element(HeaderCell).Text("Date");
-                        header.Cell().Element(HeaderCell).Text("Bank description (ANZ)");
-                        header.Cell().Element(HeaderCell).Text("Category");
-                        header.Cell().Element(HeaderCell).AlignRight().Text("Money in");
-                        header.Cell().Element(HeaderCell).AlignRight().Text("Money out");
+                        header.Cell().Element(c => HeaderCell(c, tableHeaderSize)).Text("Date");
+                        header.Cell().Element(c => HeaderCell(c, tableHeaderSize)).Text("Bank description (ANZ)");
+                        header.Cell().Element(c => HeaderCell(c, tableHeaderSize)).Text("Category");
+                        header.Cell().Element(c => HeaderCell(c, tableHeaderSize)).AlignRight().Text("Money in");
+                        header.Cell().Element(c => HeaderCell(c, tableHeaderSize)).AlignRight().Text("Money out");
                     });
 
                     var alt = false;
@@ -201,25 +247,25 @@ public static class MonthlyReportExporter
                         var bg = alt ? Colors.Grey.Lighten4 : Colors.White;
                         alt = !alt;
 
-                        table.Cell().Element(c => BodyCell(c, bg)).Text(txn.Date.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture));
-                        table.Cell().Element(c => BodyCell(c, bg)).Text(txn.Description);
-                        table.Cell().Element(c => BodyCell(c, bg)).Text(txn.CategoryName);
-                        table.Cell().Element(c => BodyCell(c, bg)).AlignRight()
+                        table.Cell().Element(c => BodyCell(c, bg, tableCellSize)).Text(txn.Date.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture));
+                        table.Cell().Element(c => BodyCell(c, bg, tableCellSize)).Text(txn.Description);
+                        table.Cell().Element(c => BodyCell(c, bg, tableCellSize)).Text(txn.CategoryName);
+                        table.Cell().Element(c => BodyCell(c, bg, tableCellSize)).AlignRight()
                             .Text(txn.MoneyIn > 0 ? txn.MoneyIn.ToString("C") : "—");
-                        table.Cell().Element(c => BodyCell(c, bg)).AlignRight()
+                        table.Cell().Element(c => BodyCell(c, bg, tableCellSize)).AlignRight()
                             .Text(txn.MoneyOut > 0 ? txn.MoneyOut.ToString("C") : "—");
 
                         if (txn.HasSquareItems)
                         {
                             foreach (var item in txn.SquareItems)
                             {
-                                table.Cell().Element(c => BodyCell(c, bg)).Text("").FontSize(7);
-                                table.Cell().Element(c => BodyCell(c, bg)).PaddingLeft(10)
-                                    .Text($"↳ {item.Label}").FontSize(7).FontColor(Colors.Grey.Darken1);
-                                table.Cell().Element(c => BodyCell(c, bg)).Text("Square").FontSize(7).FontColor(Colors.Grey.Medium);
-                                table.Cell().Element(c => BodyCell(c, bg)).AlignRight()
-                                    .Text(item.Amount > 0 ? item.Amount.ToString("C") : "—").FontSize(7);
-                                table.Cell().Element(c => BodyCell(c, bg)).Text("—").FontSize(7);
+                                table.Cell().Element(c => BodyCell(c, bg, squareDetailSize)).Text("").FontSize(squareDetailSize);
+                                table.Cell().Element(c => BodyCell(c, bg, squareDetailSize)).PaddingLeft(10)
+                                    .Text($"↳ {item.Label}").FontSize(squareDetailSize).FontColor(Colors.Grey.Darken1);
+                                table.Cell().Element(c => BodyCell(c, bg, squareDetailSize)).Text("Square").FontSize(squareDetailSize).FontColor(Colors.Grey.Medium);
+                                table.Cell().Element(c => BodyCell(c, bg, squareDetailSize)).AlignRight()
+                                    .Text(item.Amount > 0 ? item.Amount.ToString("C") : "—").FontSize(squareDetailSize);
+                                table.Cell().Element(c => BodyCell(c, bg, squareDetailSize)).Text("—").FontSize(squareDetailSize);
                             }
                         }
                     }
@@ -227,17 +273,17 @@ public static class MonthlyReportExporter
 
                 col.Item().PaddingTop(4).AlignRight()
                     .Text($"{data.TransactionCount} transaction(s)")
-                    .FontSize(9).FontColor(Colors.Grey.Medium);
+                    .FontSize(baseFontSize).FontColor(Colors.Grey.Medium);
             }
 
             if (!string.IsNullOrWhiteSpace(data.Notes))
             {
-                col.Item().PaddingTop(8).Text("Notes").Bold().FontSize(11).FontColor(Colors.Black);
+                col.Item().PaddingTop(8).Text("Notes").Bold().FontSize(sectionHeaderSize).FontColor(Colors.Black);
                 col.Item().Text(data.Notes);
             }
 
             // Keep declaration with the report body when it fits (avoids a signature-only page).
-            col.Item().PaddingTop(10).ShowEntire().Element(c => ComposeSignatureBlock(c, data));
+            col.Item().PaddingTop(10).ShowEntire().Element(c => ComposeSignatureBlock(c, data, baseFontSize));
         });
     }
 
@@ -356,24 +402,29 @@ public static class MonthlyReportExporter
         output.Save(outputPath);
     }
 
-    private static void ComposeSignatureBlock(IContainer container, MonthlyReportData data)
+    private static void ComposeSignatureBlock(IContainer container, MonthlyReportData data, int baseFontSize)
     {
+        var titleSize = baseFontSize + 1;
+        var textSize = baseFontSize - 1;
+        var labelSize = baseFontSize - 2;
+        var nameSize = baseFontSize + 1;
+
         container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(10).Column(col =>
         {
-            col.Item().Text("Treasurer declaration").Bold().FontSize(10).FontColor(Colors.Black);
+            col.Item().Text("Treasurer declaration").Bold().FontSize(titleSize).FontColor(Colors.Black);
             col.Item().PaddingTop(2)
                 .Text("I confirm this report is a true and fair summary of the club's bank transactions for the period.")
-                .FontSize(8).FontColor(Colors.Grey.Darken1);
+                .FontSize(textSize).FontColor(Colors.Grey.Darken1);
 
             col.Item().PaddingTop(10).Row(row =>
             {
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Full name").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text("Full name").FontSize(labelSize).FontColor(Colors.Grey.Medium);
                     c.Item().PaddingTop(4).MinHeight(36).AlignBottom().Column(inner =>
                     {
-                        inner.Item().Text(data.PreparedBy).SemiBold().FontSize(10);
-                        inner.Item().Text(data.PreparedByRole).FontSize(7).FontColor(Colors.Grey.Medium);
+                        inner.Item().Text(data.PreparedBy).SemiBold().FontSize(nameSize);
+                        inner.Item().Text(data.PreparedByRole).FontSize(labelSize).FontColor(Colors.Grey.Medium);
                     });
                     c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                 });
@@ -382,17 +433,17 @@ public static class MonthlyReportExporter
 
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Signature").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text("Signature").FontSize(labelSize).FontColor(Colors.Grey.Medium);
                     c.Item().PaddingTop(4).MinHeight(36).AlignBottom().Column(inner =>
                     {
                         if (data.HasSignature)
                         {
                             inner.Item().Height(28).Width(120).Image(data.SignatureImagePath!).FitArea();
-                            inner.Item().PaddingTop(2).Text("Digitally signed").FontSize(7).FontColor(Colors.Grey.Medium);
+                            inner.Item().PaddingTop(2).Text("Digitally signed").FontSize(labelSize).FontColor(Colors.Grey.Medium);
                         }
                         else
                         {
-                            inner.Item().Text("Draw signature in Settings").FontSize(7).FontColor(Colors.Grey.Medium);
+                            inner.Item().Text("Draw signature in Settings").FontSize(labelSize).FontColor(Colors.Grey.Medium);
                         }
                     });
                     c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
@@ -402,18 +453,18 @@ public static class MonthlyReportExporter
 
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("Date").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text("Date").FontSize(labelSize).FontColor(Colors.Grey.Medium);
                     c.Item().PaddingTop(4).MinHeight(36).AlignBottom()
-                        .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(10);
+                        .Text(data.PrintedAt.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)).SemiBold().FontSize(nameSize);
                     c.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                 });
             });
         });
     }
 
-    private static void ComposeFooter(IContainer container, MonthlyReportData data)
+    private static void ComposeFooter(IContainer container, MonthlyReportData data, int footerFontSize)
     {
-        container.AlignCenter().DefaultTextStyle(x => x.FontSize(8).FontColor(Colors.Grey.Medium)).Text(t =>
+        container.AlignCenter().DefaultTextStyle(x => x.FontSize(footerFontSize).FontColor(Colors.Grey.Medium)).Text(t =>
         {
             t.Span("Nickeltown Finance  ·  ");
             t.Span($"Signed by {data.PreparedBy}  ·  ");
@@ -425,15 +476,15 @@ public static class MonthlyReportExporter
         });
     }
 
-    private static void SummaryCell(RowDescriptor row, string label, decimal amount, bool bold = false)
+    private static void SummaryCell(RowDescriptor row, string label, decimal amount, int labelSize, int valueSize, bool bold = false)
     {
         row.RelativeItem().Column(c =>
         {
-            c.Item().Text(label).FontSize(7).FontColor(Colors.Grey.Darken1);
+            c.Item().Text(label).FontSize(labelSize).FontColor(Colors.Grey.Darken1);
             if (bold)
-                c.Item().Text(amount.ToString("C")).FontSize(10).Bold();
+                c.Item().Text(amount.ToString("C")).FontSize(valueSize).Bold();
             else
-                c.Item().Text(amount.ToString("C")).FontSize(10);
+                c.Item().Text(amount.ToString("C")).FontSize(valueSize);
         });
     }
 
@@ -441,11 +492,13 @@ public static class MonthlyReportExporter
         IContainer container,
         string title,
         IReadOnlyList<CategoryTotal> items,
-        decimal total)
+        decimal total,
+        int titleSize,
+        int itemSize)
     {
         container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Column(col =>
         {
-            col.Item().Text(title).Bold().FontSize(10).FontColor(Colors.Black);
+            col.Item().Text(title).Bold().FontSize(titleSize).FontColor(Colors.Black);
             if (items.Count == 0)
             {
                 col.Item().PaddingTop(4).Text("None").Italic().FontColor(Colors.Grey.Medium);
@@ -456,8 +509,8 @@ public static class MonthlyReportExporter
                 {
                     col.Item().PaddingTop(3).Row(r =>
                     {
-                        r.RelativeItem().Text(item.CategoryName);
-                        r.ConstantItem(72).AlignRight().Text(item.Amount.ToString("C"));
+                        r.RelativeItem().Text(item.CategoryName).FontSize(itemSize);
+                        r.ConstantItem(72).AlignRight().Text(item.Amount.ToString("C")).FontSize(itemSize);
                     });
                 }
             }
@@ -465,23 +518,23 @@ public static class MonthlyReportExporter
             col.Item().PaddingTop(6).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
             col.Item().PaddingTop(4).Row(r =>
             {
-                r.RelativeItem().Text($"Total {title.ToLowerInvariant()}").Bold();
-                r.ConstantItem(72).AlignRight().Text(total.ToString("C")).Bold();
+                r.RelativeItem().Text($"Total {title.ToLowerInvariant()}").Bold().FontSize(itemSize);
+                r.ConstantItem(72).AlignRight().Text(total.ToString("C")).Bold().FontSize(itemSize);
             });
         });
     }
 
-    private static IContainer HeaderCell(IContainer container) =>
-        container.DefaultTextStyle(x => x.SemiBold().FontSize(7).FontColor(Colors.White))
+    private static IContainer HeaderCell(IContainer container, int fontSize) =>
+        container.DefaultTextStyle(x => x.SemiBold().FontSize(fontSize).FontColor(Colors.White))
             .Background(Colors.Blue.Darken2)
             .PaddingVertical(3)
             .PaddingHorizontal(3);
 
-    private static IContainer BodyCell(IContainer container, string background) =>
+    private static IContainer BodyCell(IContainer container, string background, int fontSize) =>
         container.Background(background)
             .PaddingVertical(2)
             .PaddingHorizontal(3)
-            .DefaultTextStyle(x => x.FontSize(7));
+            .DefaultTextStyle(x => x.FontSize(fontSize));
 
     public static string ExportExcel(MonthlyReportData data, string outputPath)
     {
