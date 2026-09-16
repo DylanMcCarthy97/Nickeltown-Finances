@@ -52,6 +52,34 @@
                     </Grid>
                     <Grid Margin="0,14,0,0">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="From" Style="{StaticResource FieldLabelStyle}" />
+                            <ds:AppDateField SelectedDate="{Binding FromDate}" MinWidth="160" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="To" Style="{StaticResource FieldLabelStyle}" />
+                            <ds:AppDateField SelectedDate="{Binding ToDate}" MinWidth="160" />
+                        </StackPanel>
+                        <ui:Button Grid.Column="4"
+                                   Content="22nd to 21st"
+                                   Style="{StaticResource SecondaryButtonStyle}"
+                                   VerticalAlignment="Bottom"
+                                   ToolTip="Set dates to the ANZ statement cycle for the selected month (22nd of the previous month to the 21st)."
+                                   Command="{Binding UseStatementPeriodCommand}" />
+                    </Grid>
+                    <TextBlock Text="{Binding PeriodHint}"
+                               Style="{StaticResource CaptionTextStyle}"
+                               Margin="0,8,0,0"
+                               TextWrapping="Wrap" />
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="120" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" MinWidth="120" />
@@ -135,7 +163,7 @@
                 </ds:SurfaceCard>
 
                 <ds:EmptyState Title="No report yet"
-                               Message="Choose a financial year and month, then click Preview to generate your monthly treasurer report."
+                               Message="Choose a financial year and statement dates (22nd to 21st by default), then click Preview to generate your monthly treasurer report."
                                IconSymbol="DocumentSearch24"
                                Margin="0,8,0,0"
                                Visibility="{Binding HasReport, Converter={StaticResource InverseBoolToVisibilityConverter}}">
@@ -162,9 +190,8 @@
                                    MaxWidth="960"
                                    HorizontalAlignment="Center">
                         <ds:ReportCard.Subtitle>
-                            <MultiBinding StringFormat="{}{0} {1}  ·  FY {2}">
-                                <Binding Path="ReportData.MonthName" />
-                                <Binding Path="ReportData.Year" />
+                            <MultiBinding StringFormat="{}{0}  ·  FY {1}">
+                                <Binding Path="ReportData.PeriodLabel" />
                                 <Binding Path="ReportData.FinancialYearName" />
                             </MultiBinding>
                         </ds:ReportCard.Subtitle>
@@ -179,12 +206,18 @@
                                 <Run Text="{Binding PrintedAtDisplay, Mode=OneWay}" />
                             </TextBlock>
 
-                            <UniformGrid Columns="4" Margin="0,0,0,18">
-                                <ds:MoneyCard Title="Opening balance" Amount="{Binding OpeningBalance}" Tone="Neutral" ShowIcon="False" Margin="0,0,8,0" />
+                            <UniformGrid Columns="4" Margin="0,0,0,8">
+                                <ds:MoneyCard Title="{Binding OpeningBalanceTitle}" Amount="{Binding OpeningBalance}" Tone="Neutral" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="Income" Amount="{Binding TotalIncome}" Tone="Income" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="Expenses" Amount="{Binding TotalExpenses}" Tone="Expense" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="{Binding ClosingBalanceTitle}" Amount="{Binding ClosingBalance}" Tone="Neutral" ShowIcon="False" />
                             </UniformGrid>
+                            <TextBlock Margin="0,0,0,18" TextWrapping="Wrap"
+                                       Style="{StaticResource CaptionTextStyle}">
+                                <Run Text="ANZ statement period " />
+                                <Run Text="{Binding PeriodDateRange, Mode=OneWay}" FontWeight="SemiBold" />
+                                <Run Text="  ·  Opening + income − expenses = closing, matching the imported statement." />
+                            </TextBlock>
 
                             <Grid Margin="0,0,0,18">
                                 <Grid.ColumnDefinitions>
@@ -236,7 +269,7 @@
                                     Visibility="{Binding SquareBreakdown, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
                                 <StackPanel>
                                     <TextBlock Text="Square transfer breakdown" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                                    <TextBlock Text="What made up the matched Square deposits this month — bar top-ups, memberships, and Pitstop sales."
+                                    <TextBlock Text="What made up the matched Square deposits in this statement period — bar top-ups, memberships, and Pitstop sales."
                                                Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" />
 
                                     <ItemsControl ItemsSource="{Binding SquareBreakdown}">
@@ -283,12 +316,12 @@
                             </Border>
 
                             <TextBlock Text="Bank transactions" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                            <TextBlock Text="As shown on the ANZ statement, with the category assigned in Nickeltown Finance."
+                            <TextBlock Text="As shown on the imported ANZ statement for this date range, with the category assigned in Nickeltown Finance."
                                        Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,10" />
 
                             <Border Style="{StaticResource AppCardStyle}" Padding="0" Margin="0,0,0,20">
                                 <Grid>
-                                    <TextBlock Text="No transactions this month"
+                                    <TextBlock Text="No transactions in this period"
                                                Style="{StaticResource CaptionTextStyle}"
                                                Margin="16"
                                                Visibility="{Binding Transactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}}" />

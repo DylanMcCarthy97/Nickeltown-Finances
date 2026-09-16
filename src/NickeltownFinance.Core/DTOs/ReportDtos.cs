@@ -240,9 +240,30 @@ public class MonthlyReportData
 
     public int Year { get; set; }
 
-    public string PeriodLabel => $"{MonthName} {Year}";
+    /// <summary>Inclusive first day of the report (ANZ statement start, typically the 22nd).</summary>
+    public DateTime PeriodStart { get; set; }
+
+    /// <summary>Inclusive last day of the report (ANZ statement end, typically the 21st).</summary>
+    public DateTime PeriodEnd { get; set; }
+
+    public string PeriodDateRange =>
+        PeriodStart == default || PeriodEnd == default
+            ? string.Empty
+            : DateFormats.FormatRange(PeriodStart, PeriodEnd);
+
+    public string PeriodLabel => string.IsNullOrEmpty(PeriodDateRange)
+        ? $"{MonthName} {Year}"
+        : $"{MonthName} {Year}  ·  {PeriodDateRange}";
 
     public decimal OpeningBalance { get; set; }
+
+    /// <summary>Statement opening date (start of <see cref="PeriodStart"/>).</summary>
+    public DateTime OpeningBalanceAsOf { get; set; }
+
+    public string OpeningBalanceTitle =>
+        OpeningBalanceAsOf == default
+            ? "Opening balance"
+            : $"Opening balance (as at {DateFormats.Format(OpeningBalanceAsOf)})";
 
     public IReadOnlyList<CategoryTotal> IncomeByCategory { get; set; } = [];
 
@@ -256,8 +277,13 @@ public class MonthlyReportData
 
     public decimal ClosingBalance { get; set; }
 
-    /// <summary>Calendar date the closing balance was calculated for (print date, capped at month end).</summary>
+    /// <summary>Statement closing date (end of <see cref="PeriodEnd"/>).</summary>
     public DateTime ClosingBalanceAsOf { get; set; }
+
+    /// <summary>Opening + income − expenses. Matches <see cref="ClosingBalance"/> when the ledger is consistent.</summary>
+    public decimal LedgerClosingCheck => OpeningBalance + TotalIncome - TotalExpenses;
+
+    public bool LedgerReconciles => LedgerClosingCheck == ClosingBalance;
 
     public string ClosingBalanceTitle =>
         $"Closing balance (as at {DateFormats.Format(ClosingBalanceAsOf)})";

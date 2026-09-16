@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.FinancialYears;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Services;
@@ -27,6 +28,8 @@ public partial class MonthlyReportViewModel : ViewModelBase
     [ObservableProperty] private FinancialYear? _selectedFinancialYear;
     [ObservableProperty] private int _selectedMonth = DateTime.Today.Month;
     [ObservableProperty] private int _selectedYear = DateTime.Today.Year;
+    [ObservableProperty] private DateTime? _fromDate;
+    [ObservableProperty] private DateTime? _toDate;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private decimal _cashOnHand;
     [ObservableProperty] private decimal _shireBonds;
@@ -41,12 +44,31 @@ public partial class MonthlyReportViewModel : ViewModelBase
 
     public bool HasPitstopReports => PitstopReports.Count > 0;
 
+    public bool IsStatementPeriod =>
+        FromDate is { } from &&
+        ToDate is { } to &&
+        StatementPeriod.Matches(from, to, SelectedYear, SelectedMonth);
+
+    public string PeriodHint => IsStatementPeriod
+        ? "ANZ statement cycle — 22nd to the 21st. Opening and closing balances match this statement."
+        : "Custom date range. Opening and closing balances are the ANZ ledger totals for these dates.";
+
     public IReadOnlyList<CategoryTotal> VisibleIncome => FilterCategories(ReportData?.IncomeByCategory);
     public IReadOnlyList<CategoryTotal> VisibleExpenses => FilterCategories(ReportData?.ExpensesByCategory);
 
     partial void OnSearchTextChanged(string value) => NotifyVisibleCategories();
-    partial void OnSelectedMonthChanged(int value) => _ = ReloadPitstopReportsAsync();
-    partial void OnSelectedYearChanged(int value) => _ = ReloadPitstopReportsAsync();
+    partial void OnSelectedMonthChanged(int value)
+    {
+        ApplyStatementPeriodDates();
+        _ = ReloadPitstopReportsAsync();
+    }
+    partial void OnSelectedYearChanged(int value)
+    {
+        ApplyStatementPeriodDates();
+        _ = ReloadPitstopReportsAsync();
+    }
+    partial void OnFromDateChanged(DateTime? value) => NotifyPeriodHint();
+    partial void OnToDateChanged(DateTime? value) => NotifyPeriodHint();
 
     partial void OnReportDataChanged(MonthlyReportData? value)
     {
@@ -96,7 +118,25 @@ public partial class MonthlyReportViewModel : ViewModelBase
         ShireBonds = _settingsService.DefaultShireBonds;
         PayPalBalance = _settingsService.DefaultPayPalBalance;
         LoadFinancialYears();
+        ApplyStatementPeriodDates();
         _ = ReloadPitstopReportsAsync();
+    }
+
+    private void ApplyStatementPeriodDates()
+    {
+        if (SelectedMonth is < 1 or > 12)
+            return;
+
+        var (start, end) = StatementPeriod.ForMonth(SelectedYear, SelectedMonth);
+        FromDate = start;
+        ToDate = end;
+        NotifyPeriodHint();
+    }
+
+    private void NotifyPeriodHint()
+    {
+        OnPropertyChanged(nameof(IsStatementPeriod));
+        OnPropertyChanged(nameof(PeriodHint));
     }
 
     private void LoadFinancialYears()
@@ -124,15 +164,37 @@ public partial class MonthlyReportViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void UseStatementPeriod() => ApplyStatementPeriodDates();
+
+    [RelayCommand]
     private async Task GenerateReportAsync()
     {
         if (SelectedFinancialYear is null) return;
+
+        if (FromDate is null || ToDate is null)
+            ApplyStatementPeriodDates();
+
+        if (FromDate is not { } from || ToDate is not { } to)
+            return;
+
+        if (to.Date < from.Date)
+        {
+            const string message = "The report end date must be on or after the start date.";
+            ErrorMessage = message;
+            _notificationService.ShowError(message);
+            return;
+        }
 
         BeginBusy("On track — building monthly report…");
         try
         {
             ReportData = await _reportService.BuildMonthlyReportAsync(
-                SelectedFinancialYear.Id, SelectedYear, SelectedMonth, Notes);
+                SelectedFinancialYear.Id,
+                SelectedYear,
+                SelectedMonth,
+                Notes,
+                from.Date,
+                to.Date);
             ApplyHoldingsToReport();
             HasReport = true;
             await ReloadPitstopReportsAsync();
@@ -257,7 +319,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         {
             ApplyHoldingsToReport();
             _reportService.ApplyPrintDate(ReportData);
-            var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.pdf");
+            var path = Path.Combine(AppPaths.ExportsPath, BuildExportFileName("pdf"));
             await _reportService.ExportMonthlyPdfAsync(ReportData, path);
             _notificationService.ShowSuccess($"PDF saved to {path}");
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
@@ -281,7 +343,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         {
             ApplyHoldingsToReport();
             _reportService.ApplyPrintDate(ReportData);
-            var path = Path.Combine(AppPaths.ExportsPath, $"MonthlyReport_{SelectedYear}_{SelectedMonth:D2}.xlsx");
+            var path = Path.Combine(AppPaths.ExportsPath, BuildExportFileName("xlsx"));
             await _reportService.ExportMonthlyExcelAsync(ReportData, path);
             _notificationService.ShowSuccess($"Excel saved to {path}");
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
@@ -300,6 +362,13 @@ public partial class MonthlyReportViewModel : ViewModelBase
     private async Task PrintAsync()
     {
         await ExportPdfAsync();
+    }
+
+    private string BuildExportFileName(string extension)
+    {
+        var start = ReportData?.PeriodStart ?? FromDate ?? new DateTime(SelectedYear, SelectedMonth, 1);
+        var end = ReportData?.PeriodEnd ?? ToDate ?? start;
+        return $"MonthlyReport_{start:yyyyMMdd}_{end:yyyyMMdd}.{extension}";
     }
 
     private void ApplyHoldingsToReport()

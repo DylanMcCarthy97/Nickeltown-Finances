@@ -75,8 +75,14 @@ public static class MonthlyReportExporter
 
             col.Item().AlignCenter().Text(data.ClubName).Bold().FontSize(16).FontColor(Colors.Black);
             col.Item().AlignCenter().Text("Monthly Treasurer Report").SemiBold().FontSize(12);
-            col.Item().AlignCenter().Text($"{data.PeriodLabel}  ·  Financial Year {data.FinancialYearName}")
+            col.Item().AlignCenter().Text($"{data.MonthName} {data.Year}  ·  Financial Year {data.FinancialYearName}")
                 .FontSize(10).FontColor(Colors.Grey.Darken2);
+            if (!string.IsNullOrEmpty(data.PeriodDateRange))
+            {
+                col.Item().AlignCenter()
+                    .Text($"ANZ statement {data.PeriodDateRange}")
+                    .FontSize(10).FontColor(Colors.Grey.Darken2);
+            }
             col.Item().PaddingTop(2).AlignCenter()
                 .Text($"Signed by {data.PreparedBy} ({data.PreparedByRole})  ·  {data.PrintedAtDisplay}")
                 .FontSize(8).FontColor(Colors.Grey.Medium);
@@ -91,11 +97,14 @@ public static class MonthlyReportExporter
             // Summary strip
             col.Item().Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
             {
-                SummaryCell(row, "Opening balance", data.OpeningBalance);
+                SummaryCell(row, data.OpeningBalanceTitle, data.OpeningBalance);
                 SummaryCell(row, "Income", data.TotalIncome);
                 SummaryCell(row, "Expenses", data.TotalExpenses);
                 SummaryCell(row, data.ClosingBalanceTitle, data.ClosingBalance, bold: true);
             });
+            col.Item().PaddingTop(3)
+                .Text($"ANZ statement {data.PeriodDateRange}  ·  Opening + income − expenses = closing.")
+                .FontSize(8).FontColor(Colors.Grey.Medium);
 
             col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(11).FontColor(Colors.Black);
 
@@ -141,7 +150,7 @@ public static class MonthlyReportExporter
             if (data.HasSquareBreakdown)
             {
                 col.Item().PaddingTop(8).Text("Square transfer breakdown").Bold().FontSize(11).FontColor(Colors.Black);
-                col.Item().PaddingTop(1).Text("What made up the matched Square deposits this month.")
+                col.Item().PaddingTop(1).Text("What made up the matched Square deposits in this statement period.")
                     .FontSize(8).FontColor(Colors.Grey.Medium);
 
                 foreach (var section in data.SquareBreakdown)
@@ -166,12 +175,12 @@ public static class MonthlyReportExporter
 
             // Transaction detail — bank descriptions
             col.Item().PaddingTop(8).Text("Bank transactions").Bold().FontSize(11).FontColor(Colors.Black);
-            col.Item().Text("As shown on the ANZ statement, with the category assigned in Nickeltown Finance.")
+            col.Item().Text("As shown on the imported ANZ statement for this date range, with the category assigned in Nickeltown Finance.")
                 .FontSize(8).FontColor(Colors.Grey.Medium);
 
             if (data.Transactions.Count == 0)
             {
-                col.Item().PaddingTop(4).Text("No transactions in this month.").Italic().FontColor(Colors.Grey.Medium);
+                col.Item().PaddingTop(4).Text("No transactions in this period.").Italic().FontColor(Colors.Grey.Medium);
             }
             else
             {
@@ -499,9 +508,12 @@ public static class MonthlyReportExporter
         ws.Cell(5, 1).Value = $"Printed: {data.PrintedAtDisplay}";
 
         var row = 7;
-        ws.Cell(row, 1).Value = "Opening Balance";
+        ws.Cell(row, 1).Value = data.OpeningBalanceTitle;
         ws.Cell(row, 2).Value = data.OpeningBalance;
         ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+        row++;
+        ws.Cell(row, 1).Value = "Statement period";
+        ws.Cell(row, 2).Value = data.PeriodDateRange;
         row += 2;
 
         ws.Cell(row, 1).Value = "INCOME BY CATEGORY";

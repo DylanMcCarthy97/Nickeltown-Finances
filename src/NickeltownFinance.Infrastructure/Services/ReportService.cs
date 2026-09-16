@@ -1,8 +1,10 @@
 using LiteDB;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Enums;
+using NickeltownFinance.Core.FinancialYears;
 using NickeltownFinance.Core.Helpers;
 using NickeltownFinance.Core.Interfaces;
+using NickeltownFinance.Core.Ledger;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Infrastructure.Import;
 using NickeltownFinance.Reports.Exporters;
@@ -49,18 +51,29 @@ public class ReportService : IReportService
         _monthDocumentService = monthDocumentService;
     }
 
-    public Task<MonthlyReportData> BuildMonthlyReportAsync(ObjectId financialYearId, int year, int month, string notes = "")
+    public Task<MonthlyReportData> BuildMonthlyReportAsync(
+        ObjectId financialYearId,
+        int year,
+        int month,
+        string notes = "",
+        DateTime? periodStart = null,
+        DateTime? periodEnd = null)
     {
         var fy = _financialYearRepository.GetById(financialYearId)
                  ?? throw new InvalidOperationException("Financial year not found.");
 
         _financialYearService.RecalculateAllOpeningBalances();
 
-        var monthStart = new DateTime(year, month, 1);
-        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var (defaultStart, defaultEnd) = StatementPeriod.ForMonth(year, month);
+        var rangeStart = (periodStart ?? defaultStart).Date;
+        var rangeEnd = (periodEnd ?? defaultEnd).Date;
+        if (rangeEnd < rangeStart)
+            throw new InvalidOperationException("Report end date must be on or after the start date.");
 
-        var opening = CalculateBalanceAsOf(monthStart.AddDays(-1));
-        var monthTxns = _transactionRepository.GetByDateRange(monthStart, monthEnd)
+        // Opening is the bank balance at the start of the first day — i.e. end of the previous day.
+        // That is the same figure ANZ shows as the statement opening balance.
+        var opening = CalculateBalanceAsOf(rangeStart.AddDays(-1));
+        var monthTxns = _transactionRepository.GetByDateRange(rangeStart, rangeEnd)
             .Where(t => !t.IsDeleted)
             .OrderBy(t => t.Date)
             .ThenBy(t => t.Description)
@@ -119,10 +132,13 @@ public class ReportService : IReportService
             ClubName = _settingsService.ClubName,
             LogoPath = ResolveLogoPath(),
             FinancialYearName = fy.Name,
-            MonthName = monthStart.ToString("MMMM"),
+            MonthName = new DateTime(year, month, 1).ToString("MMMM"),
             Month = month,
             Year = year,
+            PeriodStart = rangeStart,
+            PeriodEnd = rangeEnd,
             OpeningBalance = opening,
+            OpeningBalanceAsOf = rangeStart,
             IncomeByCategory = incomeByCat,
             TotalIncome = totalIncome,
             ExpensesByCategory = expenseByCat,
@@ -141,8 +157,8 @@ public class ReportService : IReportService
             PrintedAt = DateTime.Now,
             SignatureImagePath = signaturePath
         };
-        ApplyClosingBalance(data, monthEnd);
-        ApplyHoldings(data, year, month);
+        ApplyClosingBalance(data);
+        ApplyHoldings(data, data.ClosingBalanceAsOf.Year, data.ClosingBalanceAsOf.Month);
 
         return Task.FromResult(data);
     }
@@ -348,8 +364,7 @@ public class ReportService : IReportService
     {
         ArgumentNullException.ThrowIfNull(data);
         data.PrintedAt = DateTime.Now;
-        var monthEnd = new DateTime(data.Year, data.Month, 1).AddMonths(1).AddDays(-1);
-        ApplyClosingBalance(data, monthEnd);
+        ApplyClosingBalance(data);
         ApplyHoldings(data, data.ClosingBalanceAsOf.Year, data.ClosingBalanceAsOf.Month);
     }
 
@@ -386,10 +401,15 @@ public class ReportService : IReportService
             snapshot?.PayPalBalance ?? _settingsService.DefaultPayPalBalance);
     }
 
-    private void ApplyClosingBalance(MonthlyReportData data, DateTime monthEnd)
+    private void ApplyClosingBalance(MonthlyReportData data)
     {
-        data.ClosingBalanceAsOf = ResolveClosingBalanceAsOf(data.PrintedAt, monthEnd);
-        data.ClosingBalance = CalculateBalanceAsOf(data.ClosingBalanceAsOf);
+        var periodEnd = data.PeriodEnd != default
+            ? data.PeriodEnd.Date
+            : new DateTime(data.Year, data.Month, 1).AddMonths(1).AddDays(-1);
+        // Closing is always the statement-period end so it matches the imported ANZ statement,
+        // not the date the report is printed.
+        data.ClosingBalanceAsOf = periodEnd;
+        data.ClosingBalance = CalculateBalanceAsOf(periodEnd);
     }
 
     private void ApplyClosingBalance(AgmReportData data)
@@ -412,34 +432,10 @@ public class ReportService : IReportService
     private decimal CalculateBalanceAsOf(DateTime asOfDate)
     {
         var (trackingDate, trackingBalance) = _financialYearService.GetTrackingStart();
-        var asOf = asOfDate.Date;
-
-        if (asOf == trackingDate)
-            return trackingBalance;
-
-        decimal net = 0;
-        foreach (var txn in _transactionRepository.GetAll())
-        {
-            if (txn.IsDeleted) continue;
-            var day = txn.Date.Date;
-            var amount = txn.IncomeAmount - txn.ExpenseAmount;
-
-            if (asOf < trackingDate)
-            {
-                // Working backwards: remove activity from after asOf through the starting date.
-                if (day > asOf && day <= trackingDate)
-                    net += amount;
-            }
-            else if (day > trackingDate && day <= asOf)
-            {
-                // After tracking start: only activity strictly after the starting date.
-                net += amount;
-            }
-        }
-
-        return asOf < trackingDate
-            ? trackingBalance - net
-            : trackingBalance + net;
+        var lines = _transactionRepository.GetAll()
+            .Where(t => !t.IsDeleted)
+            .Select(t => (t.Date, t.IncomeAmount - t.ExpenseAmount));
+        return BankBalance.AsOf(asOfDate, trackingDate, trackingBalance, lines);
     }
 
     private (string Name, string Role, string? SignaturePath) GetPreparer()
