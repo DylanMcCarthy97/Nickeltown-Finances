@@ -421,6 +421,16 @@ public class StatementReconcileResult
 
     public string ClosingStatus { get; set; } = string.Empty;
 
+    public IReadOnlyList<StatementReconcileIssue> Issues { get; set; } = [];
+
+    public IReadOnlyList<StatementReconcileLine> ExtraLedgerTransactions { get; set; } = [];
+
+    public IReadOnlyList<StatementReconcileLine> MissingImportTransactions { get; set; } = [];
+
+    public bool HasIssues => Issues.Count > 0;
+
+    public bool HasTransactionDiffs => ExtraLedgerTransactions.Count > 0 || MissingImportTransactions.Count > 0;
+
     public string BadgeText => State switch
     {
         "Matched" => "Reconciled",
@@ -428,6 +438,34 @@ public class StatementReconcileResult
         "Partial" => "Partially matched",
         _ => "Enter ANZ balances"
     };
+}
+
+public class StatementReconcileIssue
+{
+    public string Title { get; set; } = string.Empty;
+
+    public string Why { get; set; } = string.Empty;
+
+    public string HowToFix { get; set; } = string.Empty;
+}
+
+public class StatementReconcileLine
+{
+    public DateTime Date { get; set; }
+
+    public string Description { get; set; } = string.Empty;
+
+    public decimal MoneyIn { get; set; }
+
+    public decimal MoneyOut { get; set; }
+
+    public decimal Net => MoneyIn - MoneyOut;
+
+    public string DateDisplay => DateFormats.Format(Date);
+
+    public string AmountDisplay => MoneyIn > 0 ? MoneyIn.ToString("C") : MoneyOut.ToString("C");
+
+    public string Direction => MoneyIn > 0 ? "In" : "Out";
 }
 
 public class MonthlyBreakdown

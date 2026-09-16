@@ -225,6 +225,27 @@ public class ReportService : IReportService
         var opening = anzOpening ?? statement?.StatementOpening;
         var closing = anzClosing ?? statement?.StatementClosing;
 
+        IReadOnlyList<StatementReconcileLine> extra = [];
+        IReadOnlyList<StatementReconcileLine> missing = [];
+        decimal? importedIncome = statement?.TotalIncome;
+        decimal? importedExpenses = statement?.TotalExpenses;
+        int? importedCount = statement?.TransactionCount;
+
+        if (statement is not null)
+        {
+            var ledger = _transactionRepository
+                .GetByDateRange(report.PeriodStart, report.PeriodEnd)
+                .Where(t => !t.IsDeleted)
+                .Select(ToReconcileLine)
+                .ToList();
+            var imported = _transactionRepository
+                .GetByImportBatch(statement.BatchId)
+                .Where(t => !t.IsDeleted)
+                .Select(ToReconcileLine)
+                .ToList();
+            (extra, missing) = StatementReconcile.DiffTransactions(ledger, imported);
+        }
+
         var result = StatementReconcile.Compare(
             report.OpeningBalance,
             report.ClosingBalance,
@@ -233,14 +254,24 @@ public class ReportService : IReportService
             report.TransactionCount,
             opening,
             closing,
-            statement?.TotalIncome,
-            statement?.TotalExpenses,
-            statement?.TransactionCount,
-            statement?.FileName);
+            importedIncome,
+            importedExpenses,
+            importedCount,
+            statement?.FileName,
+            extra,
+            missing);
 
         report.AnzReconcile = result;
         return result;
     }
+
+    private static StatementReconcileLine ToReconcileLine(Transaction txn) => new()
+    {
+        Date = txn.Date.Date,
+        Description = string.IsNullOrWhiteSpace(txn.Description) ? "—" : txn.Description.Trim(),
+        MoneyIn = txn.IncomeAmount,
+        MoneyOut = txn.ExpenseAmount
+    };
 
     public Task<AgmReportData> BuildAgmReportAsync(ObjectId financialYearId)
     {

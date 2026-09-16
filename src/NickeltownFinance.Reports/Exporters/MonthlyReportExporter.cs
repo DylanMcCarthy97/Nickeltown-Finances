@@ -119,6 +119,22 @@ public static class MonthlyReportExporter
                 {
                     r.RelativeItem().Text($"Closing  {reconcile.LedgerClosing:C}  ·  {reconcile.ClosingStatus}");
                 });
+                foreach (var issue in reconcile.Issues)
+                {
+                    col.Item().PaddingTop(4).Text(issue.Title).SemiBold().FontSize(8);
+                    col.Item().Text($"Why: {issue.Why}").FontSize(8);
+                    col.Item().Text($"How to fix: {issue.HowToFix}").FontSize(8);
+                }
+                foreach (var row in reconcile.ExtraLedgerTransactions)
+                {
+                    col.Item().Text($"Ledger only  {row.DateDisplay}  {row.Description}  {row.Direction} {row.AmountDisplay}")
+                        .FontSize(8).FontColor(Colors.Grey.Darken1);
+                }
+                foreach (var row in reconcile.MissingImportTransactions)
+                {
+                    col.Item().Text($"ANZ only  {row.DateDisplay}  {row.Description}  {row.Direction} {row.AmountDisplay}")
+                        .FontSize(8).FontColor(Colors.Grey.Darken1);
+                }
             }
 
             col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(11).FontColor(Colors.Black);
@@ -552,7 +568,20 @@ public static class MonthlyReportExporter
                 ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
             }
             ws.Cell(row, 3).Value = reconcile.ClosingStatus;
-            row += 2;
+            row++;
+            foreach (var issue in reconcile.Issues)
+            {
+                ws.Cell(row, 1).Value = issue.Title;
+                ws.Cell(row, 1).Style.Font.Bold = true;
+                row++;
+                ws.Cell(row, 1).Value = "Why";
+                ws.Cell(row, 2).Value = issue.Why;
+                row++;
+                ws.Cell(row, 1).Value = "How to fix";
+                ws.Cell(row, 2).Value = issue.HowToFix;
+                row++;
+            }
+            row++;
         }
 
         ws.Cell(row, 1).Value = "INCOME BY CATEGORY";

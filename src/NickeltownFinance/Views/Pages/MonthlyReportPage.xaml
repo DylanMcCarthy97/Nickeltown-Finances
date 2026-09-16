@@ -170,6 +170,68 @@
                                        Margin="0,12,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasAnzReconcile, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                            <ItemsControl ItemsSource="{Binding AnzReconcile.Issues}"
+                                          Margin="0,10,0,0"
+                                          Visibility="{Binding AnzReconcile.HasIssues, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource AppCardStyle}" Padding="12" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap">
+                                                    <Run Text="Why: " FontWeight="SemiBold" />
+                                                    <Run Text="{Binding Why, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
+                                                    <Run Text="How to fix: " FontWeight="SemiBold" />
+                                                    <Run Text="{Binding HowToFix, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <StackPanel Margin="0,4,0,0"
+                                        Visibility="{Binding AnzReconcile.ExtraLedgerTransactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
+                                <TextBlock Text="In the ledger, not on this ANZ import" Style="{StaticResource FieldLabelStyle}" />
+                                <ItemsControl ItemsSource="{Binding AnzReconcile.ExtraLedgerTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
+                                                <Run Text="{Binding DateDisplay, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Description, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Direction, Mode=OneWay}" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding AmountDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding AnzReconcile.MissingImportTransactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
+                                <TextBlock Text="On the ANZ import, missing from this report" Style="{StaticResource FieldLabelStyle}" />
+                                <ItemsControl ItemsSource="{Binding AnzReconcile.MissingImportTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
+                                                <Run Text="{Binding DateDisplay, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Description, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Direction, Mode=OneWay}" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding AmountDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                     <Grid Margin="0,14,0,0">
@@ -324,6 +386,24 @@
                                     <ds:ReportLine Label="Ledger closing" Amount="{Binding LedgerClosing}" LineMargin="0,10,0,2" />
                                     <ds:ReportLine Label="ANZ closing" Amount="{Binding StatementClosing}" />
                                     <ds:ReportLine Label="Closing check" AmountText="{Binding ClosingStatus}" />
+                                    <ItemsControl ItemsSource="{Binding Issues}" Margin="0,12,0,0"
+                                                  Visibility="{Binding HasIssues, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}">
+                                                        <Run Text="Why: " FontWeight="SemiBold" />
+                                                        <Run Text="{Binding Why, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Margin="0,2,0,0" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}">
+                                                        <Run Text="How to fix: " FontWeight="SemiBold" />
+                                                        <Run Text="{Binding HowToFix, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Border>
 
