@@ -52,6 +52,190 @@
                     </Grid>
                     <Grid Margin="0,14,0,0">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="From" Style="{StaticResource FieldLabelStyle}" />
+                            <ds:AppDateField SelectedDate="{Binding FromDate}" MinWidth="160" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="To" Style="{StaticResource FieldLabelStyle}" />
+                            <ds:AppDateField SelectedDate="{Binding ToDate}" MinWidth="160" />
+                        </StackPanel>
+                        <ui:Button Grid.Column="4"
+                                   Content="22nd to 21st"
+                                   Style="{StaticResource SecondaryButtonStyle}"
+                                   VerticalAlignment="Bottom"
+                                   ToolTip="Set dates to the ANZ statement cycle for the selected month (22nd of the previous month to the 21st)."
+                                   Command="{Binding UseStatementPeriodCommand}" />
+                    </Grid>
+                    <TextBlock Text="{Binding PeriodHint}"
+                               Style="{StaticResource CaptionTextStyle}"
+                               Margin="0,8,0,0"
+                               TextWrapping="Wrap" />
+
+                    <Border Style="{StaticResource AppCardStyle}" Padding="16" Margin="0,14,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Reconcile with ANZ statement" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBlock Text="Choose the imported statement, or type the opening and closing from the ANZ PDF. The report dates and balances should match that statement."
+                                               Style="{StaticResource CaptionTextStyle}"
+                                               Margin="0,4,0,0"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ds:StatusBadge Grid.Column="1"
+                                                VerticalAlignment="Top"
+                                                Text="{Binding AnzReconcile.BadgeText}"
+                                                Visibility="{Binding HasAnzReconcile, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ds:StatusBadge.Style>
+                                        <Style TargetType="ds:StatusBadge">
+                                            <Setter Property="Tone" Value="Warning" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AnzReconcile.State}" Value="Matched">
+                                                    <Setter Property="Tone" Value="Success" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AnzReconcile.State}" Value="Mismatch">
+                                                    <Setter Property="Tone" Value="Danger" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ds:StatusBadge.Style>
+                                </ds:StatusBadge>
+                            </Grid>
+
+                            <TextBlock Text="No ANZ statements imported yet. Import the CSV on the Imports page, then come back here."
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasAnzStatements, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+
+                            <Grid Margin="0,12,0,0"
+                                  Visibility="{Binding HasAnzStatements, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="220" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Imported ANZ statement" Style="{StaticResource FieldLabelStyle}" />
+                                    <ComboBox ItemsSource="{Binding AnzStatements}"
+                                              SelectedItem="{Binding SelectedAnzStatement}"
+                                              DisplayMemberPath="DisplayLabel" />
+                                </StackPanel>
+                                <ui:Button Grid.Column="2"
+                                           Content="Use this statement"
+                                           Style="{StaticResource SecondaryButtonStyle}"
+                                           VerticalAlignment="Bottom"
+                                           ToolTip="Set the report dates to this import and tick opening, closing, and totals against it."
+                                           Command="{Binding ReconcileAnzStatementCommand}" />
+                            </Grid>
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="140" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" MinWidth="140" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="ANZ opening" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:TextBox Text="{Binding AnzOpeningText, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="From the statement" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="ANZ closing" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:TextBox Text="{Binding AnzClosingText, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="From the statement" />
+                                </StackPanel>
+                                <ui:Button Grid.Column="4"
+                                           Content="Check balances"
+                                           Style="{StaticResource PrimaryButtonStyle}"
+                                           VerticalAlignment="Bottom"
+                                           Command="{Binding CheckAnzBalancesCommand}" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding AnzReconcile.Summary}"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasAnzReconcile, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                            <ItemsControl ItemsSource="{Binding AnzReconcile.Issues}"
+                                          Margin="0,10,0,0"
+                                          Visibility="{Binding AnzReconcile.HasIssues, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource AppCardStyle}" Padding="12" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap">
+                                                    <Run Text="Why: " FontWeight="SemiBold" />
+                                                    <Run Text="{Binding Why, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
+                                                    <Run Text="How to fix: " FontWeight="SemiBold" />
+                                                    <Run Text="{Binding HowToFix, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <StackPanel Margin="0,4,0,0"
+                                        Visibility="{Binding AnzReconcile.ExtraLedgerTransactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
+                                <TextBlock Text="In the ledger, not on this ANZ import" Style="{StaticResource FieldLabelStyle}" />
+                                <ItemsControl ItemsSource="{Binding AnzReconcile.ExtraLedgerTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
+                                                <Run Text="{Binding DateDisplay, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Description, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Direction, Mode=OneWay}" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding AmountDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding AnzReconcile.MissingImportTransactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
+                                <TextBlock Text="On the ANZ import, missing from this report" Style="{StaticResource FieldLabelStyle}" />
+                                <ItemsControl ItemsSource="{Binding AnzReconcile.MissingImportTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
+                                                <Run Text="{Binding DateDisplay, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Description, Mode=OneWay}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Direction, Mode=OneWay}" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding AmountDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="120" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" MinWidth="120" />
@@ -135,7 +319,7 @@
                 </ds:SurfaceCard>
 
                 <ds:EmptyState Title="No report yet"
-                               Message="Choose a financial year and month, then click Preview to generate your monthly treasurer report."
+                               Message="Choose a financial year and statement dates (22nd to 21st by default), then click Preview to generate your monthly treasurer report."
                                IconSymbol="DocumentSearch24"
                                Margin="0,8,0,0"
                                Visibility="{Binding HasReport, Converter={StaticResource InverseBoolToVisibilityConverter}}">
@@ -162,9 +346,8 @@
                                    MaxWidth="960"
                                    HorizontalAlignment="Center">
                         <ds:ReportCard.Subtitle>
-                            <MultiBinding StringFormat="{}{0} {1}  ·  FY {2}">
-                                <Binding Path="ReportData.MonthName" />
-                                <Binding Path="ReportData.Year" />
+                            <MultiBinding StringFormat="{}{0}  ·  FY {1}">
+                                <Binding Path="ReportData.PeriodLabel" />
                                 <Binding Path="ReportData.FinancialYearName" />
                             </MultiBinding>
                         </ds:ReportCard.Subtitle>
@@ -179,12 +362,50 @@
                                 <Run Text="{Binding PrintedAtDisplay, Mode=OneWay}" />
                             </TextBlock>
 
-                            <UniformGrid Columns="4" Margin="0,0,0,18">
-                                <ds:MoneyCard Title="Opening balance" Amount="{Binding OpeningBalance}" Tone="Neutral" ShowIcon="False" Margin="0,0,8,0" />
+                            <UniformGrid Columns="4" Margin="0,0,0,8">
+                                <ds:MoneyCard Title="{Binding OpeningBalanceTitle}" Amount="{Binding OpeningBalance}" Tone="Neutral" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="Income" Amount="{Binding TotalIncome}" Tone="Income" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="Expenses" Amount="{Binding TotalExpenses}" Tone="Expense" ShowIcon="False" Margin="0,0,8,0" />
                                 <ds:MoneyCard Title="{Binding ClosingBalanceTitle}" Amount="{Binding ClosingBalance}" Tone="Neutral" ShowIcon="False" />
                             </UniformGrid>
+                            <TextBlock Margin="0,0,0,18" TextWrapping="Wrap"
+                                       Style="{StaticResource CaptionTextStyle}">
+                                <Run Text="ANZ statement period " />
+                                <Run Text="{Binding PeriodDateRange, Mode=OneWay}" FontWeight="SemiBold" />
+                                <Run Text="  ·  Opening + income − expenses = closing." />
+                            </TextBlock>
+
+                            <Border Style="{StaticResource AppCardStyle}" Padding="16" Margin="0,0,0,18"
+                                    Visibility="{Binding AnzReconcile, Converter={StaticResource NullToVisibilityConverter}}">
+                                <StackPanel DataContext="{Binding AnzReconcile}">
+                                    <TextBlock Text="ANZ statement check" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding Summary}" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
+                                    <ds:ReportLine Label="Ledger opening" Amount="{Binding LedgerOpening}" />
+                                    <ds:ReportLine Label="ANZ opening" Amount="{Binding StatementOpening}" />
+                                    <ds:ReportLine Label="Opening check" AmountText="{Binding OpeningStatus}" />
+                                    <ds:ReportLine Label="Ledger closing" Amount="{Binding LedgerClosing}" LineMargin="0,10,0,2" />
+                                    <ds:ReportLine Label="ANZ closing" Amount="{Binding StatementClosing}" />
+                                    <ds:ReportLine Label="Closing check" AmountText="{Binding ClosingStatus}" />
+                                    <ItemsControl ItemsSource="{Binding Issues}" Margin="0,12,0,0"
+                                                  Visibility="{Binding HasIssues, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}">
+                                                        <Run Text="Why: " FontWeight="SemiBold" />
+                                                        <Run Text="{Binding Why, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Margin="0,2,0,0" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}">
+                                                        <Run Text="How to fix: " FontWeight="SemiBold" />
+                                                        <Run Text="{Binding HowToFix, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
 
                             <Grid Margin="0,0,0,18">
                                 <Grid.ColumnDefinitions>
@@ -236,7 +457,7 @@
                                     Visibility="{Binding SquareBreakdown, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
                                 <StackPanel>
                                     <TextBlock Text="Square transfer breakdown" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                                    <TextBlock Text="What made up the matched Square deposits this month — bar top-ups, memberships, and Pitstop sales."
+                                    <TextBlock Text="What made up the matched Square deposits in this statement period — bar top-ups, memberships, and Pitstop sales."
                                                Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" />
 
                                     <ItemsControl ItemsSource="{Binding SquareBreakdown}">
@@ -283,12 +504,12 @@
                             </Border>
 
                             <TextBlock Text="Bank transactions" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                            <TextBlock Text="As shown on the ANZ statement, with the category assigned in Nickeltown Finance."
+                            <TextBlock Text="As shown on the imported ANZ statement for this date range, with the category assigned in Nickeltown Finance."
                                        Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,10" />
 
                             <Border Style="{StaticResource AppCardStyle}" Padding="0" Margin="0,0,0,20">
                                 <Grid>
-                                    <TextBlock Text="No transactions this month"
+                                    <TextBlock Text="No transactions in this period"
                                                Style="{StaticResource CaptionTextStyle}"
                                                Margin="16"
                                                Visibility="{Binding Transactions, Converter={StaticResource EmptyCollectionToVisibilityConverter}}" />

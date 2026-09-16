@@ -383,11 +383,25 @@ public interface IDashboardService
 
 public interface IReportService
 {
-    Task<MonthlyReportData> BuildMonthlyReportAsync(ObjectId financialYearId, int year, int month, string notes = "");
+    Task<MonthlyReportData> BuildMonthlyReportAsync(
+        ObjectId financialYearId,
+        int year,
+        int month,
+        string notes = "",
+        DateTime? periodStart = null,
+        DateTime? periodEnd = null);
+
+    Task<IReadOnlyList<AnzStatementOption>> GetAnzStatementsAsync();
+
+    StatementReconcileResult ReconcileWithAnz(
+        MonthlyReportData report,
+        AnzStatementOption? statement,
+        decimal? anzOpening,
+        decimal? anzClosing);
 
     Task<AgmReportData> BuildAgmReportAsync(ObjectId financialYearId);
 
-    /// <summary>Sets <see cref="MonthlyReportData.PrintedAt"/> to now and recalculates closing balance as of that date.</summary>
+    /// <summary>Sets <see cref="MonthlyReportData.PrintedAt"/> to now. Opening and closing balances stay as of the statement period.</summary>
     void ApplyPrintDate(MonthlyReportData data);
 
     /// <summary>Sets <see cref="AgmReportData.PrintedAt"/> to now and recalculates closing balance as of that date.</summary>

@@ -15,6 +15,10 @@
       <Platform Solution="Debug|x64" Project="Any CPU" />
       <Platform Solution="Release|x64" Project="Any CPU" />
     </Project>
+    <Project Path="src/NickeltownFinance.Tests/NickeltownFinance.Tests.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
     <Project Path="src/NickeltownFinance/NickeltownFinance.csproj">
       <Platform Solution="Debug|x64" Project="x64" />
       <Platform Solution="Release|x64" Project="x64" />
