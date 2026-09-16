@@ -24,6 +24,7 @@ public class ReportService : IReportService
     private readonly ITreasurerMonthSnapshotRepository _snapshotRepository;
     private readonly ISquareTransactionRepository _squareTransactionRepository;
     private readonly IMonthDocumentService _monthDocumentService;
+    private readonly IImportBatchRepository _importBatchRepository;
 
     public ReportService(
         IFinancialYearRepository financialYearRepository,
@@ -36,7 +37,8 @@ public class ReportService : IReportService
         IAttachmentRepository attachmentRepository,
         ITreasurerMonthSnapshotRepository snapshotRepository,
         ISquareTransactionRepository squareTransactionRepository,
-        IMonthDocumentService monthDocumentService)
+        IMonthDocumentService monthDocumentService,
+        IImportBatchRepository importBatchRepository)
     {
         _financialYearRepository = financialYearRepository;
         _financialYearService = financialYearService;
@@ -49,6 +51,7 @@ public class ReportService : IReportService
         _snapshotRepository = snapshotRepository;
         _squareTransactionRepository = squareTransactionRepository;
         _monthDocumentService = monthDocumentService;
+        _importBatchRepository = importBatchRepository;
     }
 
     public Task<MonthlyReportData> BuildMonthlyReportAsync(
@@ -161,6 +164,82 @@ public class ReportService : IReportService
         ApplyHoldings(data, data.ClosingBalanceAsOf.Year, data.ClosingBalanceAsOf.Month);
 
         return Task.FromResult(data);
+    }
+
+    public Task<IReadOnlyList<AnzStatementOption>> GetAnzStatementsAsync()
+    {
+        var options = new List<AnzStatementOption>();
+        foreach (var batch in _importBatchRepository.GetHistory(50))
+        {
+            if (batch.IsUndone || batch.SourceType != ImportSourceType.AnzBank)
+                continue;
+
+            var txns = _transactionRepository.GetByImportBatch(batch.Id)
+                .Where(t => !t.IsDeleted)
+                .OrderBy(t => t.Date)
+                .ThenBy(t => t.CreatedDate)
+                .ToList();
+            if (txns.Count == 0)
+                continue;
+
+            decimal? statementOpening = null;
+            decimal? statementClosing = null;
+            var first = txns[0];
+            var last = txns[^1];
+            if (first.StatementBalance is { } firstBalance)
+            {
+                statementOpening = StatementReconcile.InferOpeningFromFirstRunningBalance(
+                    firstBalance,
+                    first.IncomeAmount - first.ExpenseAmount);
+            }
+
+            if (last.StatementBalance is { } lastBalance)
+                statementClosing = lastBalance;
+
+            options.Add(new AnzStatementOption
+            {
+                BatchId = batch.Id,
+                FileName = batch.FileName,
+                ImportedAt = batch.ImportedAt,
+                PeriodStart = txns.Min(t => t.Date.Date),
+                PeriodEnd = txns.Max(t => t.Date.Date),
+                TransactionCount = txns.Count,
+                TotalIncome = txns.Sum(t => t.IncomeAmount),
+                TotalExpenses = txns.Sum(t => t.ExpenseAmount),
+                StatementOpening = statementOpening,
+                StatementClosing = statementClosing
+            });
+        }
+
+        return Task.FromResult<IReadOnlyList<AnzStatementOption>>(options);
+    }
+
+    public StatementReconcileResult ReconcileWithAnz(
+        MonthlyReportData report,
+        AnzStatementOption? statement,
+        decimal? anzOpening,
+        decimal? anzClosing)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        var opening = anzOpening ?? statement?.StatementOpening;
+        var closing = anzClosing ?? statement?.StatementClosing;
+
+        var result = StatementReconcile.Compare(
+            report.OpeningBalance,
+            report.ClosingBalance,
+            report.TotalIncome,
+            report.TotalExpenses,
+            report.TransactionCount,
+            opening,
+            closing,
+            statement?.TotalIncome,
+            statement?.TotalExpenses,
+            statement?.TransactionCount,
+            statement?.FileName);
+
+        report.AnzReconcile = result;
+        return result;
     }
 
     public Task<AgmReportData> BuildAgmReportAsync(ObjectId financialYearId)

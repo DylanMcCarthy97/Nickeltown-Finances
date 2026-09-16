@@ -391,6 +391,14 @@ public interface IReportService
         DateTime? periodStart = null,
         DateTime? periodEnd = null);
 
+    Task<IReadOnlyList<AnzStatementOption>> GetAnzStatementsAsync();
+
+    StatementReconcileResult ReconcileWithAnz(
+        MonthlyReportData report,
+        AnzStatementOption? statement,
+        decimal? anzOpening,
+        decimal? anzClosing);
+
     Task<AgmReportData> BuildAgmReportAsync(ObjectId financialYearId);
 
     /// <summary>Sets <see cref="MonthlyReportData.PrintedAt"/> to now. Opening and closing balances stay as of the statement period.</summary>

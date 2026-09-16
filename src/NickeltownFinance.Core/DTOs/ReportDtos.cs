@@ -329,6 +329,105 @@ public class MonthlyReportData
 
     public bool HasSignature =>
         !string.IsNullOrWhiteSpace(SignatureImagePath) && File.Exists(SignatureImagePath);
+
+    public StatementReconcileResult? AnzReconcile { get; set; }
+
+    public bool HasAnzReconcile => AnzReconcile is not null;
+}
+
+/// <summary>An imported ANZ statement that can be reconciled to a monthly report.</summary>
+public class AnzStatementOption
+{
+    public ObjectId BatchId { get; set; } = ObjectId.Empty;
+
+    public string FileName { get; set; } = string.Empty;
+
+    public DateTime ImportedAt { get; set; }
+
+    public DateTime PeriodStart { get; set; }
+
+    public DateTime PeriodEnd { get; set; }
+
+    public int TransactionCount { get; set; }
+
+    public decimal TotalIncome { get; set; }
+
+    public decimal TotalExpenses { get; set; }
+
+    /// <summary>Opening inferred from the first row's running balance, when the import included balances.</summary>
+    public decimal? StatementOpening { get; set; }
+
+    /// <summary>Closing from the last row's running balance, when the import included balances.</summary>
+    public decimal? StatementClosing { get; set; }
+
+    public string PeriodDisplay => DateFormats.FormatRange(PeriodStart, PeriodEnd);
+
+    public string DisplayLabel =>
+        $"{PeriodDisplay}  ·  {FileName}  ({TransactionCount} txn)";
+}
+
+public class StatementReconcileResult
+{
+    public string FileName { get; set; } = string.Empty;
+
+    public decimal LedgerOpening { get; set; }
+
+    public decimal LedgerClosing { get; set; }
+
+    public decimal LedgerIncome { get; set; }
+
+    public decimal LedgerExpenses { get; set; }
+
+    public int LedgerTransactionCount { get; set; }
+
+    public decimal? StatementOpening { get; set; }
+
+    public decimal? StatementClosing { get; set; }
+
+    public decimal? ImportedIncome { get; set; }
+
+    public decimal? ImportedExpenses { get; set; }
+
+    public int? ImportedTransactionCount { get; set; }
+
+    public bool HasImportTotals { get; set; }
+
+    public bool HasStatementOpening => StatementOpening.HasValue;
+
+    public bool HasStatementClosing => StatementClosing.HasValue;
+
+    public bool OpeningMatches { get; set; }
+
+    public bool ClosingMatches { get; set; }
+
+    public bool IncomeMatches { get; set; }
+
+    public bool ExpensesMatch { get; set; }
+
+    public bool CountsMatch { get; set; }
+
+    public decimal OpeningDifference { get; set; }
+
+    public decimal ClosingDifference { get; set; }
+
+    public bool IsFullyReconciled { get; set; }
+
+    /// <summary>Matched, NeedsBalances, Mismatch, or Partial.</summary>
+    public string State { get; set; } = "NeedsBalances";
+
+    public string Summary { get; set; } = string.Empty;
+
+    public string OpeningStatus { get; set; } = string.Empty;
+
+    public string ClosingStatus { get; set; } = string.Empty;
+
+    public string BadgeText => State switch
+    {
+        "Matched" => "Reconciled",
+        "Mismatch" => "Does not match",
+        "Partial" => "Partially matched",
+        _ => "Enter ANZ balances"
+    };
 }
 
 public class MonthlyBreakdown

@@ -78,6 +78,100 @@
                                Style="{StaticResource CaptionTextStyle}"
                                Margin="0,8,0,0"
                                TextWrapping="Wrap" />
+
+                    <Border Style="{StaticResource AppCardStyle}" Padding="16" Margin="0,14,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Reconcile with ANZ statement" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBlock Text="Choose the imported statement, or type the opening and closing from the ANZ PDF. The report dates and balances should match that statement."
+                                               Style="{StaticResource CaptionTextStyle}"
+                                               Margin="0,4,0,0"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ds:StatusBadge Grid.Column="1"
+                                                VerticalAlignment="Top"
+                                                Text="{Binding AnzReconcile.BadgeText}"
+                                                Visibility="{Binding HasAnzReconcile, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ds:StatusBadge.Style>
+                                        <Style TargetType="ds:StatusBadge">
+                                            <Setter Property="Tone" Value="Warning" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AnzReconcile.State}" Value="Matched">
+                                                    <Setter Property="Tone" Value="Success" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AnzReconcile.State}" Value="Mismatch">
+                                                    <Setter Property="Tone" Value="Danger" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ds:StatusBadge.Style>
+                                </ds:StatusBadge>
+                            </Grid>
+
+                            <TextBlock Text="No ANZ statements imported yet. Import the CSV on the Imports page, then come back here."
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasAnzStatements, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+
+                            <Grid Margin="0,12,0,0"
+                                  Visibility="{Binding HasAnzStatements, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="220" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Imported ANZ statement" Style="{StaticResource FieldLabelStyle}" />
+                                    <ComboBox ItemsSource="{Binding AnzStatements}"
+                                              SelectedItem="{Binding SelectedAnzStatement}"
+                                              DisplayMemberPath="DisplayLabel" />
+                                </StackPanel>
+                                <ui:Button Grid.Column="2"
+                                           Content="Use this statement"
+                                           Style="{StaticResource SecondaryButtonStyle}"
+                                           VerticalAlignment="Bottom"
+                                           ToolTip="Set the report dates to this import and tick opening, closing, and totals against it."
+                                           Command="{Binding ReconcileAnzStatementCommand}" />
+                            </Grid>
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="140" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" MinWidth="140" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="ANZ opening" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:TextBox Text="{Binding AnzOpeningText, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="From the statement" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="ANZ closing" Style="{StaticResource FieldLabelStyle}" />
+                                    <ui:TextBox Text="{Binding AnzClosingText, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="From the statement" />
+                                </StackPanel>
+                                <ui:Button Grid.Column="4"
+                                           Content="Check balances"
+                                           Style="{StaticResource PrimaryButtonStyle}"
+                                           VerticalAlignment="Bottom"
+                                           Command="{Binding CheckAnzBalancesCommand}" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding AnzReconcile.Summary}"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasAnzReconcile, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                    </Border>
                     <Grid Margin="0,14,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="120" />
@@ -216,8 +310,22 @@
                                        Style="{StaticResource CaptionTextStyle}">
                                 <Run Text="ANZ statement period " />
                                 <Run Text="{Binding PeriodDateRange, Mode=OneWay}" FontWeight="SemiBold" />
-                                <Run Text="  ·  Opening + income − expenses = closing, matching the imported statement." />
+                                <Run Text="  ·  Opening + income − expenses = closing." />
                             </TextBlock>
+
+                            <Border Style="{StaticResource AppCardStyle}" Padding="16" Margin="0,0,0,18"
+                                    Visibility="{Binding AnzReconcile, Converter={StaticResource NullToVisibilityConverter}}">
+                                <StackPanel DataContext="{Binding AnzReconcile}">
+                                    <TextBlock Text="ANZ statement check" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding Summary}" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" TextWrapping="Wrap" />
+                                    <ds:ReportLine Label="Ledger opening" Amount="{Binding LedgerOpening}" />
+                                    <ds:ReportLine Label="ANZ opening" Amount="{Binding StatementOpening}" />
+                                    <ds:ReportLine Label="Opening check" AmountText="{Binding OpeningStatus}" />
+                                    <ds:ReportLine Label="Ledger closing" Amount="{Binding LedgerClosing}" LineMargin="0,10,0,2" />
+                                    <ds:ReportLine Label="ANZ closing" Amount="{Binding StatementClosing}" />
+                                    <ds:ReportLine Label="Closing check" AmountText="{Binding ClosingStatus}" />
+                                </StackPanel>
+                            </Border>
 
                             <Grid Margin="0,0,0,18">
                                 <Grid.ColumnDefinitions>

@@ -23,6 +23,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
     private readonly INotificationService _notificationService;
     private readonly IMonthDocumentService _monthDocumentService;
     private readonly IServiceProvider _serviceProvider;
+    private bool _syncingDates;
 
     [ObservableProperty] private ObservableCollection<FinancialYear> _financialYears = [];
     [ObservableProperty] private FinancialYear? _selectedFinancialYear;
@@ -39,10 +40,19 @@ public partial class MonthlyReportViewModel : ViewModelBase
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private ObservableCollection<MonthDocumentInfo> _pitstopReports = [];
     [ObservableProperty] private MonthDocumentInfo? _selectedPitstopReport;
+    [ObservableProperty] private ObservableCollection<AnzStatementOption> _anzStatements = [];
+    [ObservableProperty] private AnzStatementOption? _selectedAnzStatement;
+    [ObservableProperty] private string _anzOpeningText = string.Empty;
+    [ObservableProperty] private string _anzClosingText = string.Empty;
+    [ObservableProperty] private StatementReconcileResult? _anzReconcile;
 
     public int[] Months => Enumerable.Range(1, 12).ToArray();
 
     public bool HasPitstopReports => PitstopReports.Count > 0;
+
+    public bool HasAnzStatements => AnzStatements.Count > 0;
+
+    public bool HasAnzReconcile => AnzReconcile is not null;
 
     public bool IsStatementPeriod =>
         FromDate is { } from &&
@@ -50,8 +60,8 @@ public partial class MonthlyReportViewModel : ViewModelBase
         StatementPeriod.Matches(from, to, SelectedYear, SelectedMonth);
 
     public string PeriodHint => IsStatementPeriod
-        ? "ANZ statement cycle — 22nd to the 21st. Opening and closing balances match this statement."
-        : "Custom date range. Opening and closing balances are the ANZ ledger totals for these dates.";
+        ? "ANZ statement cycle — 22nd to the 21st. Reconcile opening and closing against the imported statement."
+        : "Custom date range. Opening and closing are the ANZ ledger totals for these dates.";
 
     public IReadOnlyList<CategoryTotal> VisibleIncome => FilterCategories(ReportData?.IncomeByCategory);
     public IReadOnlyList<CategoryTotal> VisibleExpenses => FilterCategories(ReportData?.ExpensesByCategory);
@@ -59,16 +69,21 @@ public partial class MonthlyReportViewModel : ViewModelBase
     partial void OnSearchTextChanged(string value) => NotifyVisibleCategories();
     partial void OnSelectedMonthChanged(int value)
     {
-        ApplyStatementPeriodDates();
+        if (!_syncingDates)
+            ApplyStatementPeriodDates();
         _ = ReloadPitstopReportsAsync();
     }
     partial void OnSelectedYearChanged(int value)
     {
-        ApplyStatementPeriodDates();
+        if (!_syncingDates)
+            ApplyStatementPeriodDates();
         _ = ReloadPitstopReportsAsync();
     }
     partial void OnFromDateChanged(DateTime? value) => NotifyPeriodHint();
     partial void OnToDateChanged(DateTime? value) => NotifyPeriodHint();
+    partial void OnSelectedAnzStatementChanged(AnzStatementOption? value) => PrefillAnzBalances(value);
+    partial void OnAnzReconcileChanged(StatementReconcileResult? value) =>
+        OnPropertyChanged(nameof(HasAnzReconcile));
 
     partial void OnReportDataChanged(MonthlyReportData? value)
     {
@@ -120,6 +135,7 @@ public partial class MonthlyReportViewModel : ViewModelBase
         LoadFinancialYears();
         ApplyStatementPeriodDates();
         _ = ReloadPitstopReportsAsync();
+        _ = LoadAnzStatementsAsync();
     }
 
     private void ApplyStatementPeriodDates()
@@ -137,6 +153,57 @@ public partial class MonthlyReportViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(IsStatementPeriod));
         OnPropertyChanged(nameof(PeriodHint));
+    }
+
+    private async Task LoadAnzStatementsAsync()
+    {
+        try
+        {
+            var selectedId = SelectedAnzStatement?.BatchId;
+            var statements = await _reportService.GetAnzStatementsAsync();
+            AnzStatements = new ObservableCollection<AnzStatementOption>(statements);
+            OnPropertyChanged(nameof(HasAnzStatements));
+
+            SelectedAnzStatement = selectedId is { } id && id != default
+                ? AnzStatements.FirstOrDefault(s => s.BatchId == id)
+                : AnzStatements.FirstOrDefault(s =>
+                    FromDate is { } from &&
+                    ToDate is { } to &&
+                    s.PeriodStart == from.Date &&
+                    s.PeriodEnd == to.Date);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private void PrefillAnzBalances(AnzStatementOption? statement)
+    {
+        if (statement is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(AnzOpeningText) && statement.StatementOpening is { } opening)
+            AnzOpeningText = opening.ToString("0.00");
+        if (string.IsNullOrWhiteSpace(AnzClosingText) && statement.StatementClosing is { } closing)
+            AnzClosingText = closing.ToString("0.00");
+    }
+
+    private void ApplyAnzStatementDates(AnzStatementOption statement)
+    {
+        _syncingDates = true;
+        try
+        {
+            SelectedYear = statement.PeriodEnd.Year;
+            SelectedMonth = statement.PeriodEnd.Month;
+            FromDate = statement.PeriodStart;
+            ToDate = statement.PeriodEnd;
+        }
+        finally
+        {
+            _syncingDates = false;
+            NotifyPeriodHint();
+        }
     }
 
     private void LoadFinancialYears()
@@ -165,6 +232,85 @@ public partial class MonthlyReportViewModel : ViewModelBase
 
     [RelayCommand]
     private void UseStatementPeriod() => ApplyStatementPeriodDates();
+
+    [RelayCommand]
+    private async Task ReconcileAnzStatementAsync()
+    {
+        if (SelectedAnzStatement is null)
+        {
+            _notificationService.ShowError("Import an ANZ statement first, then choose it here.");
+            return;
+        }
+
+        PrefillAnzBalances(SelectedAnzStatement);
+        ApplyAnzStatementDates(SelectedAnzStatement);
+        await GenerateReportAsync();
+        NotifyAnzReconcileOutcome();
+    }
+
+    [RelayCommand]
+    private void CheckAnzBalances()
+    {
+        if (ReportData is null)
+        {
+            _notificationService.ShowError("Preview the report first, then check the ANZ balances.");
+            return;
+        }
+
+        ApplyAnzReconcile();
+        NotifyAnzReconcileOutcome();
+    }
+
+    private void ApplyAnzReconcile()
+    {
+        if (ReportData is null)
+            return;
+
+        if (!TryParseMoney(AnzOpeningText, out var opening, required: false))
+        {
+            _notificationService.ShowError("ANZ opening must be a valid amount.");
+            return;
+        }
+
+        if (!TryParseMoney(AnzClosingText, out var closing, required: false))
+        {
+            _notificationService.ShowError("ANZ closing must be a valid amount.");
+            return;
+        }
+
+        AnzReconcile = _reportService.ReconcileWithAnz(
+            ReportData,
+            SelectedAnzStatement,
+            opening,
+            closing);
+        OnPropertyChanged(nameof(HasAnzReconcile));
+    }
+
+    private void NotifyAnzReconcileOutcome()
+    {
+        if (AnzReconcile is null)
+            return;
+
+        if (AnzReconcile.IsFullyReconciled)
+            _notificationService.ShowSuccess("ANZ statement matches this report.");
+        else if (AnzReconcile.State == "Mismatch")
+            _notificationService.ShowError(AnzReconcile.Summary);
+        else if (AnzReconcile.State == "NeedsBalances")
+            _notificationService.ShowInfo("Type the opening and closing from the ANZ statement, then click Check balances.");
+    }
+
+    private static bool TryParseMoney(string? text, out decimal? value, bool required)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+            return !required;
+
+        if (!decimal.TryParse(text.Replace("$", "").Replace(",", "").Trim(), out var parsed))
+            return false;
+
+        value = parsed;
+        return true;
+    }
 
     [RelayCommand]
     private async Task GenerateReportAsync()
@@ -196,8 +342,10 @@ public partial class MonthlyReportViewModel : ViewModelBase
                 from.Date,
                 to.Date);
             ApplyHoldingsToReport();
+            ApplyAnzReconcile();
             HasReport = true;
             await ReloadPitstopReportsAsync();
+            await LoadAnzStatementsAsync();
         }
         catch (Exception ex)
         {

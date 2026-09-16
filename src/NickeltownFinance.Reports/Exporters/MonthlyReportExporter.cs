@@ -106,6 +106,21 @@ public static class MonthlyReportExporter
                 .Text($"ANZ statement {data.PeriodDateRange}  ·  Opening + income − expenses = closing.")
                 .FontSize(8).FontColor(Colors.Grey.Medium);
 
+            if (data.AnzReconcile is { } reconcile)
+            {
+                col.Item().PaddingTop(6).Text("ANZ statement check").Bold().FontSize(11).FontColor(Colors.Black);
+                col.Item().PaddingTop(2).Text(reconcile.Summary).FontSize(8).FontColor(
+                    reconcile.IsFullyReconciled ? Colors.Green.Darken2 : Colors.Grey.Darken1);
+                col.Item().PaddingTop(2).Row(r =>
+                {
+                    r.RelativeItem().Text($"Opening  {reconcile.LedgerOpening:C}  ·  {reconcile.OpeningStatus}");
+                });
+                col.Item().Row(r =>
+                {
+                    r.RelativeItem().Text($"Closing  {reconcile.LedgerClosing:C}  ·  {reconcile.ClosingStatus}");
+                });
+            }
+
             col.Item().PaddingTop(8).Text("Category summary").Bold().FontSize(11).FontColor(Colors.Black);
 
             col.Item().PaddingTop(4).Row(row =>
@@ -515,6 +530,30 @@ public static class MonthlyReportExporter
         ws.Cell(row, 1).Value = "Statement period";
         ws.Cell(row, 2).Value = data.PeriodDateRange;
         row += 2;
+        if (data.AnzReconcile is { } reconcile)
+        {
+            ws.Cell(row, 1).Value = "ANZ statement check";
+            ws.Cell(row, 1).Style.Font.Bold = true;
+            row++;
+            ws.Cell(row, 1).Value = reconcile.Summary;
+            row++;
+            ws.Cell(row, 1).Value = "ANZ opening";
+            if (reconcile.StatementOpening is { } anzOpen)
+            {
+                ws.Cell(row, 2).Value = anzOpen;
+                ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+            }
+            ws.Cell(row, 3).Value = reconcile.OpeningStatus;
+            row++;
+            ws.Cell(row, 1).Value = "ANZ closing";
+            if (reconcile.StatementClosing is { } anzClose)
+            {
+                ws.Cell(row, 2).Value = anzClose;
+                ws.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
+            }
+            ws.Cell(row, 3).Value = reconcile.ClosingStatus;
+            row += 2;
+        }
 
         ws.Cell(row, 1).Value = "INCOME BY CATEGORY";
         ws.Cell(row, 1).Style.Font.Bold = true;
