@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICategoryService, CategoryService>();
         services.AddSingleton<IDashboardService, DashboardService>();
         services.AddSingleton<IBackupService, BackupService>();
+        services.AddSingleton<IClubCloudSyncService, ClubCloudSyncService>();
         services.AddSingleton<IReportService, ReportService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<IAuditService, AuditService>();

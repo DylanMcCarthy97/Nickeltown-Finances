@@ -26,6 +26,8 @@
                                Command="{Binding SelectSectionCommand}" CommandParameter="Categories" Margin="0,0,0,4" />
                     <ui:Button Content="Backup" Style="{StaticResource NavButtonStyle}"
                                Command="{Binding SelectSectionCommand}" CommandParameter="Backup" Margin="0,0,0,4" />
+                    <ui:Button Content="Club sync" Style="{StaticResource NavButtonStyle}"
+                               Command="{Binding SelectSectionCommand}" CommandParameter="Sync" Margin="0,0,0,4" />
                     <ui:Button Content="Appearance" Style="{StaticResource NavButtonStyle}"
                                Command="{Binding SelectSectionCommand}" CommandParameter="Appearance" Margin="0,0,0,4" />
                     <ui:Button Content="Report settings" Style="{StaticResource NavButtonStyle}"
@@ -248,6 +250,65 @@
                                     </Grid>
                                 </Border>
                             </Grid>
+                        </ds:SurfaceCard>
+                    </StackPanel>
+
+                    <!-- Club sync (internet) -->
+                    <StackPanel Visibility="{Binding ShowSync, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ds:SurfaceCard Title="Club sync" CardMargin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Keep the home PC and club PC on the same logins and books over the internet — no USB stick and no OneDrive."
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
+                                <CheckBox Content="Enable internet sync on this computer"
+                                          IsChecked="{Binding ClubSyncEnabled}"
+                                          Margin="0,0,0,14" />
+                                <TextBlock Text="Sync server URL" Style="{StaticResource FieldLabelStyle}" />
+                                <ui:TextBox Text="{Binding ClubSyncServerUrl}"
+                                            PlaceholderText="https://sync.example.com"
+                                            Margin="0,0,0,12" />
+                                <TextBlock Text="Club id" Style="{StaticResource FieldLabelStyle}" />
+                                <ui:TextBox Text="{Binding ClubSyncClubId}"
+                                            PlaceholderText="nickeltown-flounderers"
+                                            Margin="0,0,0,12" />
+                                <TextBlock Text="Sync code (same secret on both computers)" Style="{StaticResource FieldLabelStyle}" />
+                                <ui:PasswordBox Password="{Binding ClubSyncCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="At least 8 characters"
+                                                Margin="0,0,0,8" />
+                                <TextBlock Text="Leave blank to keep the code already saved on this PC. Data is encrypted with this code before upload."
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,14" />
+                                <TextBlock Text="{Binding ClubSyncStatusText}"
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,14" />
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Content="Save"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}"
+                                               Command="{Binding SaveClubSyncSettingsCommand}" />
+                                    <ui:Button Content="Check status"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}"
+                                               Command="{Binding CheckClubSyncStatusCommand}"
+                                               IsEnabled="{Binding IsClubSyncBusy, Converter={StaticResource InverseBoolConverter}}" />
+                                    <ui:Button Content="Upload"
+                                               Icon="{ui:SymbolIcon ArrowUpload24}"
+                                               Style="{StaticResource GroupedPrimaryButtonStyle}"
+                                               Margin="{StaticResource ButtonGroupMarginInline}"
+                                               Command="{Binding PushClubSyncCommand}" />
+                                    <ui:Button Content="Download"
+                                               Icon="{ui:SymbolIcon ArrowDownload24}"
+                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                               Command="{Binding PullClubSyncCommand}" />
+                                </StackPanel>
+                                <TextBlock Text="Tip: use only one computer at a time. Upload before you leave, download when you arrive at the other PC. Closing the app also tries to upload when sync is enabled."
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,14,0,0" />
+                            </StackPanel>
                         </ds:SurfaceCard>
                     </StackPanel>
 

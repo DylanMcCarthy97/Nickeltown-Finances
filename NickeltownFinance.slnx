@@ -21,5 +21,9 @@
       <Deploy Solution="Debug|x64" />
       <Deploy Solution="Release|x64" />
     </Project>
+    <Project Path="src/NickeltownFinance.SyncServer/NickeltownFinance.SyncServer.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
   </Folder>
 </Solution>

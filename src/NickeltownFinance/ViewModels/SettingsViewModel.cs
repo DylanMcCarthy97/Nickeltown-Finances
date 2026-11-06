@@ -21,6 +21,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly IThemeService _themeService;
     private readonly ICategoryService _categoryService;
     private readonly IBackupService _backupService;
+    private readonly IClubCloudSyncService _clubCloudSyncService;
     private readonly INotificationService _notificationService;
     private readonly ISessionService _sessionService;
     private readonly IUserService _userService;
@@ -37,6 +38,12 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private int _financialYearStartMonth = 7;
     [ObservableProperty] private AppTheme _selectedTheme = AppTheme.System;
     [ObservableProperty] private string _backupFolder = string.Empty;
+    [ObservableProperty] private bool _clubSyncEnabled;
+    [ObservableProperty] private string _clubSyncServerUrl = string.Empty;
+    [ObservableProperty] private string _clubSyncClubId = string.Empty;
+    [ObservableProperty] private string _clubSyncCode = string.Empty;
+    [ObservableProperty] private string _clubSyncStatusText = string.Empty;
+    [ObservableProperty] private bool _isClubSyncBusy;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private ObservableCollection<Category> _incomeCategories = [];
     [ObservableProperty] private ObservableCollection<Category> _expenseCategories = [];
@@ -86,6 +93,7 @@ public partial class SettingsViewModel : ViewModelBase
     public bool ShowUsers => SelectedSection == "Users";
     public bool ShowCategories => SelectedSection == "Categories";
     public bool ShowBackup => SelectedSection == "Backup";
+    public bool ShowSync => SelectedSection == "Sync";
     public bool ShowAppearance => SelectedSection == "Appearance";
     public bool ShowReports => SelectedSection == "Reports";
     public bool ShowReceiptProcessing => SelectedSection == "ReceiptProcessing";
@@ -96,6 +104,7 @@ public partial class SettingsViewModel : ViewModelBase
         IThemeService themeService,
         ICategoryService categoryService,
         IBackupService backupService,
+        IClubCloudSyncService clubCloudSyncService,
         INotificationService notificationService,
         ISessionService sessionService,
         IUserService userService,
@@ -107,6 +116,7 @@ public partial class SettingsViewModel : ViewModelBase
         _themeService = themeService;
         _categoryService = categoryService;
         _backupService = backupService;
+        _clubCloudSyncService = clubCloudSyncService;
         _notificationService = notificationService;
         _sessionService = sessionService;
         _userService = userService;
@@ -130,6 +140,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowUsers));
         OnPropertyChanged(nameof(ShowCategories));
         OnPropertyChanged(nameof(ShowBackup));
+        OnPropertyChanged(nameof(ShowSync));
         OnPropertyChanged(nameof(ShowAppearance));
         OnPropertyChanged(nameof(ShowReports));
         OnPropertyChanged(nameof(ShowReceiptProcessing));
@@ -156,6 +167,7 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedTheme = _settingsService.Theme;
 
         BackupFolder = _settingsService.BackupFolder;
+        LoadClubSyncPreferences();
 
         var receiptSettings = _receiptProcessingSettings.GetSettings();
         ReceiptAutoEnhancement = receiptSettings.AutoImageEnhancement;
@@ -337,6 +349,167 @@ public partial class SettingsViewModel : ViewModelBase
 
             BackupFolder = dialog.FolderName;
 
+    }
+
+    private void LoadClubSyncPreferences()
+    {
+        var status = _clubCloudSyncService.GetStatus();
+        ClubSyncEnabled = status.Enabled;
+        ClubSyncServerUrl = status.ServerUrl;
+        ClubSyncClubId = string.IsNullOrWhiteSpace(status.ClubId)
+            ? SuggestClubId(ClubName)
+            : status.ClubId;
+        ClubSyncStatusText = status.StatusSummary;
+        // Do not echo the stored sync code into the UI unless the user is editing it.
+        if (string.IsNullOrWhiteSpace(ClubSyncCode) && status.HasSyncCode)
+            ClubSyncCode = string.Empty;
+    }
+
+    private static string SuggestClubId(string? clubName)
+    {
+        if (string.IsNullOrWhiteSpace(clubName))
+            return "my-club";
+        var slug = System.Text.RegularExpressions.Regex.Replace(
+            clubName.Trim().ToLowerInvariant(), @"[^a-z0-9]+", "-").Trim('-');
+        if (slug.Length < 3)
+            slug = "club-" + slug;
+        if (slug.Length > 64)
+            slug = slug[..64].Trim('-');
+        return slug;
+    }
+
+    [RelayCommand]
+    private void SaveClubSyncSettings()
+    {
+        _clubCloudSyncService.SavePreferences(
+            ClubSyncEnabled,
+            ClubSyncServerUrl,
+            ClubSyncClubId,
+            ClubSyncCode);
+        var status = _clubCloudSyncService.GetStatus();
+        ClubSyncStatusText = status.StatusSummary;
+        _notificationService.ShowSuccess("Club sync settings saved on this computer.");
+    }
+
+    [RelayCommand]
+    private async Task CheckClubSyncStatusAsync()
+    {
+        if (IsClubSyncBusy)
+            return;
+
+        SaveClubSyncSettings();
+        IsClubSyncBusy = true;
+        try
+        {
+            var status = await _clubCloudSyncService.RefreshRemoteStatusAsync();
+            ClubSyncStatusText = status.StatusSummary;
+            if (!string.IsNullOrWhiteSpace(status.LastError))
+                _notificationService.ShowError(status.LastError);
+            else
+                _notificationService.ShowSuccess("Checked the sync server.");
+        }
+        catch (Exception ex)
+        {
+            ClubSyncStatusText = ex.Message;
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsClubSyncBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task PushClubSyncAsync()
+    {
+        if (IsClubSyncBusy)
+            return;
+
+        SaveClubSyncSettings();
+        if (!AppDialog.Confirm(
+                "Upload club data",
+                "Upload this computer’s logins, transactions, and receipts to the sync server so the other computer can download them.\n\nOnly use one computer at a time.",
+                confirmText: "Upload",
+                cancelText: "Cancel"))
+            return;
+
+        IsClubSyncBusy = true;
+        try
+        {
+            var result = await _clubCloudSyncService.PushAsync();
+            ClubSyncStatusText = result.Message ?? string.Empty;
+            if (result.Conflict)
+            {
+                if (AppDialog.Confirm(
+                        "Newer data online",
+                        (result.Message ?? "The online copy is newer.") +
+                        "\n\nOverwrite the online copy with this computer’s data?",
+                        confirmText: "Overwrite",
+                        cancelText: "Cancel",
+                        isDanger: true))
+                {
+                    result = await _clubCloudSyncService.PushAsync(force: true);
+                    ClubSyncStatusText = result.Message ?? string.Empty;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            if (result.Success)
+                _notificationService.ShowSuccess(result.Message ?? "Uploaded.");
+            else if (!string.IsNullOrWhiteSpace(result.Message))
+                _notificationService.ShowError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            ClubSyncStatusText = ex.Message;
+            _notificationService.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsClubSyncBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task PullClubSyncAsync()
+    {
+        if (IsClubSyncBusy)
+            return;
+
+        SaveClubSyncSettings();
+        if (!AppDialog.Confirm(
+                "Download club data",
+                "Replace all data on this computer with the online club copy (same logins and books). The app will close afterwards so you can reopen it.",
+                confirmText: "Download",
+                cancelText: "Cancel",
+                isDanger: true))
+            return;
+
+        IsClubSyncBusy = true;
+        try
+        {
+            var result = await _clubCloudSyncService.PullAsync();
+            if (!result.Success)
+            {
+                ClubSyncStatusText = result.Message ?? "Download failed.";
+                _notificationService.ShowError(result.Message ?? "Download failed.");
+                IsClubSyncBusy = false;
+                return;
+            }
+
+            _notificationService.ShowSuccess(result.Message ?? "Downloaded. Restarting…");
+            App.SkipShutdownBackup = true;
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            ClubSyncStatusText = ex.Message;
+            _notificationService.ShowError(ex.Message);
+            IsClubSyncBusy = false;
+        }
     }
 
 
