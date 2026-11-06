@@ -53,6 +53,13 @@ public partial class App : Application
                 themeService.ApplyTheme(settings.Theme);
             }
 
+            // Internet club sync: offer to download newer online data before login.
+            if (!TryApplyPendingClubCloudSync())
+            {
+                Shutdown();
+                return;
+            }
+
             var login = Services.GetRequiredService<LoginWindow>();
             var loggedIn = login.ShowDialog() == true;
 
@@ -136,6 +143,9 @@ public partial class App : Application
                 {
                     var backup = Services.GetRequiredService<IBackupService>();
                     backup.BackupOnShutdownAsync().GetAwaiter().GetResult();
+
+                    var cloudSync = Services.GetService<IClubCloudSyncService>();
+                    cloudSync?.PushOnShutdownAsync().GetAwaiter().GetResult();
                 }
             }
         }
@@ -150,6 +160,49 @@ public partial class App : Application
             disposable.Dispose();
 
         Log.CloseAndFlush();
+    }
+
+    /// <summary>
+    /// Returns false when the process should exit (e.g. after a successful pull that needs restart).
+    /// </summary>
+    private bool TryApplyPendingClubCloudSync()
+    {
+        try
+        {
+            var sync = Services.GetRequiredService<IClubCloudSyncService>();
+            var status = sync.RefreshRemoteStatusAsync().GetAwaiter().GetResult();
+            if (!status.IsConfigured || !status.NewerRemoteAvailable || status.Remote is null)
+                return true;
+
+            var when = status.Remote.WrittenUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+            var pull = AppDialog.Confirm(
+                "Newer club data online",
+                $"The sync server has newer books from '{status.Remote.MachineName}' ({when}, revision {status.Remote.Revision}).\n\n" +
+                "Download that copy onto this computer? Logins and transactions will match the other PC.",
+                confirmText: "Download",
+                cancelText: "Not now");
+
+            if (!pull)
+                return true;
+
+            var result = sync.PullAsync().GetAwaiter().GetResult();
+            if (!result.Success)
+            {
+                AppDialog.Warning("Club sync", result.Message ?? "Download failed.");
+                return true;
+            }
+
+            SkipShutdownBackup = true;
+            AppDialog.Info(
+                "Club data downloaded",
+                "The online club copy is ready. The app will close — open it again to continue with the same logins and books.");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Club cloud sync check failed");
+            return true;
+        }
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

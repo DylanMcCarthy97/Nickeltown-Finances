@@ -55,6 +55,16 @@ public static class AppPaths
 
     public static string LogsPath => Path.Combine(AppDataRoot, "logs");
 
+    /// <summary>
+    /// Machine-local internet sync preferences (server URL, club id, sync code, revisions).
+    /// Kept outside LiteDB so a second PC can join before it has club data.
+    /// </summary>
+    public static string ClubCloudSyncStatePath =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "NickeltownFinance",
+            "club-cloud-sync.json");
+
     public static string ResolvePath(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

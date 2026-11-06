@@ -1,0 +1,17 @@
+# One-time host for Nickeltown club sync (home PC ↔ club PC).
+# Usage:
+#   docker compose -f docker-compose.sync.yml up -d
+# Then put the public URL into Settings → Club sync on both computers.
+services:
+  nickeltown-sync:
+    build:
+      context: .
+      dockerfile: src/NickeltownFinance.SyncServer/Dockerfile
+    ports:
+      - "5088:8080"
+    volumes:
+      - nickeltown_sync_data:/data
+    restart: unless-stopped
+
+volumes:
+  nickeltown_sync_data:

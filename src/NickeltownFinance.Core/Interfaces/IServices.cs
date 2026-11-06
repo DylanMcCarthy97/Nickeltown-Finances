@@ -422,6 +422,27 @@ public interface IBackupService
     void ValidateBackupFile(string backupFilePath);
 }
 
+/// <summary>
+/// Keeps home and club computers on the same logins and books by syncing an encrypted
+/// package over the internet to a Nickeltown sync server (no USB stick, no OneDrive).
+/// </summary>
+public interface IClubCloudSyncService
+{
+    ClubCloudSyncStatus GetStatus();
+
+    Task<ClubCloudSyncStatus> RefreshRemoteStatusAsync(CancellationToken cancellationToken = default);
+
+    void SavePreferences(bool enabled, string serverUrl, string clubId, string syncCode);
+
+    Task<ClubCloudSyncResult> PushAsync(bool force = false, CancellationToken cancellationToken = default);
+
+    Task<ClubCloudSyncResult> PullAsync(CancellationToken cancellationToken = default);
+
+    Task PushOnShutdownAsync();
+
+    ClubCloudSyncResult? GetPendingPullOffer();
+}
+
 public interface IDatabaseShutdownService
 {
     void Close();
