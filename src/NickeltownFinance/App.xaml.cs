@@ -142,10 +142,14 @@ public partial class App : Application
                 if (!SkipShutdownBackup)
                 {
                     var backup = Services.GetRequiredService<IBackupService>();
-                    backup.BackupOnShutdownAsync().GetAwaiter().GetResult();
+                    var backupPath = backup.CreateBackupAsync(isManual: false).GetAwaiter().GetResult();
+
+                    // Drop the exclusive lock before the network upload. That upload can take
+                    // minutes, and a second launch would otherwise fail with the books file in use.
+                    Services.GetRequiredService<IDatabaseShutdownService>().Close();
 
                     var cloudSync = Services.GetService<IClubCloudSyncService>();
-                    cloudSync?.PushOnShutdownAsync().GetAwaiter().GetResult();
+                    cloudSync?.PushOnShutdownAsync(backupPath).GetAwaiter().GetResult();
                 }
             }
         }
@@ -170,7 +174,13 @@ public partial class App : Application
         try
         {
             var sync = Services.GetRequiredService<IClubCloudSyncService>();
-            var status = sync.RefreshRemoteStatusAsync().GetAwaiter().GetResult();
+            // The login window is not up yet. A Docker sync server that is stopped must not
+            // leave a Task Manager process with no window for the 10-minute upload timeout.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var status = sync.RefreshRemoteStatusAsync(timeout.Token)
+                .WaitAsync(TimeSpan.FromSeconds(5))
+                .GetAwaiter()
+                .GetResult();
             if (!status.IsConfigured || !status.NewerRemoteAvailable || status.Remote is null)
                 return true;
 
