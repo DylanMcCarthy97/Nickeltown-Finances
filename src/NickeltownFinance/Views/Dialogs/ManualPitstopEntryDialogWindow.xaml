@@ -1,0 +1,104 @@
+<ui:FluentWindow x:Class="NickeltownFinance.Views.Dialogs.ManualPitstopEntryDialogWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:ds="clr-namespace:NickeltownFinance.Controls"
+                 Title="{Binding DialogTitle}"
+                 Width="480"
+                 SizeToContent="Height"
+                 MinHeight="420"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 Background="{StaticResource BrandBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}">
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding SaveCommand}" />
+    </ui:FluentWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="{Binding DialogTitle}" Grid.Row="0" ShowMinimize="False" ShowMaximize="False" />
+
+        <StackPanel Grid.Row="1" Margin="28,8,28,8">
+            <TextBlock Text="Use this when ClubPOS did not print an end-of-day report. Cash and card takings are stored with this month and included in the treasurer report."
+                       Style="{StaticResource CaptionTextStyle}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,14" />
+
+            <TextBlock Text="Report month" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox Text="{Binding MonthLabel}" IsReadOnly="True" Margin="0,0,0,12" />
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Event date" Style="{StaticResource FieldLabelStyle}" />
+                    <ds:AppDateField SelectedDate="{Binding EventDate}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Title" Style="{StaticResource FieldLabelStyle}" />
+                    <ui:TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="e.g. Pitstop race day" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Cash amount" Style="{StaticResource FieldLabelStyle}" />
+                    <ui:TextBox Text="{Binding CashAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="0.00" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Card amount" Style="{StaticResource FieldLabelStyle}" />
+                    <ui:TextBox Text="{Binding CardAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="0.00" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Total takings" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox Text="{Binding TotalDisplay}" IsReadOnly="True" Margin="0,0,0,12" />
+
+            <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                        AcceptsReturn="True"
+                        Height="72"
+                        PlaceholderText="Optional — till issues, who counted cash, etc."
+                        Margin="0,0,0,8" />
+
+            <ds:ErrorScreen Message="{Binding ErrorMessage}" IsCompact="True" />
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Cancel" Style="{StaticResource DialogFooterButtonStyle}"
+                           Command="{Binding CancelCommand}"
+                           IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                           Margin="{StaticResource ButtonGroupMarginInline}" />
+                <ui:Button Content="Save" Style="{StaticResource DialogFooterPrimaryButtonStyle}"
+                           Command="{Binding SaveCommand}"
+                           IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

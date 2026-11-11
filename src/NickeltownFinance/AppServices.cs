@@ -54,6 +54,7 @@ public static class AppServices
         services.AddTransient<ViewModels.Dialogs.ResetPasswordDialogViewModel>();
         services.AddTransient<ViewModels.Dialogs.NewFinancialYearDialogViewModel>();
         services.AddTransient<ViewModels.Dialogs.EditOpeningBalanceDialogViewModel>();
+        services.AddTransient<ViewModels.Dialogs.ManualPitstopEntryDialogViewModel>();
 
         services.AddTransient<Views.LoginWindow>();
         services.AddTransient<Views.SetupWizardWindow>();
@@ -65,6 +66,7 @@ public static class AppServices
         services.AddTransient<Views.Dialogs.ResetPasswordDialogWindow>();
         services.AddTransient<Views.Dialogs.NewFinancialYearDialogWindow>();
         services.AddTransient<Views.Dialogs.EditOpeningBalanceDialogWindow>();
+        services.AddTransient<Views.Dialogs.ManualPitstopEntryDialogWindow>();
 
 
 

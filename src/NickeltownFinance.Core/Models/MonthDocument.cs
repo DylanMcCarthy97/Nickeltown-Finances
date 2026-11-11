@@ -27,6 +27,17 @@ public class MonthDocument : BaseEntity
 
     public string? PreviewPagesJson { get; set; }
 
+    /// <summary>True when ClubPOS did not produce a report and takings were entered by hand.</summary>
+    public bool IsManual { get; set; }
+
+    public DateTime? EventDate { get; set; }
+
+    public decimal CashAmount { get; set; }
+
+    public decimal CardAmount { get; set; }
+
+    public string Notes { get; set; } = string.Empty;
+
     public ObjectId AddedByUserId { get; set; } = ObjectId.Empty;
 
     public string AddedByName { get; set; } = string.Empty;

@@ -164,6 +164,63 @@ public static class MonthlyReportExporter
                 }
             }
 
+            if (data.HasPitstopReports)
+            {
+                col.Item().PaddingTop(8).Text("Pitstop events").Bold().FontSize(11).FontColor(Colors.Black);
+                col.Item().PaddingTop(1)
+                    .Text("ClubPOS end-of-day reports and manual cash/card entries. Full pages are appended after this report.")
+                    .FontSize(8).FontColor(Colors.Grey.Medium);
+
+                foreach (var report in data.PitstopReports)
+                {
+                    col.Item().PaddingTop(4).Text(report.DisplayLabel).SemiBold().FontSize(9);
+
+                    if (report.HasAmounts)
+                    {
+                        col.Item().PaddingTop(1).PaddingLeft(8).Row(r =>
+                        {
+                            r.RelativeItem().Text("Cash");
+                            r.ConstantItem(72).AlignRight().Text(report.CashAmount.ToString("C"));
+                        });
+                        col.Item().PaddingLeft(8).Row(r =>
+                        {
+                            r.RelativeItem().Text("Card");
+                            r.ConstantItem(72).AlignRight().Text(report.CardAmount.ToString("C"));
+                        });
+                        col.Item().PaddingLeft(8).Row(r =>
+                        {
+                            r.RelativeItem().Text("Total").SemiBold();
+                            r.ConstantItem(72).AlignRight().Text(report.TotalAmount.ToString("C")).SemiBold();
+                        });
+                    }
+                    else
+                    {
+                        col.Item().PaddingTop(1).PaddingLeft(8)
+                            .Text(report.FileName)
+                            .FontSize(8).FontColor(Colors.Grey.Medium);
+                    }
+                }
+
+                if (data.HasPitstopAmounts)
+                {
+                    col.Item().PaddingTop(4).Row(r =>
+                    {
+                        r.RelativeItem().Text("Pitstop cash total").SemiBold();
+                        r.ConstantItem(72).AlignRight().Text(data.PitstopCashTotal.ToString("C")).SemiBold();
+                    });
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Pitstop card total").SemiBold();
+                        r.ConstantItem(72).AlignRight().Text(data.PitstopCardTotal.ToString("C")).SemiBold();
+                    });
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Pitstop takings total").Bold();
+                        r.ConstantItem(72).AlignRight().Text(data.PitstopTakingsTotal.ToString("C")).Bold();
+                    });
+                }
+            }
+
             // Transaction detail — bank descriptions
             col.Item().PaddingTop(8).Text("Bank transactions").Bold().FontSize(11).FontColor(Colors.Black);
             col.Item().Text("As shown on the ANZ statement, with the category assigned in Nickeltown Finance.")
@@ -651,26 +708,62 @@ public static class MonthlyReportExporter
         {
             var pit = wb.Worksheets.Add("Pitstop reports");
             pit.Cell(1, 1).Value = "Title";
-            pit.Cell(1, 2).Value = "File name";
-            pit.Cell(1, 3).Value = "Pages";
-            pit.Cell(1, 4).Value = "Added";
-            pit.Cell(1, 5).Value = "Added by";
-            pit.Range(1, 1, 1, 5).Style.Font.Bold = true;
+            pit.Cell(1, 2).Value = "Type";
+            pit.Cell(1, 3).Value = "Event date";
+            pit.Cell(1, 4).Value = "Cash";
+            pit.Cell(1, 5).Value = "Card";
+            pit.Cell(1, 6).Value = "Total";
+            pit.Cell(1, 7).Value = "File name";
+            pit.Cell(1, 8).Value = "Pages";
+            pit.Cell(1, 9).Value = "Added";
+            pit.Cell(1, 10).Value = "Added by";
+            pit.Range(1, 1, 1, 10).Style.Font.Bold = true;
 
             var pitRow = 2;
             foreach (var report in data.PitstopReports)
             {
                 pit.Cell(pitRow, 1).Value = report.DisplayLabel;
-                pit.Cell(pitRow, 2).Value = report.FileName;
-                pit.Cell(pitRow, 3).Value = Math.Max(1, report.PageCount);
-                pit.Cell(pitRow, 4).Value = report.DateAdded.ToLocalTime();
-                pit.Cell(pitRow, 4).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-                pit.Cell(pitRow, 5).Value = report.AddedByName;
+                pit.Cell(pitRow, 2).Value = report.SourceLabel;
+                if (report.EventDate is { } eventDate)
+                {
+                    pit.Cell(pitRow, 3).Value = eventDate.Date;
+                    pit.Cell(pitRow, 3).Style.DateFormat.Format = "dd/MM/yyyy";
+                }
+
+                if (report.HasAmounts)
+                {
+                    pit.Cell(pitRow, 4).Value = report.CashAmount;
+                    pit.Cell(pitRow, 5).Value = report.CardAmount;
+                    pit.Cell(pitRow, 6).Value = report.TotalAmount;
+                    pit.Cell(pitRow, 4).Style.NumberFormat.Format = "$#,##0.00";
+                    pit.Cell(pitRow, 5).Style.NumberFormat.Format = "$#,##0.00";
+                    pit.Cell(pitRow, 6).Style.NumberFormat.Format = "$#,##0.00";
+                }
+
+                pit.Cell(pitRow, 7).Value = report.FileName;
+                pit.Cell(pitRow, 8).Value = Math.Max(1, report.PageCount);
+                pit.Cell(pitRow, 9).Value = report.DateAdded.ToLocalTime();
+                pit.Cell(pitRow, 9).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                pit.Cell(pitRow, 10).Value = report.AddedByName;
+                pitRow++;
+            }
+
+            if (data.HasPitstopAmounts)
+            {
+                pitRow++;
+                pit.Cell(pitRow, 1).Value = "Pitstop totals";
+                pit.Cell(pitRow, 4).Value = data.PitstopCashTotal;
+                pit.Cell(pitRow, 5).Value = data.PitstopCardTotal;
+                pit.Cell(pitRow, 6).Value = data.PitstopTakingsTotal;
+                pit.Cell(pitRow, 4).Style.NumberFormat.Format = "$#,##0.00";
+                pit.Cell(pitRow, 5).Style.NumberFormat.Format = "$#,##0.00";
+                pit.Cell(pitRow, 6).Style.NumberFormat.Format = "$#,##0.00";
+                pit.Row(pitRow).Style.Font.Bold = true;
                 pitRow++;
             }
 
             pit.Cell(pitRow + 1, 1).Value =
-                "Full report pages are appended to the PDF export of this monthly report.";
+                "Full report pages (including generated manual-entry summaries) are appended to the PDF export of this monthly report.";
             pit.Columns().AdjustToContents();
         }
 

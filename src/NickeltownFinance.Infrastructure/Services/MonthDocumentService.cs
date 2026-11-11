@@ -1,3 +1,4 @@
+using System.Globalization;
 using LiteDB;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.DTOs;
@@ -5,6 +6,7 @@ using NickeltownFinance.Core.Enums;
 using NickeltownFinance.Core.Helpers;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
+using NickeltownFinance.Reports.Exporters;
 
 namespace NickeltownFinance.Infrastructure.Services;
 
@@ -22,15 +24,18 @@ public class MonthDocumentService : IMonthDocumentService
 
     private readonly IMonthDocumentRepository _repository;
     private readonly ISessionService _sessionService;
+    private readonly ISettingsService _settingsService;
     private readonly IPdfRenderService _pdfRenderService;
 
     public MonthDocumentService(
         IMonthDocumentRepository repository,
         ISessionService sessionService,
+        ISettingsService settingsService,
         IPdfRenderService pdfRenderService)
     {
         _repository = repository;
         _sessionService = sessionService;
+        _settingsService = settingsService;
         _pdfRenderService = pdfRenderService;
     }
 
@@ -107,6 +112,77 @@ public class MonthDocumentService : IMonthDocumentService
         await ApplyPreviewsAsync(document, fullPath);
         _repository.Update(document);
 
+        return Map(document);
+    }
+
+    public async Task<MonthDocumentInfo> AddManualPitstopAsync(
+        int year,
+        int month,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? title = null,
+        string? notes = null)
+    {
+        ValidateManualPitstop(year, month, eventDate, cashAmount, cardAmount);
+
+        var resolvedTitle = ResolveManualTitle(title, eventDate);
+        var fileName = ManualFileName(eventDate);
+        var pdf = BuildManualPdf(resolvedTitle, eventDate, cashAmount, cardAmount, notes);
+        var info = await AddFromBytesAsync(year, month, pdf, fileName, MonthDocumentKind.PitstopReport, resolvedTitle);
+
+        var document = _repository.GetById(info.Id)
+            ?? throw new InvalidOperationException("Manual Pitstop entry could not be saved.");
+        ApplyManualFields(document, eventDate, cashAmount, cardAmount, notes);
+        _repository.Update(document);
+        return Map(document);
+    }
+
+    public async Task<MonthDocumentInfo> UpdateManualPitstopAsync(
+        ObjectId documentId,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? title = null,
+        string? notes = null)
+    {
+        var document = _repository.GetById(documentId)
+            ?? throw new InvalidOperationException("Pitstop entry not found.");
+        if (!document.IsManual)
+            throw new InvalidOperationException("Only manual Pitstop entries can be edited.");
+
+        ValidateManualPitstop(document.Year, document.Month, eventDate, cashAmount, cardAmount);
+
+        var resolvedTitle = ResolveManualTitle(title, eventDate);
+        var pdf = BuildManualPdf(resolvedTitle, eventDate, cashAmount, cardAmount, notes);
+        var fullPath = string.IsNullOrWhiteSpace(document.RelativePath)
+            ? string.Empty
+            : AppPaths.ResolvePath(document.RelativePath);
+        if (string.IsNullOrWhiteSpace(fullPath))
+        {
+            var storedName = $"{Guid.NewGuid():N}.pdf";
+            var fullDir = Path.Combine(AppPaths.MonthDocumentsPath, document.Id.ToString());
+            Directory.CreateDirectory(fullDir);
+            fullPath = Path.Combine(fullDir, storedName);
+            document.RelativePath = AppPaths.ToRelativePath(fullPath);
+        }
+        else
+        {
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+        }
+
+        await File.WriteAllBytesAsync(fullPath, pdf);
+
+        document.Title = resolvedTitle;
+        document.FileName = ManualFileName(eventDate);
+        document.SizeBytes = pdf.LongLength;
+        document.ContentType = "application/pdf";
+        document.ModifiedDate = DateTime.UtcNow;
+        ApplyManualFields(document, eventDate, cashAmount, cardAmount, notes);
+        await ApplyPreviewsAsync(document, fullPath);
+        _repository.Update(document);
         return Map(document);
     }
 
@@ -254,8 +330,82 @@ public class MonthDocumentService : IMonthDocumentService
             IsImage = ImageExtensions.Contains(ext) || previewPaths.Count > 0,
             IsPdf = ext == ".pdf",
             PageCount = document.PageCount > 0 ? document.PageCount : Math.Max(1, previewPaths.Count),
-            PreviewFullPaths = previewPaths
+            PreviewFullPaths = previewPaths,
+            IsManual = document.IsManual,
+            EventDate = document.EventDate,
+            CashAmount = document.CashAmount,
+            CardAmount = document.CardAmount,
+            Notes = document.Notes ?? string.Empty
         };
+    }
+
+    private byte[] BuildManualPdf(
+        string title,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? notes) =>
+        PitstopManualEntryPdf.Generate(new PitstopManualEntryPdfRequest
+        {
+            ClubName = _settingsService.ClubName,
+            Title = title,
+            EventDate = eventDate.Date,
+            CashAmount = cashAmount,
+            CardAmount = cardAmount,
+            Notes = notes?.Trim() ?? string.Empty,
+            RecordedBy = _sessionService.CurrentUser?.DisplayName ?? "Treasurer",
+            RecordedAt = DateTime.Now
+        });
+
+    private static void ApplyManualFields(
+        MonthDocument document,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? notes)
+    {
+        document.IsManual = true;
+        document.EventDate = eventDate.Date;
+        document.CashAmount = cashAmount;
+        document.CardAmount = cardAmount;
+        document.Notes = notes?.Trim() ?? string.Empty;
+    }
+
+    private static string ResolveManualTitle(string? title, DateTime eventDate)
+    {
+        var trimmed = title?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed)
+            ? $"Pitstop {eventDate.ToString("d MMM yyyy", CultureInfo.InvariantCulture)}"
+            : trimmed;
+    }
+
+    private static string ManualFileName(DateTime eventDate) =>
+        $"Pitstop-manual-{eventDate:yyyy-MM-dd}.pdf";
+
+    private static void ValidateManualPitstop(
+        int year,
+        int month,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount)
+    {
+        if (year < 2000 || month is < 1 or > 12)
+            throw new InvalidOperationException("A valid report month is required.");
+
+        if (eventDate == default)
+            throw new InvalidOperationException("Event date is required.");
+
+        if (eventDate.Year != year || eventDate.Month != month)
+        {
+            var monthName = new DateTime(year, month, 1).ToString("MMMM yyyy");
+            throw new InvalidOperationException($"Event date must be in {monthName}.");
+        }
+
+        if (cashAmount < 0 || cardAmount < 0)
+            throw new InvalidOperationException("Cash and card amounts cannot be negative.");
+
+        if (cashAmount == 0 && cardAmount == 0)
+            throw new InvalidOperationException("Enter a cash amount, a card amount, or both.");
     }
 
     private static string GuessContentType(string ext) => ext.ToLowerInvariant() switch

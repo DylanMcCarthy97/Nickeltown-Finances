@@ -77,18 +77,23 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Pitstop reports" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBlock Text="Attach ClubPOS end-of-day reports when this month had a Pitstop event."
+                                <TextBlock Text="Attach ClubPOS end-of-day reports, or add cash and card amounts when a report was not generated."
                                            Style="{StaticResource CaptionTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap" />
                             </StackPanel>
-                            <ui:Button Grid.Column="1"
-                                       Content="Attach report"
-                                       Style="{StaticResource SecondaryButtonStyle}"
-                                       Icon="{ui:SymbolIcon Attach24}"
-                                       VerticalAlignment="Top"
-                                       Command="{Binding AttachPitstopReportCommand}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                <ui:Button Content="Add manual entry"
+                                           Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                           Icon="{ui:SymbolIcon Money24}"
+                                           Margin="{StaticResource ButtonGroupMarginInline}"
+                                           Command="{Binding AddManualPitstopCommand}" />
+                                <ui:Button Content="Attach report"
+                                           Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                           Icon="{ui:SymbolIcon Attach24}"
+                                           Command="{Binding AttachPitstopReportCommand}" />
+                            </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="No Pitstop reports attached for this month."
+                        <TextBlock Text="No Pitstop reports or manual entries for this month."
                                    Style="{StaticResource CaptionTextStyle}"
                                    Visibility="{Binding HasPitstopReports, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
 
@@ -104,17 +109,22 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding DisplayLabel}" FontWeight="SemiBold" />
-                                                <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0">
-                                                    <Run Text="{Binding FileName, Mode=OneWay}" />
-                                                    <Run Text="  ·  " />
-                                                    <Run Text="{Binding SizeDisplay, Mode=OneWay}" />
-                                                </TextBlock>
+                                                <TextBlock Text="{Binding DetailLine}"
+                                                           Style="{StaticResource CaptionTextStyle}"
+                                                           Margin="0,2,0,0"
+                                                           TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal">
                                                 <ui:Button Content="View"
                                                            Style="{StaticResource GroupedSecondaryButtonStyle}"
                                                            Margin="{StaticResource ButtonGroupMarginInline}"
                                                            Command="{Binding DataContext.OpenPitstopReportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                           CommandParameter="{Binding}" />
+                                                <ui:Button Content="Edit"
+                                                           Style="{StaticResource GroupedSecondaryButtonStyle}"
+                                                           Margin="{StaticResource ButtonGroupMarginInline}"
+                                                           Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                           Command="{Binding DataContext.EditManualPitstopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                            CommandParameter="{Binding}" />
                                                 <ui:Button Content="Open file"
                                                            Style="{StaticResource GroupedSecondaryButtonStyle}"
@@ -263,22 +273,36 @@
                                     Visibility="{Binding PitstopReports, Converter={StaticResource EmptyCollectionToVisibilityConverter}, ConverterParameter=Invert}">
                                 <StackPanel>
                                     <TextBlock Text="Pitstop event reports" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
-                                    <TextBlock Text="ClubPOS end-of-day reports attached to this month. Full pages are included when you export the PDF."
+                                    <TextBlock Text="ClubPOS end-of-day reports and manual cash/card entries for this month. Full pages are included when you export the PDF."
                                                Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,12" />
 
                                     <ItemsControl ItemsSource="{Binding PitstopReports}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
-                                                    <Run Text="• " />
-                                                    <Run Text="{Binding DisplayLabel, Mode=OneWay}" FontWeight="SemiBold" />
-                                                    <Run Text=" (" />
-                                                    <Run Text="{Binding FileName, Mode=OneWay}" />
-                                                    <Run Text=")" />
-                                                </TextBlock>
+                                                <StackPanel Margin="0,0,0,12">
+                                                    <TextBlock TextWrapping="Wrap">
+                                                        <Run Text="{Binding DisplayLabel, Mode=OneWay}" FontWeight="SemiBold" />
+                                                        <Run Text="  ·  " />
+                                                        <Run Text="{Binding SourceLabel, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <StackPanel Visibility="{Binding HasAmounts, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <ds:ReportLine Label="Cash" Amount="{Binding CashAmount}" />
+                                                        <ds:ReportLine Label="Card" Amount="{Binding CardAmount}" />
+                                                        <ds:ReportLine Label="Total" Amount="{Binding TotalAmount}" IsBold="True" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding FileName}"
+                                                               Style="{StaticResource CaptionTextStyle}"
+                                                               Margin="0,2,0,0"
+                                                               Visibility="{Binding HasAmounts, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+                                    <StackPanel Visibility="{Binding HasPitstopAmounts, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ds:ReportLine Label="Pitstop cash total" Amount="{Binding PitstopCashTotal}" LineMargin="0,8,0,2" />
+                                        <ds:ReportLine Label="Pitstop card total" Amount="{Binding PitstopCardTotal}" />
+                                        <ds:ReportLine Label="Pitstop takings total" Amount="{Binding PitstopTakingsTotal}" IsBold="True" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 

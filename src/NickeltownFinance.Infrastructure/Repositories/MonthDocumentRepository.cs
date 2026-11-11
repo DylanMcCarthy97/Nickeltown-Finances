@@ -15,6 +15,9 @@ public class MonthDocumentRepository : RepositoryBase<MonthDocument>, IMonthDocu
         if (kind is not null)
             query = query.Where(x => x.Kind == kind.Value);
 
-        return query.OrderBy(x => x.DateAdded).ThenBy(x => x.FileName);
+        return query
+            .OrderBy(x => x.EventDate ?? x.DateAdded)
+            .ThenBy(x => x.DateAdded)
+            .ThenBy(x => x.FileName);
     }
 }

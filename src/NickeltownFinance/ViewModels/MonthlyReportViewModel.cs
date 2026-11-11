@@ -10,6 +10,7 @@ using NickeltownFinance.Core.Enums;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Services;
+using NickeltownFinance.ViewModels.Dialogs;
 using NickeltownFinance.Views.Dialogs;
 
 namespace NickeltownFinance.ViewModels;
@@ -115,7 +116,10 @@ public partial class MonthlyReportViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasPitstopReports));
 
             if (ReportData is not null)
+            {
                 ReportData.PitstopReports = reports;
+                OnPropertyChanged(nameof(ReportData));
+            }
         }
         catch (Exception ex)
         {
@@ -190,6 +194,41 @@ public partial class MonthlyReportViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task AddManualPitstopAsync()
+    {
+        if (ShowManualPitstopDialog(existing: null))
+        {
+            await ReloadPitstopReportsAsync();
+            _notificationService.ShowSuccess("Manual Pitstop entry saved.");
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditManualPitstopAsync(MonthDocumentInfo? document)
+    {
+        document ??= SelectedPitstopReport;
+        if (document is null || !document.IsManual)
+            return;
+
+        if (ShowManualPitstopDialog(document))
+        {
+            await ReloadPitstopReportsAsync();
+            _notificationService.ShowSuccess("Manual Pitstop entry updated.");
+        }
+    }
+
+    private bool ShowManualPitstopDialog(MonthDocumentInfo? existing)
+    {
+        var vm = _serviceProvider.GetRequiredService<ManualPitstopEntryDialogViewModel>();
+        vm.Initialize(SelectedYear, SelectedMonth, existing);
+        var window = new ManualPitstopEntryDialogWindow(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        return window.ShowDialog() == true;
+    }
+
+    [RelayCommand]
     private void OpenPitstopReport(MonthDocumentInfo? document)
     {
         document ??= SelectedPitstopReport;
@@ -230,8 +269,10 @@ public partial class MonthlyReportViewModel : ViewModelBase
             return;
 
         if (!System.Windows.MessageBox.Show(
-                $"Remove \"{document.DisplayLabel}\" from {SelectedMonth}/{SelectedYear}?",
-                "Remove Pitstop report",
+                document.IsManual
+                    ? $"Remove manual Pitstop entry \"{document.DisplayLabel}\" from {SelectedMonth}/{SelectedYear}?"
+                    : $"Remove \"{document.DisplayLabel}\" from {SelectedMonth}/{SelectedYear}?",
+                document.IsManual ? "Remove Pitstop entry" : "Remove Pitstop report",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Question).Equals(System.Windows.MessageBoxResult.Yes))
             return;

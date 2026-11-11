@@ -224,6 +224,41 @@ public class MonthDocumentInfo
     public IReadOnlyList<string> PreviewFullPaths { get; set; } = [];
 
     public string DisplayLabel => string.IsNullOrWhiteSpace(Title) ? FileName : Title;
+
+    /// <summary>True when ClubPOS did not produce a report and takings were entered by hand.</summary>
+    public bool IsManual { get; set; }
+
+    public DateTime? EventDate { get; set; }
+
+    public decimal CashAmount { get; set; }
+
+    public decimal CardAmount { get; set; }
+
+    public decimal TotalAmount => CashAmount + CardAmount;
+
+    public string Notes { get; set; } = string.Empty;
+
+    public bool HasAmounts => IsManual || CashAmount != 0 || CardAmount != 0;
+
+    public string SourceLabel => IsManual ? "Manual entry" : "ClubPOS report";
+
+    public string EventDateDisplay => DateFormats.Format(EventDate);
+
+    public string DetailLine
+    {
+        get
+        {
+            if (IsManual || HasAmounts)
+            {
+                var date = string.IsNullOrWhiteSpace(EventDateDisplay) ? SourceLabel : EventDateDisplay;
+                return $"{date}  ·  Cash {CashAmount:C}  ·  Card {CardAmount:C}  ·  Total {TotalAmount:C}";
+            }
+
+            return string.IsNullOrWhiteSpace(FileName)
+                ? SourceLabel
+                : $"{FileName}  ·  {SizeDisplay}";
+        }
+    }
 }
 
 public class MonthlyReportData
@@ -284,6 +319,14 @@ public class MonthlyReportData
     public IReadOnlyList<MonthDocumentInfo> PitstopReports { get; set; } = [];
 
     public bool HasPitstopReports => PitstopReports.Count > 0;
+
+    public bool HasPitstopAmounts => PitstopReports.Any(r => r.HasAmounts);
+
+    public decimal PitstopCashTotal => PitstopReports.Sum(r => r.CashAmount);
+
+    public decimal PitstopCardTotal => PitstopReports.Sum(r => r.CardAmount);
+
+    public decimal PitstopTakingsTotal => PitstopCashTotal + PitstopCardTotal;
 
     public int TransactionCount => Transactions.Count;
 
