@@ -1,6 +1,7 @@
 using LiteDB;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.Models;
+using NickeltownFinance.Core.Storage;
 
 namespace NickeltownFinance.Infrastructure.Database;
 
@@ -12,10 +13,62 @@ public sealed class LiteDbContext : IDisposable
 
     public LiteDbContext()
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.DatabasePath)!);
-        _database = new LiteDatabase(AppPaths.DatabasePath);
+        // Documents is often OneDrive. Copy the books out before opening so sync
+        // cannot hold the exclusive lock LiteDB needs.
+        DatabaseFileMigration.EnsureLocalCopy(
+            AppPaths.DatabasePath,
+            AppPaths.LegacyDatabasePath,
+            TimeSpan.FromSeconds(8),
+            validate: CanReadDatabase);
+
+        _database = OpenDatabase(AppPaths.DatabasePath);
         MigrateFinancialYears();
         EnsureIndexes();
+    }
+
+    private static LiteDatabase OpenDatabase(string path)
+    {
+        try
+        {
+            LiteDatabase? database = null;
+            DatabaseFileMigration.ExecuteWithRetry(TimeSpan.FromSeconds(5), () =>
+            {
+                database = new LiteDatabase(new ConnectionString
+                {
+                    Filename = path,
+                    Connection = ConnectionType.Direct
+                });
+            });
+            return database ?? throw new InvalidOperationException("Database did not open.");
+        }
+        catch (IOException ex) when (DatabaseFileMigration.IsSharingViolation(ex))
+        {
+            throw new DatabaseInUseException(path, ex);
+        }
+    }
+
+    private static bool CanReadDatabase(string path)
+    {
+        try
+        {
+            using var database = new LiteDatabase(new ConnectionString
+            {
+                Filename = path,
+                Connection = ConnectionType.Direct,
+                ReadOnly = true
+            });
+            _ = database.GetCollectionNames().ToList();
+            return true;
+        }
+        catch (Exception ex) when (DatabaseFileMigration.IsSharingViolation(ex))
+        {
+            // The copy is ours. A brief lock should not throw the user's books away.
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public ILiteCollection<Transaction> Transactions => _database.GetCollection<Transaction>("transactions");

@@ -113,7 +113,13 @@ public class ClubCloudSyncService : IClubCloudSyncService
         }
     }
 
-    public async Task<ClubCloudSyncResult> PushAsync(bool force = false, CancellationToken cancellationToken = default)
+    public Task<ClubCloudSyncResult> PushAsync(bool force = false, CancellationToken cancellationToken = default) =>
+        PushCoreAsync(force, cancellationToken, existingBackupPath: null);
+
+    private async Task<ClubCloudSyncResult> PushCoreAsync(
+        bool force,
+        CancellationToken cancellationToken,
+        string? existingBackupPath)
     {
         var prefs = LoadPreferences();
         if (!prefs.Enabled)
@@ -147,7 +153,9 @@ public class ClubCloudSyncService : IClubCloudSyncService
                 nextRevision = Math.Max(nextRevision, remoteStatus.Remote.Revision + 1);
         }
 
-        var backupPath = await _backupService.CreateBackupAsync(isManual: false);
+        var backupPath = !string.IsNullOrWhiteSpace(existingBackupPath) && File.Exists(existingBackupPath)
+            ? existingBackupPath
+            : await _backupService.CreateBackupAsync(isManual: false);
         var encrypted = EncryptFile(backupPath, prefs.SyncCode);
         try
         {
@@ -277,17 +285,13 @@ public class ClubCloudSyncService : IClubCloudSyncService
         }
     }
 
-    public async Task PushOnShutdownAsync()
+    public async Task PushOnShutdownAsync(string? backupZipPath = null)
     {
-        var prefs = LoadPreferences();
-        if (!prefs.Enabled || ValidateConfigured(prefs) is not null)
-            return;
-
         try
         {
-            var result = await PushAsync(force: false);
-            // Conflicts are left for the next launch prompt.
-            _ = result;
+            // Conflicts are left for the next launch prompt. The zip was taken while the
+            // database was still open; uploading it does not need the books file.
+            _ = await PushCoreAsync(force: false, CancellationToken.None, backupZipPath);
         }
         catch
         {

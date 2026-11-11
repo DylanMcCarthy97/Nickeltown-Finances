@@ -413,8 +413,13 @@ public sealed class ReceiptImportQueue : IReceiptImportQueue, IDisposable
     private static bool IsPdf(string fileName) =>
         Path.GetExtension(fileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase);
 
+    private int _disposed;
+
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            return;
+
         _cts.Cancel();
         try { _worker.Wait(TimeSpan.FromSeconds(2)); } catch { /* shutting down */ }
         _cts.Dispose();

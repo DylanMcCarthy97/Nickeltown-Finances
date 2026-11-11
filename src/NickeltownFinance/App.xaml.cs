@@ -142,10 +142,14 @@ public partial class App : Application
                 if (!SkipShutdownBackup)
                 {
                     var backup = Services.GetRequiredService<IBackupService>();
-                    backup.BackupOnShutdownAsync().GetAwaiter().GetResult();
+                    var backupPath = backup.CreateBackupAsync(isManual: false).GetAwaiter().GetResult();
+
+                    // Drop the exclusive lock before the network upload. That upload can take
+                    // minutes, and a second launch would otherwise fail with the books file in use.
+                    Services.GetRequiredService<IDatabaseShutdownService>().Close();
 
                     var cloudSync = Services.GetService<IClubCloudSyncService>();
-                    cloudSync?.PushOnShutdownAsync().GetAwaiter().GetResult();
+                    cloudSync?.PushOnShutdownAsync(backupPath).GetAwaiter().GetResult();
                 }
             }
         }

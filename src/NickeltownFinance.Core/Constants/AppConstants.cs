@@ -39,7 +39,21 @@ public static class AppPaths
     public static string AppDataRoot =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "NickeltownFinance");
 
-    public static string DatabasePath => Path.Combine(AppDataRoot, "data", "nickeltown.db");
+    /// <summary>
+    /// Local folder for the live LiteDB file. Documents is often redirected into OneDrive,
+    /// and OneDrive locks <c>nickeltown.db</c> while it syncs, which stops the app from opening.
+    /// </summary>
+    public static string LocalDataRoot =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NickeltownFinance");
+
+    public static string DatabasePath => Path.Combine(LocalDataRoot, "data", "nickeltown.db");
+
+    /// <summary>
+    /// Previous location, under Documents. Kept so an existing books file can be copied
+    /// out of OneDrive on first launch. New writes do not go here.
+    /// </summary>
+    public static string LegacyDatabasePath =>
+        Path.Combine(AppDataRoot, "data", "nickeltown.db");
 
     public static string FilesRoot => Path.Combine(AppDataRoot, "files");
 
