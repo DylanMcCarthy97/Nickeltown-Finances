@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.Interfaces;
+using NickeltownFinance.Core.Storage;
 using NickeltownFinance.Services;
 using NickeltownFinance.Views;
 using Serilog;
@@ -27,6 +28,9 @@ public partial class App : Application
 
         try
         {
+            // Move receipts and backups out of Documents before anything touches them.
+            // OneDrive denies that folder and was stopping startup and club upload.
+            WorkingTreeMigration.EnsureLocalCopy(AppPaths.LocalDataRoot, AppPaths.LegacyAppDataRoot);
             Directory.CreateDirectory(AppPaths.LogsPath);
             Services = AppServices.Configure();
 
@@ -80,14 +84,15 @@ public partial class App : Application
         catch (Exception ex)
         {
             Log.Fatal(ex, "Application failed to start");
+            var startupMessage = StorageAccess.ForUser(ex, "Nickeltown Finance failed to start:");
             try
             {
-                AppDialog.Error("Startup error", $"Nickeltown Finance failed to start:\n\n{ex.Message}");
+                AppDialog.Error("Startup error", startupMessage);
             }
             catch
             {
                 MessageBox.Show(
-                    $"Nickeltown Finance failed to start:\n\n{ex.Message}",
+                    startupMessage,
                     "Startup Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -187,8 +192,8 @@ public partial class App : Application
             var when = status.Remote.WrittenUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
             var pull = AppDialog.Confirm(
                 "Newer club data online",
-                $"The sync server has newer books from '{status.Remote.MachineName}' ({when}, revision {status.Remote.Revision}).\n\n" +
-                "Download that copy onto this computer? Logins and transactions will match the other PC.",
+                $"The other computer ({status.Remote.MachineName}) has newer books from {when}.\n\n" +
+                "Download them onto this computer? Logins and transactions will match.",
                 confirmText: "Download",
                 cancelText: "Not now");
 
@@ -220,12 +225,12 @@ public partial class App : Application
         Log.Error(e.Exception, "Unhandled UI exception");
         try
         {
-            AppDialog.Error("Unexpected error", $"An unexpected error occurred:\n\n{e.Exception.Message}");
+            AppDialog.Error("Unexpected error", StorageAccess.ForUser(e.Exception, "An unexpected error occurred:"));
         }
         catch
         {
             MessageBox.Show(
-                $"An unexpected error occurred:\n\n{e.Exception.Message}",
+                StorageAccess.ForUser(e.Exception, "An unexpected error occurred:"),
                 "Nickeltown Finance",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

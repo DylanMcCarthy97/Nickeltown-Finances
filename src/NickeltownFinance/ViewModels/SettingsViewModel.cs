@@ -5,7 +5,9 @@ using CommunityToolkit.Mvvm.Input;
 using LiteDB;
 using Microsoft.Win32;
 using NickeltownFinance.Core;
+using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.DTOs;
+using NickeltownFinance.Core.Storage;
 using NickeltownFinance.Core.Enums;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
@@ -345,10 +347,17 @@ public partial class SettingsViewModel : ViewModelBase
 
         var dialog = new OpenFolderDialog();
 
-        if (dialog.ShowDialog() == true)
+        if (dialog.ShowDialog() != true)
+            return;
 
-            BackupFolder = dialog.FolderName;
+        if (BackupFolderPolicy.IsCloudPath(dialog.FolderName))
+        {
+            _notificationService.ShowError(
+                "Pick a folder on this PC. OneDrive blocks Nickeltown Finance from opening backups.");
+            return;
+        }
 
+        BackupFolder = dialog.FolderName;
     }
 
     private void LoadClubSyncPreferences()
@@ -381,91 +390,77 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void SaveClubSyncSettings()
     {
+        PersistClubSyncSettings();
+        _notificationService.ShowSuccess("Club sync settings saved on this computer.");
+    }
+
+    private void PersistClubSyncSettings()
+    {
         _clubCloudSyncService.SavePreferences(
             ClubSyncEnabled,
             ClubSyncServerUrl,
             ClubSyncClubId,
             ClubSyncCode);
-        var status = _clubCloudSyncService.GetStatus();
-        ClubSyncStatusText = status.StatusSummary;
-        _notificationService.ShowSuccess("Club sync settings saved on this computer.");
+        ClubSyncStatusText = _clubCloudSyncService.GetStatus().StatusSummary;
     }
 
+    /// <summary>
+    /// One action for both computers: download when the other PC is newer, otherwise upload.
+    /// Turns sync on so closing the app keeps uploading.
+    /// </summary>
     [RelayCommand]
-    private async Task CheckClubSyncStatusAsync()
+    private async Task SyncClubNowAsync()
     {
         if (IsClubSyncBusy)
             return;
 
-        SaveClubSyncSettings();
+        ClubSyncEnabled = true;
+        PersistClubSyncSettings();
+
+        var ready = _clubCloudSyncService.GetStatus();
+        if (!ready.IsConfigured)
+        {
+            ClubSyncStatusText = ready.StatusSummary;
+            _notificationService.ShowError(ready.StatusSummary);
+            return;
+        }
+
         IsClubSyncBusy = true;
         try
         {
             var status = await _clubCloudSyncService.RefreshRemoteStatusAsync();
             ClubSyncStatusText = status.StatusSummary;
-            if (!string.IsNullOrWhiteSpace(status.LastError))
-                _notificationService.ShowError(status.LastError);
-            else
-                _notificationService.ShowSuccess("Checked the sync server.");
-        }
-        catch (Exception ex)
-        {
-            ClubSyncStatusText = ex.Message;
-            _notificationService.ShowError(ex.Message);
-        }
-        finally
-        {
-            IsClubSyncBusy = false;
-        }
-    }
 
-    [RelayCommand]
-    private async Task PushClubSyncAsync()
-    {
-        if (IsClubSyncBusy)
-            return;
-
-        SaveClubSyncSettings();
-        if (!AppDialog.Confirm(
-                "Upload club data",
-                "Upload this computer’s logins, transactions, and receipts to the sync server so the other computer can download them.\n\nOnly use one computer at a time.",
-                confirmText: "Upload",
-                cancelText: "Cancel"))
-            return;
-
-        IsClubSyncBusy = true;
-        try
-        {
-            var result = await _clubCloudSyncService.PushAsync();
-            ClubSyncStatusText = result.Message ?? string.Empty;
-            if (result.Conflict)
+            if (status.NewerRemoteAvailable && status.Remote is not null)
             {
-                if (AppDialog.Confirm(
-                        "Newer data online",
-                        (result.Message ?? "The online copy is newer.") +
-                        "\n\nOverwrite the online copy with this computer’s data?",
-                        confirmText: "Overwrite",
-                        cancelText: "Cancel",
-                        isDanger: true))
-                {
-                    result = await _clubCloudSyncService.PushAsync(force: true);
-                    ClubSyncStatusText = result.Message ?? string.Empty;
-                }
-                else
+                var when = status.Remote.WrittenUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+                if (!AppDialog.Confirm(
+                        "Newer club data online",
+                        $"The other computer ({status.Remote.MachineName}) has newer books from {when}.\n\n" +
+                        "Download them onto this computer? This computer’s copy will be replaced, then the app will close.",
+                        confirmText: "Download",
+                        cancelText: "Not now"))
                 {
                     return;
                 }
+
+                await DownloadClubCopyAsync();
+                return;
             }
 
-            if (result.Success)
-                _notificationService.ShowSuccess(result.Message ?? "Uploaded.");
-            else if (!string.IsNullOrWhiteSpace(result.Message))
-                _notificationService.ShowError(result.Message);
+            if (!string.IsNullOrWhiteSpace(status.LastError) && status.Remote is null)
+            {
+                _notificationService.ShowError(status.StatusSummary);
+                return;
+            }
+
+            await UploadClubCopyAsync();
         }
         catch (Exception ex)
         {
-            ClubSyncStatusText = ex.Message;
-            _notificationService.ShowError(ex.Message);
+            var message = StorageAccess.ForUser(ex);
+            ClubSyncStatusText = message;
+            _notificationService.ShowError(message);
         }
         finally
         {
@@ -473,43 +468,44 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    private async Task PullClubSyncAsync()
+    private async Task UploadClubCopyAsync()
     {
-        if (IsClubSyncBusy)
-            return;
-
-        SaveClubSyncSettings();
-        if (!AppDialog.Confirm(
-                "Download club data",
-                "Replace all data on this computer with the online club copy (same logins and books). The app will close afterwards so you can reopen it.",
-                confirmText: "Download",
-                cancelText: "Cancel",
-                isDanger: true))
-            return;
-
-        IsClubSyncBusy = true;
-        try
+        var result = await _clubCloudSyncService.PushAsync();
+        ClubSyncStatusText = result.Message ?? string.Empty;
+        if (result.Conflict)
         {
-            var result = await _clubCloudSyncService.PullAsync();
-            if (!result.Success)
-            {
-                ClubSyncStatusText = result.Message ?? "Download failed.";
-                _notificationService.ShowError(result.Message ?? "Download failed.");
-                IsClubSyncBusy = false;
+            if (!AppDialog.Confirm(
+                    "Newer data online",
+                    (result.Message ?? "The online copy is newer.") +
+                    "\n\nReplace the online copy with this computer’s books?",
+                    confirmText: "Replace online copy",
+                    cancelText: "Cancel",
+                    isDanger: true))
                 return;
-            }
 
-            _notificationService.ShowSuccess(result.Message ?? "Downloaded. Restarting…");
-            App.SkipShutdownBackup = true;
-            Application.Current.Shutdown();
+            result = await _clubCloudSyncService.PushAsync(force: true);
+            ClubSyncStatusText = result.Message ?? string.Empty;
         }
-        catch (Exception ex)
+
+        if (result.Success)
+            _notificationService.ShowSuccess(result.Message ?? "Uploaded.");
+        else if (!result.Skipped && !string.IsNullOrWhiteSpace(result.Message))
+            _notificationService.ShowError(result.Message);
+    }
+
+    private async Task DownloadClubCopyAsync()
+    {
+        var result = await _clubCloudSyncService.PullAsync();
+        if (!result.Success)
         {
-            ClubSyncStatusText = ex.Message;
-            _notificationService.ShowError(ex.Message);
-            IsClubSyncBusy = false;
+            ClubSyncStatusText = result.Message ?? "Download failed.";
+            _notificationService.ShowError(result.Message ?? "Download failed.");
+            return;
         }
+
+        _notificationService.ShowSuccess(result.Message ?? "Downloaded. Restarting…");
+        App.SkipShutdownBackup = true;
+        Application.Current.Shutdown();
     }
 
 
@@ -527,6 +523,10 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.FinancialYearStartMonth = FinancialYearStartMonth;
 
         _settingsService.Theme = SelectedTheme;
+
+        if (BackupFolderPolicy.IsCloudPath(BackupFolder)
+            || BackupFolderPolicy.IsUnder(BackupFolder, AppPaths.LegacyAppDataRoot))
+            BackupFolder = Path.Combine(AppPaths.LocalDataRoot, "backups");
 
         _settingsService.BackupFolder = BackupFolder;
 

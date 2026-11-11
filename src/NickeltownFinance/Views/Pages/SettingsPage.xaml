@@ -211,6 +211,10 @@
 
                                 <StackPanel>
                                     <TextBlock Text="Backup folder" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBlock Text="Kept on this PC, outside OneDrive, so backups cannot stop the app from opening."
+                                               Style="{StaticResource CaptionTextStyle}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8" />
                                     <Grid Margin="0,0,0,14">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -257,11 +261,11 @@
                     <StackPanel Visibility="{Binding ShowSync, Converter={StaticResource BoolToVisibilityConverter}}">
                         <ds:SurfaceCard Title="Club sync" CardMargin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Keep the home PC and club PC on the same logins and books over the internet — no USB stick and no OneDrive."
+                                <TextBlock Text="Home and the club share the same logins and books. Enter the same server, club id, and code on both computers, then press Sync now."
                                            Style="{StaticResource CaptionTextStyle}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,12" />
-                                <CheckBox Content="Enable internet sync on this computer"
+                                <CheckBox Content="Sync this computer"
                                           IsChecked="{Binding ClubSyncEnabled}"
                                           Margin="0,0,0,14" />
                                 <TextBlock Text="Sync server URL" Style="{StaticResource FieldLabelStyle}" />
@@ -285,26 +289,18 @@
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,14" />
                                 <StackPanel Orientation="Horizontal">
-                                    <ui:Button Content="Save"
-                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}"
-                                               Command="{Binding SaveClubSyncSettingsCommand}" />
-                                    <ui:Button Content="Check status"
-                                               Style="{StaticResource GroupedSecondaryButtonStyle}"
-                                               Margin="{StaticResource ButtonGroupMarginInline}"
-                                               Command="{Binding CheckClubSyncStatusCommand}"
-                                               IsEnabled="{Binding IsClubSyncBusy, Converter={StaticResource InverseBoolConverter}}" />
-                                    <ui:Button Content="Upload"
-                                               Icon="{ui:SymbolIcon ArrowUpload24}"
+                                    <ui:Button Content="Sync now"
+                                               Icon="{ui:SymbolIcon ArrowSync24}"
                                                Style="{StaticResource GroupedPrimaryButtonStyle}"
                                                Margin="{StaticResource ButtonGroupMarginInline}"
-                                               Command="{Binding PushClubSyncCommand}" />
-                                    <ui:Button Content="Download"
-                                               Icon="{ui:SymbolIcon ArrowDownload24}"
+                                               Command="{Binding SyncClubNowCommand}"
+                                               IsEnabled="{Binding IsClubSyncBusy, Converter={StaticResource InverseBoolConverter}}" />
+                                    <ui:Button Content="Save"
                                                Style="{StaticResource GroupedSecondaryButtonStyle}"
-                                               Command="{Binding PullClubSyncCommand}" />
+                                               Command="{Binding SaveClubSyncSettingsCommand}"
+                                               IsEnabled="{Binding IsClubSyncBusy, Converter={StaticResource InverseBoolConverter}}" />
                                 </StackPanel>
-                                <TextBlock Text="Tip: use only one computer at a time. Upload before you leave, download when you arrive at the other PC. Closing the app also tries to upload when sync is enabled."
+                                <TextBlock Text="Sync now downloads when the other computer is newer, and uploads otherwise. Opening the app offers that download. Closing the app uploads while “Sync this computer” is on. If both computers changed the books, you choose which copy to keep. OneDrive is not part of this."
                                            Style="{StaticResource CaptionTextStyle}"
                                            TextWrapping="Wrap"
                                            Margin="0,14,0,0" />
