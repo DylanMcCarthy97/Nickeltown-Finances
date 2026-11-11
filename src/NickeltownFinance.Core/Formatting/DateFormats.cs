@@ -21,4 +21,7 @@ public static class DateFormats
 
     public static string FormatDateTime(DateTime? value) =>
         value is { } d ? FormatDateTime(d) : string.Empty;
+
+    public static string FormatRange(DateTime from, DateTime to) =>
+        $"{Format(from)} – {Format(to)}";
 }
