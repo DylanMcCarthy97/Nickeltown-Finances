@@ -200,6 +200,23 @@ public interface IMonthDocumentService
         MonthDocumentKind kind,
         string? title = null);
 
+    Task<MonthDocumentInfo> AddManualPitstopAsync(
+        int year,
+        int month,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? title = null,
+        string? notes = null);
+
+    Task<MonthDocumentInfo> UpdateManualPitstopAsync(
+        ObjectId documentId,
+        DateTime eventDate,
+        decimal cashAmount,
+        decimal cardAmount,
+        string? title = null,
+        string? notes = null);
+
     Task DeleteAsync(ObjectId documentId);
 
     Task<string> GetFullPathAsync(ObjectId documentId);
