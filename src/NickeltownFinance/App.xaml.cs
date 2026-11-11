@@ -174,7 +174,13 @@ public partial class App : Application
         try
         {
             var sync = Services.GetRequiredService<IClubCloudSyncService>();
-            var status = sync.RefreshRemoteStatusAsync().GetAwaiter().GetResult();
+            // The login window is not up yet. A Docker sync server that is stopped must not
+            // leave a Task Manager process with no window for the 10-minute upload timeout.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var status = sync.RefreshRemoteStatusAsync(timeout.Token)
+                .WaitAsync(TimeSpan.FromSeconds(5))
+                .GetAwaiter()
+                .GetResult();
             if (!status.IsConfigured || !status.NewerRemoteAvailable || status.Remote is null)
                 return true;
 
