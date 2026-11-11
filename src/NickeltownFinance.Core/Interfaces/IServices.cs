@@ -469,7 +469,11 @@ public interface IClubCloudSyncService
 
     Task<ClubCloudSyncResult> PullAsync(CancellationToken cancellationToken = default);
 
-    Task PushOnShutdownAsync();
+    /// <param name="backupZipPath">
+    /// Zip already created while the database was open. When set, shutdown upload uses this
+    /// file and does not open the books again, so a new launch is not blocked on the upload.
+    /// </param>
+    Task PushOnShutdownAsync(string? backupZipPath = null);
 
     ClubCloudSyncResult? GetPendingPullOffer();
 }

@@ -30,4 +30,10 @@
       <Platform Solution="Release|x64" Project="Any CPU" />
     </Project>
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NickeltownFinance.Core.Tests/NickeltownFinance.Core.Tests.csproj">
+      <Platform Solution="Debug|x64" Project="Any CPU" />
+      <Platform Solution="Release|x64" Project="Any CPU" />
+    </Project>
+  </Folder>
 </Solution>
