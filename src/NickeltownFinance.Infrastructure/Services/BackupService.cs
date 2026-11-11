@@ -3,6 +3,7 @@ using LiteDB;
 using NickeltownFinance.Core.Constants;
 using NickeltownFinance.Core.DTOs;
 using NickeltownFinance.Core.Interfaces;
+using NickeltownFinance.Core.Storage;
 using NickeltownFinance.Infrastructure.Database;
 
 namespace NickeltownFinance.Infrastructure.Services;
@@ -25,13 +26,13 @@ public class BackupService : IBackupService
 
     public Task<string> CreateBackupAsync(bool isManual = false)
     {
-        Directory.CreateDirectory(_settingsService.BackupFolder);
+        var folder = EnsureWritableBackupFolder();
         Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.DatabasePath)!);
         Directory.CreateDirectory(AppPaths.FilesRoot);
 
         var prefix = isManual ? "manual" : "auto";
         var fileName = $"nickeltown_{prefix}_{DateTime.Now:yyyy-MM-dd_HHmmss}.zip";
-        var destPath = Path.Combine(_settingsService.BackupFolder, fileName);
+        var destPath = Path.Combine(folder, fileName);
 
         if (File.Exists(destPath))
             File.Delete(destPath);
@@ -46,8 +47,20 @@ public class BackupService : IBackupService
             AddDirectory(archive, AppPaths.FilesRoot, "files");
         }
 
-        PruneOldBackups(_settingsService.BackupFolder, 30);
+        PruneOldBackups(folder, 30);
         return Task.FromResult(destPath);
+    }
+
+    private string EnsureWritableBackupFolder()
+    {
+        var local = Path.Combine(AppPaths.LocalDataRoot, "backups");
+        var resolved = BackupFolderPolicy.ResolveWritableFolder(
+            _settingsService.BackupFolder,
+            AppPaths.LegacyAppDataRoot,
+            local);
+        if (!BackupFolderPolicy.PathsEqual(_settingsService.BackupFolder, resolved))
+            _settingsService.BackupFolder = resolved;
+        return resolved;
     }
 
 
@@ -232,9 +245,7 @@ public class BackupService : IBackupService
 
     {
 
-        var folder = _settingsService.BackupFolder;
-
-        Directory.CreateDirectory(folder);
+        var folder = EnsureWritableBackupFolder();
 
 
 
@@ -325,23 +336,22 @@ public class BackupService : IBackupService
     }
 
     private static void AddDirectory(ZipArchive archive, string sourceDir, string entryPrefix)
-
     {
-
         if (!Directory.Exists(sourceDir)) return;
 
-
-
-        foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
-
+        // One locked previews folder must not fail the whole club upload.
+        foreach (var file in FileTreeWalker.ListFiles(sourceDir))
         {
-
             var relative = Path.GetRelativePath(sourceDir, file).Replace('\\', '/');
-
-            archive.CreateEntryFromFile(file, $"{entryPrefix}/{relative}");
-
+            try
+            {
+                archive.CreateEntryFromFile(file, $"{entryPrefix}/{relative}");
+            }
+            catch (Exception ex) when (StorageAccess.IsAccessProblem(ex))
+            {
+                // Skip the file OneDrive (or another locker) will not hand over.
+            }
         }
-
     }
 
 

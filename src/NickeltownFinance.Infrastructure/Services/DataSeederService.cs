@@ -5,6 +5,7 @@ using NickeltownFinance.Core.FinancialYears;
 using NickeltownFinance.Core.Interfaces;
 using NickeltownFinance.Core.Models;
 using NickeltownFinance.Core.Security;
+using NickeltownFinance.Core.Storage;
 
 namespace NickeltownFinance.Infrastructure.Services;
 
@@ -38,16 +39,42 @@ public class DataSeederService : IDataSeederService
     public void SeedIfNeeded()
     {
         Directory.CreateDirectory(AppPaths.AppDataRoot);
-        Directory.CreateDirectory(Path.Combine(AppPaths.AppDataRoot, "data"));
-        Directory.CreateDirectory(_settingsService.BackupFolder);
+        Directory.CreateDirectory(Path.Combine(AppPaths.LocalDataRoot, "data"));
         Directory.CreateDirectory(AppPaths.ExportsPath);
         Directory.CreateDirectory(AppPaths.LogsPath);
+        Directory.CreateDirectory(AppPaths.FilesRoot);
+        EnsureBackupFolder();
 
         // Existing installations keep their data; first-run setup creates FY + admin.
         if (_settingsRepository.GetValue(SettingKeys.IsInitialized) == "true")
         {
             MigrateAuthIfNeeded();
             _categorisationService.EnsureDefaultRules();
+        }
+    }
+
+    /// <summary>
+    /// A backup folder inside Documents/OneDrive throws on startup when OneDrive denies access.
+    /// Point the setting at the local folder instead.
+    /// </summary>
+    private void EnsureBackupFolder()
+    {
+        var local = Path.Combine(AppPaths.LocalDataRoot, "backups");
+        try
+        {
+            var resolved = BackupFolderPolicy.ResolveWritableFolder(
+                _settingsService.BackupFolder,
+                AppPaths.LegacyAppDataRoot,
+                local);
+            if (!BackupFolderPolicy.PathsEqual(_settingsService.BackupFolder, resolved))
+                _settingsService.BackupFolder = resolved;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // OneDrive is retargeted before this runs. A USB folder that is unplugged
+            // must not stop the app from opening; the saved path is left as it is.
+            if (BackupFolderPolicy.ShouldRetarget(_settingsService.BackupFolder, AppPaths.LegacyAppDataRoot, local))
+                throw;
         }
     }
 

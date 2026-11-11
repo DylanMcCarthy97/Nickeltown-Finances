@@ -348,10 +348,10 @@ public class ClubCloudSyncService : IClubCloudSyncService
     private static string BuildLocalSummary(ClubCloudSyncPreferences prefs)
     {
         if (!prefs.Enabled)
-            return "Internet sync is off. Turn it on so home and club stay on the same logins and books.";
+            return "Press Sync now to keep this computer on the same logins and books as the other one.";
         if (ValidateConfigured(prefs) is { } error)
             return error;
-        return $"Ready to sync club '{prefs.ClubId}' via {prefs.ServerUrl}.";
+        return "Ready. Sync now uploads this computer, or downloads when the other one is newer.";
     }
 
     private ClubCloudSyncPreferences LoadPreferences()

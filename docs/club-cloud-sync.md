@@ -9,13 +9,18 @@ Nickeltown Finance stores books in a local LiteDB database. To keep **the same l
    - Sync server URL  
    - Club id (e.g. `nickeltown-flounderers`)  
    - Sync code (a shared secret, 8+ characters)
-3. Turn **Enable internet sync** on and tap **Save**.
-4. On the computer you just used: **Upload** (or simply close the app — it uploads on shutdown).
-5. On the other computer: open the app — it offers to **Download** if newer data is online, or use **Download** in Settings.
+3. Press **Sync now**.
 
-Use **one computer at a time**. Upload before you leave; download when you arrive.
+That is the whole routine. **Sync now** downloads when the other computer has newer books, and uploads otherwise. It also turns **Sync this computer** on, so:
+
+- Opening the app offers to download when the other computer is newer.
+- Closing the app uploads this computer.
+
+If both computers changed the books before either one synced, the app asks which copy to keep.
 
 Packages are **encrypted with the sync code** before upload. The server stores an opaque blob; it cannot read club finances without the code.
+
+Books, receipts, and backups are stored on each PC under `%LOCALAPPDATA%\NickeltownFinance`, not in Documents. Documents is often OneDrive, and OneDrive was denying access to the backups folder (the app would not start) and to receipt preview folders (upload failed).
 
 ## Run the sync server
 
@@ -47,6 +52,6 @@ Header: `X-Club-Sync-Code: <code>`
 
 ## Why not OneDrive / USB?
 
-- Putting the live LiteDB file in OneDrive/Google Drive risks **corruption**.
+- Putting the live books, receipts, or backups in OneDrive/Google Drive risks **corruption**, and those folders often **deny access** while the cloud client is syncing. The app will not use them.
 - USB sticks get **lost** and are easy to forget.
 - A sync server keeps one encrypted copy online that both PCs can reach when they have internet.
